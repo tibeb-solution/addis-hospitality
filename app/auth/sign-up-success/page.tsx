@@ -1,11 +1,14 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 export default function SignUpSuccessPage() {
   const t = useTranslations()
+  const searchParams = useSearchParams()
+  const nextPath = searchParams.get('next') || '/auth/login'
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
@@ -40,7 +43,7 @@ export default function SignUpSuccessPage() {
         </div>
 
         <div className="space-y-4">
-          <Link href="/auth/login" className="block">
+          <Link href={nextPath} className="block">
             <Button variant="outline" className="w-full">
               {t('auth.login')}
             </Button>

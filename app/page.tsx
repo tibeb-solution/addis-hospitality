@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher'
 
 export default function LandingPage() {
   const t = useTranslations()
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,14 +24,47 @@ export default function LandingPage() {
                 {t('auth.login')}
               </Button>
             </Link>
-            <Link href="/auth/sign-up">
-              <Button size="sm">
-                {t('auth.signUp')}
-              </Button>
-            </Link>
+            <Button size="sm" onClick={() => setIsSignupModalOpen(true)}>
+              {t('auth.signUp')}
+            </Button>
           </div>
         </div>
       </header>
+
+      {isSignupModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[28px] border border-border/70 bg-card p-6 shadow-[0_20px_80px_rgba(15,23,42,0.24)]">
+            <div className="space-y-2 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary">Choose your path</p>
+              <h2 className="text-2xl font-semibold text-foreground">{t('auth.signUp')}</h2>
+              <p className="text-sm text-muted-foreground">Pick the account type that fits you best.</p>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <Link href="/auth/sign-up/employee" onClick={() => setIsSignupModalOpen(false)} className="block">
+                <Button className="w-full justify-center" size="lg">
+                  {t('auth.signUpAsEmployee')}
+                </Button>
+              </Link>
+              <Link href="/auth/sign-up/company" onClick={() => setIsSignupModalOpen(false)} className="block">
+                <Button variant="outline" className="w-full justify-center" size="lg">
+                  {t('auth.signUpAsCompany')}
+                </Button>
+              </Link>
+            </div>
+
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignupModalOpen(false)}
+                className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:py-32">
@@ -44,12 +79,12 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-            <Link href="/auth/sign-up?role=employee">
+            <Link href="/auth/sign-up/employee">
               <Button size="lg" className="w-full sm:w-auto">
                 {t('auth.signUpAsEmployee')}
               </Button>
             </Link>
-            <Link href="/auth/sign-up?role=company">
+            <Link href="/auth/sign-up/company">
               <Button size="lg" variant="outline" className="w-full sm:w-auto">
                 {t('auth.signUpAsCompany')}
               </Button>
@@ -161,12 +196,12 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/sign-up?role=employee">
+            <Link href="/auth/sign-up/employee">
               <Button size="lg" variant="secondary">
                 {t('auth.signUpAsEmployee')}
               </Button>
             </Link>
-            <Link href="/auth/sign-up?role=company">
+            <Link href="/auth/sign-up/company">
               <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
                 {t('auth.signUpAsCompany')}
               </Button>

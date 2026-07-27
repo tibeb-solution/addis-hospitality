@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -12,7 +12,9 @@ type Role = 'employee' | 'company'
 export default function SignUpPage() {
   const t = useTranslations()
   const router = useRouter()
-  const [role, setRole] = useState<Role>('employee')
+  const searchParams = useSearchParams()
+  const initialRole = (searchParams.get('role') as Role | null) ?? 'employee'
+  const [role, setRole] = useState<Role>(initialRole)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -82,7 +84,8 @@ export default function SignUpPage() {
         return
       }
 
-      router.push('/auth/sign-up-success')
+      const destination = role === 'company' ? '/company' : '/employee'
+      router.push(`/auth/sign-up-success?next=${encodeURIComponent(destination)}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.serverError'))
       setLoading(false)
@@ -102,174 +105,153 @@ export default function SignUpPage() {
     'other',
   ]
 
+  const inputClassName =
+    'w-full rounded-xl border border-border/70 bg-background/80 px-3 py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50'
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-primary">{t('common.logo')}</h1>
-          <p className="text-muted-foreground">{t('auth.signUp')}</p>
-        </div>
-
-        <form onSubmit={handleSignUp} className="space-y-6">
-          {/* Role Selection */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium">{t('auth.selectRole')}</label>
-            <div className="flex gap-3">
-              {(['employee', 'company'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
-                    role === r
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                  }`}
-                >
-                  {r === 'employee'
-                    ? t('auth.signUpAsEmployee')
-                    : t('auth.signUpAsCompany')}
-                </button>
-              ))}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center">
+        <div className="w-full max-w-xl rounded-[28px] border border-border/70 bg-card/90 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8">
+          <div className="space-y-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <span className="text-xl font-semibold">✦</span>
             </div>
+            <h1 className="text-3xl font-bold text-primary">{t('common.logo')}</h1>
+            <p className="text-sm text-muted-foreground">{t('auth.signUp')}</p>
           </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('auth.email')}</label>
-            <input
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              required
-              disabled={loading}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
+          <form onSubmit={handleSignUp} className="mt-8 space-y-5">
+            <div className="rounded-2xl border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Selected role</p>
+              <p className="mt-1">
+                {role === 'employee' ? t('auth.signUpAsEmployee') : t('auth.signUpAsCompany')}
+              </p>
+            </div>
 
-          {/* Role-specific fields */}
-          {role === 'employee' ? (
-            <>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+              <input
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                disabled={loading}
+                className={inputClassName}
+              />
+            </div>
+
+            {role === 'employee' ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">{t('auth.firstName')}</label>
+                    <input
+                      name="firstName"
+                      placeholder={t('auth.firstName')}
+                      disabled={loading}
+                      className={inputClassName}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">{t('auth.lastName')}</label>
+                    <input
+                      name="lastName"
+                      placeholder={t('auth.lastName')}
+                      disabled={loading}
+                      className={inputClassName}
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('auth.firstName')}</label>
+                  <label className="text-sm font-medium text-foreground">{t('auth.city')}</label>
+                  <input name="city" placeholder={t('auth.city')} disabled={loading} className={inputClassName} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t('auth.companyName')}</label>
                   <input
-                    name="firstName"
-                    placeholder={t('auth.firstName')}
+                    name="companyName"
+                    placeholder={t('auth.companyName')}
                     disabled={loading}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={inputClassName}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('auth.lastName')}</label>
-                  <input
-                    name="lastName"
-                    placeholder={t('auth.lastName')}
+                  <label className="text-sm font-medium text-foreground">{t('auth.businessType')}</label>
+                  <select
+                    name="businessType"
                     disabled={loading}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                    className={inputClassName}
+                  >
+                    <option value="">{t('auth.selectBusinessType')}</option>
+                    {businessTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {t(`taxonomy.business_${type}`)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('auth.city')}</label>
-                <input name="city" placeholder={t('auth.city')} disabled={loading} className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary" />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('auth.companyName')}</label>
-                <input
-                  name="companyName"
-                  placeholder={t('auth.companyName')}
-                  disabled={loading}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('auth.businessType')}</label>
-                <select
-                  name="businessType"
-                  disabled={loading}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">{t('auth.selectBusinessType')}</option>
-                  {businessTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`taxonomy.business_${type}`)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('auth.city')}</label>
-                <input name="city" placeholder={t('auth.city')} disabled={loading} className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary" />
-              </div>
-            </>
-          )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t('auth.city')}</label>
+                  <input name="city" placeholder={t('auth.city')} disabled={loading} className={inputClassName} />
+                </div>
+              </>
+            )}
 
-          {/* Phone */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('auth.phone')}</label>
-            <input
-              name="phone"
-              type="tel"
-              placeholder="+251..."
-              disabled={loading}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {/* Password */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('auth.password')}</label>
-            <input
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              disabled={loading}
-              required
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {/* Confirm Password */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('auth.passwordConfirm')}</label>
-            <input
-              name="passwordConfirm"
-              type="password"
-              placeholder="••••••••"
-              disabled={loading}
-              required
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-              {error}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">{t('auth.phone')}</label>
+              <input
+                name="phone"
+                type="tel"
+                placeholder="+251..."
+                disabled={loading}
+                className={inputClassName}
+              />
             </div>
-          )}
 
-          {/* Submit */}
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full"
-            size="lg"
-          >
-            {loading ? t('common.loading') : t('auth.signUp')}
-          </Button>
-        </form>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
+              <input
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                disabled={loading}
+                required
+                className={inputClassName}
+              />
+            </div>
 
-        {/* Login Link */}
-        <div className="text-center text-sm">
-          {t('auth.alreadyHaveAccount')}{' '}
-          <Link href="/auth/login" className="text-primary font-medium hover:underline">
-            {t('auth.login')}
-          </Link>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">{t('auth.passwordConfirm')}</label>
+              <input
+                name="passwordConfirm"
+                type="password"
+                placeholder="••••••••"
+                disabled={loading}
+                required
+                className={inputClassName}
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <Button type="submit" disabled={loading} className="w-full" size="lg">
+              {loading ? t('common.loading') : t('auth.signUp')}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            {t('auth.alreadyHaveAccount')}{' '}
+            <Link href="/auth/login" className="font-medium text-primary hover:underline">
+              {t('auth.login')}
+            </Link>
+          </div>
         </div>
       </div>
     </div>
