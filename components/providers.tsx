@@ -14,7 +14,11 @@ export default function Providers({
 }) {
   return (
     <ThemeProvider>
-      <NextIntlClientProvider messages={messages} locale={locale}>
+      <NextIntlClientProvider
+        messages={messages}
+        locale={locale}
+        timeZone="Africa/Addis_Ababa"
+      >
         {children}
       </NextIntlClientProvider>
     </ThemeProvider>
