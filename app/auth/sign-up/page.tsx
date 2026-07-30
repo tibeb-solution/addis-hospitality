@@ -93,6 +93,13 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       <div className="w-full max-w-md space-y-8">
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm font-medium text-primary hover:underline"
+        >
+          ← {t('common.back')} {t('common.logo')}
+        </Link>
+
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold text-primary">{t('common.logo')}</h1>
           <p className="text-muted-foreground">{t('auth.signUp')}</p>
