@@ -58,6 +58,10 @@
     "emailAlreadyExists": "Email already registered"
   },
   "nav": {
+    "home": "Home",
+    "about": "About",
+    "news": "News",
+    "projects": "Projects",
     "dashboard": "Dashboard",
     "profile": "Profile",
     "documents": "Documents",

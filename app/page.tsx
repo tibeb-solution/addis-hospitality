@@ -20,6 +20,29 @@ export default function LandingPage() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <nav
+              aria-label="Main navigation"
+              className="mr-2 hidden items-center gap-2.5 lg:flex xl:gap-3"
+            >
+              {[
+                ['nav.home', '#home'],
+                ['nav.about', '#about'],
+                ['nav.news', '#news'],
+                ['nav.projects', '#projects'],
+              ].map(([label, href]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 ${
+                    label === 'nav.home'
+                      ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:-translate-y-0.5 hover:bg-primary/90'
+                      : 'border-border/70 bg-background/60 text-muted-foreground shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
+                  }`}
+                >
+                  {t(label)}
+                </Link>
+              ))}
+            </nav>
             <ThemeSwitcher />
             <LocaleSwitcher />
             <Link href="/auth/login">
@@ -37,7 +60,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:py-32 overflow-hidden">
+      <section id="home" className="relative py-20 px-4 sm:py-32 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 -z-10 opacity-20">
           <div className="absolute top-20 right-20 w-72 h-72 bg-primary rounded-full mix-blend-multiply filter blur-3xl"></div>
           <div className="absolute bottom-20 left-20 w-72 h-72 bg-accent rounded-full mix-blend-multiply filter blur-3xl"></div>
@@ -71,7 +94,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-card/50">
+      <section id="about" className="py-20 px-4 bg-card/50 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
             {t('landing.features')}
@@ -115,7 +138,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 px-4">
+      <section id="news" className="py-20 px-4 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
             {t('landing.howItWorks')}
@@ -162,7 +185,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-primary to-accent">
+      <section id="projects" className="py-20 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20">
         <div className="max-w-4xl mx-auto space-y-8 text-center text-primary-foreground">
           <h2 className="text-3xl sm:text-4xl font-bold">
             {t('landing.readyToStart')}
