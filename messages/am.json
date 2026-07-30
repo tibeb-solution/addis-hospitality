@@ -339,6 +339,7 @@
     "timestamp": "የጊዜ ምልክት",
     "user": "ተጠቃሚ",
     "details": "ዝርዝሮች",
-    "statusChange": "የሁኔታ ለውጥ"
+    "statusChange": "የሁኔታ ለውጥ",
+    "registrationDate": "የተመዘገቡበት ቀን"
   }
 }

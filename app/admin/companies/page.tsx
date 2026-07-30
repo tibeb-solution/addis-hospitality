@@ -97,6 +97,7 @@ export default function AdminCompaniesPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('auth.companyName')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('auth.businessType')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.registrationDate')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.verificationStatus')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.action')}</th>
                 </tr>
@@ -107,6 +108,9 @@ export default function AdminCompaniesPage() {
                     <td className="px-6 py-4 text-sm">{comp.company_name || '—'}</td>
                     <td className="px-6 py-4 text-sm">
                       {t(`taxonomy.business_${comp.business_type}`) || '—'}
+                    </td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                      {comp.created_at ? new Date(comp.created_at).toLocaleDateString() : '—'}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${

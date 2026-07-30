@@ -339,6 +339,7 @@
     "timestamp": "Timestamp",
     "user": "User",
     "details": "Details",
-    "statusChange": "Status Change"
+    "statusChange": "Status Change",
+    "registrationDate": "Registration Date"
   }
 }

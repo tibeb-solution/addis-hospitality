@@ -99,6 +99,7 @@ export default function AdminEmployeesPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('auth.email')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('auth.fullName')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.registrationDate')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('documents.status')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.action')}</th>
                 </tr>
@@ -108,6 +109,9 @@ export default function AdminEmployeesPage() {
                   <tr key={emp.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4 text-sm">{emp.email}</td>
                     <td className="px-6 py-4 text-sm">{emp.full_name || '—'}</td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                      {emp.created_at ? new Date(emp.created_at).toLocaleDateString() : '—'}
+                    </td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                         emp.status === 'active' ? 'bg-green-500/20 text-green-700' :

@@ -16,21 +16,43 @@ export default function AdminAuditLogPage() {
     const loadLogs = async () => {
       const supabase = createClient()
 
-      // For now, we'll show recent profile changes
-      const { data: employees } = await supabase
+      const { data: profiles } = await supabase
         .from('profiles')
         .select('id, email, status, reviewed_at, created_at')
         .order('reviewed_at', { ascending: false })
         .limit(100)
 
-      const auditLogs = employees?.map((emp) => ({
+      const { data: companies } = await supabase
+        .from('company_profiles')
+        .select('id, email, company_name, is_verified, reviewed_at, created_at')
+        .order('reviewed_at', { ascending: false })
+        .limit(100)
+
+      const employeeLogs = profiles
+        ?.filter((profile: any) => profile.role === 'employee')
+        .map((emp: any) => ({
         id: emp.id,
         user: emp.email,
         action: emp.reviewed_at ? 'status_change' : 'signup',
         details: `Status: ${emp.status}`,
         timestamp: emp.reviewed_at || emp.created_at,
+        approvedAt: emp.status === 'active' ? emp.reviewed_at : null,
+        reviewedAt: emp.reviewed_at,
         status: emp.status,
       })) || []
+
+      const companyLogs = companies?.map((company: any) => ({
+        id: `company-${company.id}`,
+        user: company.email || company.company_name || '—',
+        action: company.reviewed_at ? 'status_change' : 'signup',
+        details: company.is_verified ? 'Company verification: approved' : 'Company verification: pending',
+        timestamp: company.reviewed_at || company.created_at,
+        approvedAt: company.is_verified ? company.reviewed_at : null,
+        reviewedAt: company.reviewed_at,
+      })) || []
+
+      const auditLogs = [...employeeLogs, ...companyLogs]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
       setLogs(auditLogs)
       setFiltered(auditLogs)
@@ -105,6 +127,8 @@ export default function AdminAuditLogPage() {
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.timestamp')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.user')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.action')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.approvedAt')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.reviewedAt')}</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.details')}</th>
                 </tr>
               </thead>
@@ -119,6 +143,12 @@ export default function AdminAuditLogPage() {
                       <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
                         {log.action === 'signup' ? t('auth.signUp') : t('admin.statusChange')}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                      {log.approvedAt ? new Date(log.approvedAt).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                      {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString() : '—'}
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
                       {log.details}

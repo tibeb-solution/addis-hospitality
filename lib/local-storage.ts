@@ -84,6 +84,7 @@ export function createUser(
   data: any,
 ): LocalUser {
   const users = getUsers();
+  const registeredAt = new Date().toISOString();
   const newUser: LocalUser = {
     id: Math.random().toString(36).substr(2, 9),
     email,
@@ -92,10 +93,28 @@ export function createUser(
     full_name: data.full_name || data.company_name || "",
     phone: data.phone || "",
     status: role === "company" ? "pending" : "active",
-    created_at: new Date().toISOString(),
+    created_at: registeredAt,
   };
   users.push(newUser);
   saveUsers(users);
+
+  // Create the role profile at registration so it is immediately visible to admins.
+  if (role === "employee") {
+    const profiles = getEmployeeProfiles();
+    profiles.push({ ...newUser, created_at: registeredAt } as EmployeeProfile);
+    saveEmployeeProfiles(profiles);
+  } else {
+    const profiles = getCompanyProfiles();
+    profiles.push({
+      ...newUser,
+      company_name: data.company_name || "",
+      business_type: data.business_type || "",
+      city: data.city || "",
+      created_at: registeredAt,
+    } as CompanyProfile);
+    saveCompanyProfiles(profiles);
+  }
+
   return newUser;
 }
 

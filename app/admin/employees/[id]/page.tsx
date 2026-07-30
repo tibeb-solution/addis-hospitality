@@ -108,7 +108,7 @@ export default function AdminEmployeeDetailPage() {
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">{t('common.loading')}</dt>
+              <dt className="text-muted-foreground">{t('admin.registrationDate')}</dt>
               <dd className="font-medium">
                 {new Date(employee.created_at).toLocaleDateString()}
               </dd>
