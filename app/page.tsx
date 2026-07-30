@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { BrandLogo } from '@/components/brand-logo'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 
@@ -15,17 +15,8 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image 
-              src="/logo.png" 
-              alt="Addis Hospitality Logo" 
-              width={40} 
-              height={40}
-              className="rounded-lg"
-            />
-            <span className="font-bold text-lg text-primary hidden sm:inline">
-              {t('common.logo')}
-            </span>
+          <Link href="/" className="hover:opacity-90 transition-opacity">
+            <BrandLogo />
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-4">
@@ -53,13 +44,7 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-8 text-center">
-          <Image 
-            src="/logo.png" 
-            alt="Addis Hospitality" 
-            width={120}
-            height={120}
-            className="mx-auto rounded-xl shadow-lg"
-          />
+          <BrandLogo variant="hero" />
 
           <div className="space-y-4">
             <h1 className="text-5xl sm:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">

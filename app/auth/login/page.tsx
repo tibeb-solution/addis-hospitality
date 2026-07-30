@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { BrandLogo } from '@/components/brand-logo'
 import { findUserByEmail, setCurrentUser } from '@/lib/local-storage'
 
 export default function LoginPage() {
@@ -70,7 +71,7 @@ export default function LoginPage() {
         </Link>
 
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-primary">{t('common.logo')}</h1>
+          <BrandLogo variant="auth" />
           <p className="text-muted-foreground">{t('auth.login')}</p>
         </div>
 

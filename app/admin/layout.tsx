@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { BrandLogo } from '@/components/brand-logo'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 import { getCurrentUser, clearCurrentUser } from '@/lib/local-storage'
@@ -59,14 +59,8 @@ export default function AdminLayout({
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <Link href="/admin" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image 
-              src="/logo.png" 
-              alt="Addis Hospitality Logo" 
-              width={40} 
-              height={40}
-              className="rounded-lg"
-            />
+          <Link href="/admin" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+            <BrandLogo />
             <span className="font-bold text-lg text-primary hidden sm:inline">
               {t('admin.title')}
             </span>

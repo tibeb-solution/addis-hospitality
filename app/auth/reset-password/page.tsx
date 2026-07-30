@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { updateUserPasswordByEmail } from "@/lib/local-storage";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function ResetPasswordPage() {
   const t = useTranslations();
@@ -94,9 +95,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-primary">
-            {t("common.logo")}
-          </h1>
+          <BrandLogo variant="auth" />
           <p className="text-muted-foreground">{t("auth.resetPassword")}</p>
         </div>
 
