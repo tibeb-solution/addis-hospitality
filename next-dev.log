@@ -36,3 +36,15 @@ Creating turbopack project {
  GET / 200 in 137ms (next.js: 65ms, proxy.ts: 9ms, application-code: 63ms)
  GET /auth/login 200 in 71ms (next.js: 38ms, proxy.ts: 4ms, application-code: 29ms)
  GET /auth/sign-up 200 in 79ms (next.js: 48ms, proxy.ts: 8ms, application-code: 23ms)
+✓ Compiled in 50ms
+✓ Compiled in 38ms
+ GET /auth/sign-up 200 in 190ms (next.js: 54ms, proxy.ts: 58ms, application-code: 78ms)
+ GET /auth/sign-up 200 in 26ms (next.js: 3ms, proxy.ts: 5ms, application-code: 19ms)
+ GET / 200 in 32ms (next.js: 9ms, proxy.ts: 5ms, application-code: 18ms)
+✓ Compiled in 38ms
+ GET / 200 in 168ms (next.js: 78ms, proxy.ts: 21ms, application-code: 68ms)
+✓ Compiled in 71ms
+ GET / 200 in 132ms (next.js: 50ms, proxy.ts: 22ms, application-code: 60ms)
+ GET / 200 in 36ms (next.js: 4ms, proxy.ts: 7ms, application-code: 25ms)
+✓ Compiled in 91ms
+ GET / 200 in 123ms (next.js: 47ms, proxy.ts: 25ms, application-code: 51ms)

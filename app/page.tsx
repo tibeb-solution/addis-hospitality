@@ -5,7 +5,6 @@ import Link from "next/link";
 import { UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export default function LandingPage() {
@@ -23,7 +22,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 sm:gap-4">
             <nav
               aria-label="Main navigation"
-              className="mr-2 hidden items-center gap-2.5 lg:flex xl:gap-3"
+              className="mr-2 hidden items-center justify-center gap-8 lg:flex"
             >
               {[
                 ["nav.home", "#home"],
@@ -34,25 +33,24 @@ export default function LandingPage() {
                 <Link
                   key={href}
                   href={href}
-                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 ${
-                    label === "nav.home"
-                      ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:-translate-y-0.5 hover:bg-primary/90"
-                      : "border-border/70 bg-background/60 text-muted-foreground shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                  className={`text-base font-semibold text-muted-foreground transition-colors hover:text-primary ${
+                    label === "nav.home" ? "text-foreground" : ""
                   }`}
                 >
                   {t(label)}
                 </Link>
               ))}
             </nav>
-            <ThemeSwitcher />
-            <LocaleSwitcher />
-            <Link
-              href="/auth/login"
-              aria-label={t("auth.login")}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
-            >
-              <UserRound className="h-4 w-4" />
-            </Link>
+            <div className="ml-auto flex items-center gap-2">
+              <ThemeSwitcher />
+              <Link
+                href="/auth/login"
+                aria-label={t("auth.login")}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+              >
+                <UserRound className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </header>
