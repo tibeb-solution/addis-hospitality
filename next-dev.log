@@ -22,3 +22,17 @@ Creating turbopack project {
  GET /auth/login 200 in 543ms (next.js: 497ms, proxy.ts: 5ms, application-code: 41ms)
  GET /auth/sign-up 200 in 704ms (next.js: 624ms, proxy.ts: 9ms, application-code: 71ms)
  GET / 200 in 55ms (next.js: 8ms, proxy.ts: 19ms, application-code: 27ms)
+✓ Compiled in 80ms
+ GET / 200 in 129ms (next.js: 47ms, proxy.ts: 19ms, application-code: 64ms)
+ GET / 200 in 46ms (next.js: 3ms, proxy.ts: 7ms, application-code: 36ms)
+ GET / 200 in 26ms (next.js: 3ms, proxy.ts: 6ms, application-code: 17ms)
+✓ Compiled in 68ms
+ GET / 200 in 166ms (next.js: 44ms, proxy.ts: 20ms, application-code: 102ms)
+ GET / 200 in 158ms (next.js: 3ms, proxy.ts: 6ms, application-code: 150ms)
+ GET / 200 in 146ms (next.js: 9ms, proxy.ts: 21ms, application-code: 116ms)
+ GET / 200 in 147ms (next.js: 33ms, proxy.ts: 21ms, application-code: 94ms)
+ GET / 200 in 151ms (next.js: 20ms, proxy.ts: 21ms, application-code: 110ms)
+ GET / 200 in 151ms (next.js: 46ms, proxy.ts: 20ms, application-code: 85ms)
+ GET / 200 in 137ms (next.js: 65ms, proxy.ts: 9ms, application-code: 63ms)
+ GET /auth/login 200 in 71ms (next.js: 38ms, proxy.ts: 4ms, application-code: 29ms)
+ GET /auth/sign-up 200 in 79ms (next.js: 48ms, proxy.ts: 8ms, application-code: 23ms)

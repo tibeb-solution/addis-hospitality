@@ -8,6 +8,7 @@ export interface LocalUser {
   full_name: string;
   phone: string;
   status: "active" | "pending" | "suspended" | "rejected";
+  email_verified?: boolean;
   created_at: string;
 }
 
@@ -63,6 +64,35 @@ const STORAGE_KEYS = {
   AUDIT_LOG: "ah_audit_log",
 };
 
+export function isValidGoogleEmail(email: string): boolean {
+  if (!email || typeof email !== "string") return false;
+
+  const normalized = email.trim().toLowerCase();
+
+  if (!/^[^\s@]+@(?:gmail\.com|googlemail\.com)$/.test(normalized)) {
+    return false;
+  }
+
+  const localPart = normalized.split("@")[0];
+  const blockedKeywords = [
+    "test",
+    "example",
+    "demo",
+    "fake",
+    "dummy",
+    "placeholder",
+    "noreply",
+    "admin",
+    "support",
+  ];
+
+  if (blockedKeywords.some((keyword) => localPart.includes(keyword))) {
+    return false;
+  }
+
+  return localPart.length >= 3 && localPart.length <= 64;
+}
+
 // Users
 export function getUsers(): LocalUser[] {
   try {
@@ -85,6 +115,9 @@ export function createUser(
 ): LocalUser {
   const users = getUsers();
   const registeredAt = new Date().toISOString();
+  const verifiedGoogleEmail =
+    role === "employee" ? isValidGoogleEmail(email) : true;
+
   const newUser: LocalUser = {
     id: Math.random().toString(36).substr(2, 9),
     email,
@@ -93,6 +126,7 @@ export function createUser(
     full_name: data.full_name || data.company_name || "",
     phone: data.phone || "",
     status: role === "company" ? "pending" : "active",
+    email_verified: verifiedGoogleEmail,
     created_at: registeredAt,
   };
   users.push(newUser);

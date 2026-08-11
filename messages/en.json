@@ -49,6 +49,8 @@
     "resendEmail": "Resend Email",
     "emailVerified": "Email verified successfully",
     "invalidEmail": "Invalid email address",
+    "googleEmailRequired": "Employee registration requires a valid active Google email account (Gmail).",
+    "googleEmailHint": "Use your active Google account email for employee registration.",
     "passwordTooShort": "Password must be at least 8 characters",
     "passwordsMustMatch": "Passwords must match",
     "signupSuccess": "Account created successfully. Please check your email to verify.",

@@ -49,6 +49,8 @@
     "resendEmail": "ኢሜይል እንደገና ይላኩ",
     "emailVerified": "ኢሜይል በስኬት ተረጋግጧል",
     "invalidEmail": "ልክ ያልሆነ ኢሜይል አድራሻ",
+    "googleEmailRequired": "ለተቀጣሪ መመዝገብ የሚሰራ ትክክለኛ እና ንቁ የGoogle ኢሜይል (Gmail) ያስፈልጋል።",
+    "googleEmailHint": "ለተቀጣሪ መመዝገብ ንቁ የGoogle ኢሜይል ያጠቃልላል።",
     "passwordTooShort": "ይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት",
     "passwordsMustMatch": "የይለፍ ቃሎቹ መመሳሰል አለባቸው",
     "signupSuccess": "መለያዎ በስኬት ተፈጥሯል። ለማረጋገጥ ኢሜይልዎን ይፈትሹ።",
