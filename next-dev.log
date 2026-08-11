@@ -1,0 +1,24 @@
+
+> my-project@0.1.0 dev
+> next dev -p 3000
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.6:3000
+✓ Ready in 445ms
+Creating turbopack project {
+  dir: 'C:\\Users\\VICTUS\\Desktop\\tibeb\\addis web\\addis-hospitality',
+  testMode: true
+}
+
+ GET / 200 in 506ms (next.js: 89ms, proxy.ts: 159ms, application-code: 259ms)
+ GET / 200 in 90ms (next.js: 13ms, proxy.ts: 13ms, application-code: 65ms)
+✓ Compiled in 134ms
+ GET / 200 in 193ms (next.js: 61ms, proxy.ts: 37ms, application-code: 96ms)
+ GET / 200 in 76ms (next.js: 3ms, proxy.ts: 7ms, application-code: 65ms)
+ GET / 200 in 45ms (next.js: 4ms, proxy.ts: 12ms, application-code: 28ms)
+✓ Compiled in 62ms
+ GET / 200 in 135ms (next.js: 48ms, proxy.ts: 24ms, application-code: 63ms)
+ GET /auth/login 200 in 543ms (next.js: 497ms, proxy.ts: 5ms, application-code: 41ms)
+ GET /auth/sign-up 200 in 704ms (next.js: 624ms, proxy.ts: 9ms, application-code: 71ms)
+ GET / 200 in 55ms (next.js: 8ms, proxy.ts: 19ms, application-code: 27ms)
