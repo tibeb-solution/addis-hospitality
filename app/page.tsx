@@ -3,10 +3,19 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
-import { UserRound, Layers3, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
+import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import {
+  Camera,
+  Mail,
+  MapPin,
+  Phone,
+  UserRound,
+  Video,
+  X,
+  Layers3,
+} from "lucide-react";
 
 export default function LandingPage() {
   const t = useTranslations();
@@ -14,6 +23,64 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top info bar */}
+      <div className="bg-slate-950 text-slate-100 shadow-sm shadow-slate-950/10">
+        <div className="mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 text-[10px] sm:px-5 sm:py-2 sm:text-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <a
+              href="mailto:addis.hospitalitysolutions@gmail.com"
+              className="group flex min-w-[180px] items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-3 py-1.5 transition hover:bg-slate-900"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
+                <Mail className="h-4 w-4" />
+              </span>
+              <span className="truncate font-medium">
+                addis.hospitalitysolutions@gmail.com
+              </span>
+            </a>
+            <a
+              href="tel:+251941248888"
+              className="group flex min-w-[130px] items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-3 py-1.5 transition hover:bg-slate-900"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
+                <Phone className="h-4 w-4" />
+              </span>
+              <span className="font-medium">+251 94 124 8888</span>
+            </a>
+            <div className="group flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-3 py-1.5">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
+                <MapPin className="h-4 w-4" />
+              </span>
+              <span className="font-medium">Addis Ababa</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 justify-start sm:justify-end">
+            <Link
+              href="/instagram"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
+            >
+              <Camera className="h-4 w-4" />{" "}
+              <span className="hidden sm:inline">Instagram</span>
+            </Link>
+            <Link
+              href="/tiktok"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
+            >
+              <Video className="h-4 w-4" />{" "}
+              <span className="hidden sm:inline">TikTok</span>
+            </Link>
+            <Link
+              href="/youtube"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
+            >
+              <Video className="h-4 w-4" />{" "}
+              <span className="hidden sm:inline">YouTube</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="relative border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -95,33 +162,33 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section
         id="home"
-        className="relative py-20 px-4 sm:py-32 overflow-hidden scroll-mt-20"
+        className="relative py-14 px-4 sm:py-20 overflow-hidden scroll-mt-20"
       >
         <div className="absolute inset-0 -z-10 opacity-20">
-          <div className="absolute top-20 right-20 w-72 h-72 bg-primary rounded-full mix-blend-multiply filter blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-72 h-72 bg-accent rounded-full mix-blend-multiply filter blur-3xl"></div>
+          <div className="absolute top-16 right-16 w-60 h-60 bg-primary rounded-full mix-blend-multiply filter blur-3xl"></div>
+          <div className="absolute bottom-16 left-16 w-60 h-60 bg-accent rounded-full mix-blend-multiply filter blur-3xl"></div>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-8 text-center">
+        <div className="max-w-3xl mx-auto space-y-6 text-center">
           <BrandLogo variant="hero" />
 
-          <div className="space-y-4">
-            <h1 className="text-5xl sm:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <div className="space-y-3">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {t("landing.title")}
             </h1>
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
               {t("landing.tagline")}
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-6">
             <Link href="/auth/sign-up?role=employee">
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto px-6 py-3">
                 {t("auth.signUpAsEmployee")}
               </Button>
             </Link>
             <Link href="/auth/sign-up?role=company">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto px-6 py-3">
                 {t("auth.signUpAsCompany")}
               </Button>
             </Link>
@@ -130,18 +197,18 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="about" className="py-20 px-4 bg-card/50 scroll-mt-20">
+      <section id="about" className="py-16 px-4 bg-card/50 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
             {t("landing.features")}
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="bg-card border border-border rounded-lg p-8 space-y-4 hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-3 hover:border-primary/50 transition-colors">
+              <div className="w-11 h-11 bg-primary/20 rounded-2xl flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-primary"
+                  className="w-5 h-5 text-primary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -154,19 +221,19 @@ export default function LandingPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-base font-semibold">
                 {t("landing.feature1Title")}
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {t("landing.feature1Desc")}
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-card border border-border rounded-lg p-8 space-y-4 hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-3 hover:border-primary/50 transition-colors">
+              <div className="w-11 h-11 bg-accent/20 rounded-2xl flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-accent"
+                  className="w-5 h-5 text-accent"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -179,19 +246,19 @@ export default function LandingPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-base font-semibold">
                 {t("landing.feature2Title")}
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {t("landing.feature2Desc")}
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-card border border-border rounded-lg p-8 space-y-4 hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-3 hover:border-primary/50 transition-colors">
+              <div className="w-11 h-11 bg-green-500/20 rounded-2xl flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-green-600"
+                  className="w-5 h-5 text-green-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -204,10 +271,10 @@ export default function LandingPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-base font-semibold">
                 {t("landing.feature3Title")}
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {t("landing.feature3Desc")}
               </p>
             </div>
@@ -273,28 +340,25 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section
         id="projects"
-        className="py-20 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20"
+        className="py-16 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20"
       >
-        <div className="max-w-4xl mx-auto space-y-8 text-center text-primary-foreground">
+        <div className="max-w-4xl mx-auto space-y-6 text-center text-primary-foreground">
           <h2 className="text-3xl sm:text-4xl font-bold">
             {t("landing.readyToStart")}
           </h2>
 
-          <p className="text-lg opacity-90 max-w-2xl mx-auto">
+          <p className="text-base opacity-90 max-w-2xl mx-auto">
             {t("landing.ctaDescription")}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/auth/sign-up?role=employee">
-              <Button size="lg" variant="secondary">
+              <Button variant="secondary" className="px-6 py-3">
                 {t("auth.signUpAsEmployee")}
               </Button>
             </Link>
             <Link href="/auth/sign-up?role=company">
-              <Button
-                size="lg"
-                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-              >
+              <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 px-6 py-3">
                 {t("auth.signUpAsCompany")}
               </Button>
             </Link>
@@ -304,19 +368,22 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8 px-4 bg-card/50">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+        <div className="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-muted-foreground">
           <p>
             &copy; 2024 {t("common.logo")}. {t("landing.allRightsReserved")}
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap items-center gap-4">
             <Link href="/privacy" className="hover:text-foreground">
               {t("landing.privacy")}
             </Link>
             <Link href="/terms" className="hover:text-foreground">
               {t("landing.terms")}
             </Link>
-            <Link href="/contact" className="hover:text-foreground">
-              {t("landing.contact")}
+            <Link
+              href="/contact"
+              className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+            >
+              Contact us
             </Link>
           </div>
         </div>
