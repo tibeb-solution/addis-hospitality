@@ -2,28 +2,30 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { UserRound } from "lucide-react";
+import { useState } from "react";
+import { UserRound, Layers3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export default function LandingPage() {
   const t = useTranslations();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="hover:opacity-90 transition-opacity">
-            <BrandLogo />
-          </Link>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <nav
-              aria-label="Main navigation"
-              className="mr-2 hidden items-center justify-center gap-8 lg:flex"
+      <header className="relative border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="relative flex items-center justify-center">
+            <Link
+              href="/"
+              className="absolute left-4 hover:opacity-90 transition-opacity"
             >
+              <BrandLogo />
+            </Link>
+
+            <nav aria-label="Main navigation" className="hidden md:flex gap-8">
               {[
                 ["nav.home", "#home"],
                 ["nav.about", "#about"],
@@ -41,7 +43,8 @@ export default function LandingPage() {
                 </Link>
               ))}
             </nav>
-            <div className="ml-auto flex items-center gap-2">
+
+            <div className="absolute right-4 flex items-center gap-2">
               <ThemeSwitcher />
               <Link
                 href="/auth/login"
@@ -50,8 +53,42 @@ export default function LandingPage() {
               >
                 <UserRound className="h-4 w-4" />
               </Link>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground transition-colors hover:border-primary hover:text-primary md:hidden"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Layers3 className="h-5 w-5" />
+                )}
+              </button>
             </div>
           </div>
+        </div>
+
+        <div
+          className={`${mobileMenuOpen ? "block" : "hidden"} md:hidden border-t border-border bg-card/95 px-4 pb-4`}
+        >
+          <nav aria-label="Mobile main navigation" className="mt-3 space-y-2">
+            {[
+              ["nav.home", "#home"],
+              ["nav.about", "#about"],
+              ["nav.news", "#news"],
+              ["nav.projects", "#projects"],
+            ].map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="block rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t(label)}
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
 
