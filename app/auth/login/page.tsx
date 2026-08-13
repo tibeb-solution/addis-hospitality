@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { findUserByEmail, setCurrentUser } from "@/lib/local-storage";
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,14 +93,27 @@ export default function LoginPage() {
           {/* Password */}
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("auth.password")}</label>
-            <input
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                required
+                disabled={loading}
+                className="w-full px-3 py-2 pr-10 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={
+                  showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+                }
+                className="absolute inset-y-0 right-2 inline-flex items-center p-1 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {/* Error */}

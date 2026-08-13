@@ -10,6 +10,7 @@ export interface LocalUser {
   status: "active" | "pending" | "suspended" | "rejected";
   email_verified?: boolean;
   created_at: string;
+  security_questions?: { question: string; answer: string }[];
 }
 
 export interface EmployeeProfile extends LocalUser {
@@ -97,6 +98,7 @@ export function createUser(
     // Local mode has no email service, so newly created accounts are usable immediately.
     email_verified: true,
     created_at: registeredAt,
+    security_questions: data.security_questions || undefined,
   };
   users.push(newUser);
   saveUsers(users);
@@ -119,6 +121,24 @@ export function createUser(
   }
 
   return newUser;
+}
+
+export function verifySecurityAnswers(
+  email: string,
+  answers: string[],
+): boolean {
+  const user = findUserByEmail(email);
+  if (!user || !user.security_questions) return false;
+  if (user.security_questions.length !== answers.length) return false;
+  for (let i = 0; i < answers.length; i++) {
+    if (
+      (user.security_questions[i].answer || "").trim().toLowerCase() !==
+      (answers[i] || "").trim().toLowerCase()
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function findUserByEmail(email: string): LocalUser | undefined {
