@@ -9,7 +9,6 @@ import { BrandLogo } from "@/components/brand-logo";
 import {
   createUser,
   findUserByEmail,
-  isValidGoogleEmail,
   setCurrentUser,
 } from "@/lib/local-storage";
 
@@ -35,12 +34,6 @@ export default function SignUpPage() {
     // Validation
     if (!email || !password || !passwordConfirm) {
       setError(t("validation.required"));
-      setLoading(false);
-      return;
-    }
-
-    if (role === "employee" && !isValidGoogleEmail(email)) {
-      setError(t("auth.googleEmailRequired"));
       setLoading(false);
       return;
     }
@@ -155,11 +148,6 @@ export default function SignUpPage() {
               disabled={loading}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {role === "employee" && (
-              <p className="text-xs text-muted-foreground">
-                {t("auth.googleEmailHint")}
-              </p>
-            )}
           </div>
 
           {/* Role-specific fields */}

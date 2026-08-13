@@ -76,15 +76,13 @@ export default function EmployeeDocumentsPage() {
     setError(null)
 
     try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('ownerId', user.id)
+      const upload = await fetch('/api/local-files', { method: 'POST', body: form })
+      const uploaded = await upload.json()
+      if (!upload.ok) throw new Error(uploaded.error || 'Unable to save the file locally')
       const supabase = createClient()
-      const fileName = `${user.id}/${Date.now()}-${file.name}`
-
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(fileName, file)
-
-      if (uploadError) throw uploadError
 
       // Create document record
       const { data: doc, error: insertError } = await supabase
@@ -94,7 +92,7 @@ export default function EmployeeDocumentsPage() {
             owner_id: user.id,
             document_type: selectedType,
             file_name: file.name,
-            file_path: fileName,
+            file_path: uploaded.path,
             file_size: file.size,
             status: 'pending',
           },
@@ -119,8 +117,7 @@ export default function EmployeeDocumentsPage() {
     try {
       const supabase = createClient()
 
-      // Delete from storage
-      await supabase.storage.from('documents').remove([filePath])
+      await fetch('/api/local-files', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: filePath }) })
 
       // Delete record
       await supabase.from('documents').delete().eq('id', docId)
@@ -217,6 +214,7 @@ export default function EmployeeDocumentsPage() {
                 >
                   {t('common.delete')}
                 </Button>
+                <a className="ml-2 text-sm text-primary underline" href={`/api/local-files/${doc.file_path}`} target="_blank" rel="noreferrer">Open</a>
               </div>
             ))}
           </div>

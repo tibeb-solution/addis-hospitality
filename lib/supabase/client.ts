@@ -260,7 +260,7 @@ export function createClient() {
 
     function getPublicUrl(path: string) {
       const files = JSON.parse(localStorage.getItem(FILES_KEY) || "{}");
-      return { publicUrl: files[path]?.dataUrl ?? "" };
+      return { data: { publicUrl: files[path]?.dataUrl ?? "" } };
     }
 
     async function createSignedUrl(path: string, _expires: number) {

@@ -45,7 +45,7 @@
     "city": "City",
     "selectBusinessType": "Select business type",
     "verifyEmail": "Verify Email",
-    "emailVerificationSent": "Check your email for a verification link",
+    "emailVerificationSent": "Your account is ready to use on this computer",
     "resendEmail": "Resend Email",
     "emailVerified": "Email verified successfully",
     "invalidEmail": "Invalid email address",

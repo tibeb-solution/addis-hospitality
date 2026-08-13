@@ -83,6 +83,100 @@ CREATE TABLE IF NOT EXISTS avatars (
 CREATE INDEX IF NOT EXISTS idx_profiles_status ON profiles (status);
 CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents (owner_id);
 
+-- Recruitment workflow. Keep IDs tied to profiles.id so the same schema can
+-- support Supabase Auth once profiles are provisioned from auth.users.
+CREATE TABLE IF NOT EXISTS jobs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  description text NOT NULL,
+  location text NOT NULL,
+  employment_type text NOT NULL,
+  experience_required integer NOT NULL DEFAULT 0 CHECK (experience_required >= 0),
+  skills text[] NOT NULL DEFAULT '{}',
+  languages text[] NOT NULL DEFAULT '{}',
+  salary_min integer CHECK (salary_min IS NULL OR salary_min >= 0),
+  salary_max integer CHECK (salary_max IS NULL OR salary_max >= salary_min),
+  application_deadline timestamptz,
+  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','closed','expired')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS applications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id uuid NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  employee_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  status text NOT NULL DEFAULT 'applied' CHECK (status IN ('applied','shortlisted','interview','hired','rejected','withdrawn')),
+  match_score smallint CHECK (match_score BETWEEN 0 AND 100),
+  cover_note text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (job_id, employee_id)
+);
+
+CREATE TABLE IF NOT EXISTS interviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id uuid NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  company_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  employee_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  starts_at timestamptz NOT NULL,
+  meeting_type text NOT NULL CHECK (meeting_type IN ('in_person','phone','video')),
+  location_or_link text NOT NULL,
+  status text NOT NULL DEFAULT 'proposed' CHECK (status IN ('proposed','accepted','declined','cancelled')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  type text NOT NULL,
+  title text NOT NULL,
+  body text NOT NULL,
+  read_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ratings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id uuid NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  author_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  subject_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  score smallint NOT NULL CHECK (score BETWEEN 1 AND 5),
+  review text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (application_id, author_id),
+  CHECK (author_id <> subject_id)
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  plan_code text NOT NULL,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','past_due','cancelled','expired')),
+  current_period_end timestamptz,
+  gateway_customer_id text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS payment_transactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  subscription_id uuid REFERENCES subscriptions(id) ON DELETE SET NULL,
+  amount_etb numeric(12,2) NOT NULL CHECK (amount_etb >= 0),
+  transaction_type text NOT NULL CHECK (transaction_type IN ('subscription','premium_posting','cv_download','refund')),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','failed','refunded')),
+  gateway_reference text UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_jobs_company_status ON jobs (company_id, status);
+CREATE INDEX IF NOT EXISTS idx_jobs_published_deadline ON jobs (status, application_deadline);
+CREATE INDEX IF NOT EXISTS idx_applications_job_status ON applications (job_id, status);
+CREATE INDEX IF NOT EXISTS idx_applications_employee ON applications (employee_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (user_id, read_at, created_at DESC);
+
 -- Seed admin (change password/hashing as needed)
 INSERT INTO profiles (id, email, password, role, full_name, phone, status)
 VALUES ('00000000-0000-0000-0000-000000000001','admin@addishospitality.et','AddisAdmin2026!','admin','Admin','+251911000000','active')

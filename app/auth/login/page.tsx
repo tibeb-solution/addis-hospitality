@@ -37,11 +37,6 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      if (user.role === "employee" && !user.email_verified) {
-        setError(t("auth.googleEmailRequired"));
-        setLoading(false);
-        return;
-      }
       if (user.password !== password) {
         setError(t("auth.invalidCredentials"));
         setLoading(false);

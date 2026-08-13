@@ -70,6 +70,9 @@ export default function EmployeeLayout({
             <Link href="/employee/profile" className="text-foreground hover:text-primary transition-colors">
               {t('nav.profile')}
             </Link>
+            <Link href="/employee/jobs" className="text-foreground hover:text-primary transition-colors">
+              Jobs
+            </Link>
             <Link href="/employee/documents" className="text-foreground hover:text-primary transition-colors">
               {t('nav.documents')}
             </Link>

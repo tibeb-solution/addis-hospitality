@@ -184,7 +184,7 @@ export default function EmployeeProfilePage() {
           <h3 className="font-semibold">{t('employee.personalInfo')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('employee.phone')}</label>
+              <label className="text-sm font-medium">{t('auth.phone')}</label>
               <input
                 name="phone"
                 defaultValue={profile?.phone}

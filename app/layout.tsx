@@ -7,8 +7,8 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import Providers from "@/components/providers";
 
-const geistSans = Geist({ subsets: ["latin"] });
-const geistMono = Geist_Mono({ subsets: ["latin"] });
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: "Addis Hospitality",
@@ -45,7 +45,12 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head />
-      <body className="antialiased font-sans bg-background text-foreground">
+      <body className="app-shell antialiased font-sans bg-background text-foreground">
+        <div className="ambient-scene" aria-hidden="true">
+          <span className="ambient-orb ambient-orb-one" />
+          <span className="ambient-orb ambient-orb-two" />
+          <span className="ambient-grid" />
+        </div>
         <Providers messages={messages} locale={locale}>
           {children}
           {process.env.NODE_ENV === "production" && <Analytics />}

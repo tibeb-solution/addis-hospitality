@@ -70,6 +70,12 @@ export default function CompanyLayout({
             <Link href="/company/profile" className="text-foreground hover:text-primary transition-colors">
               {t('nav.profile')}
             </Link>
+            <Link href="/company/jobs" className="text-foreground hover:text-primary transition-colors">
+              Jobs
+            </Link>
+            <Link href="/company/applications" className="text-foreground hover:text-primary transition-colors">
+              Applications
+            </Link>
             <Link href="/company/documents" className="text-foreground hover:text-primary transition-colors">
               {t('nav.documents')}
             </Link>
