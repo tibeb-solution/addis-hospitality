@@ -6,8 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { useTheme } from '@/lib/theme-provider'
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import SideNav from "@/components/side-nav";
@@ -57,8 +56,32 @@ export default function EmployeeLayout({
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [localesOpen, setLocalesOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const { theme, toggleTheme } = useTheme()
+
+  const LOCALES: { key: 'en' | 'am'; label: string; className?: string }[] = [
+    { key: 'en', label: 'English' },
+    { key: 'am', label: 'አማርኛ', className: 'font-ethiopic' },
+  ]
+
+  const setLocale = async (locale: 'en' | 'am') => {
+    try {
+      const res = await fetch('/api/locale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale }),
+      })
+      if (res.ok) {
+        setMenuOpen(false)
+        setLocalesOpen(false)
+        setTimeout(() => router.refresh(), 100)
+      }
+    } catch (e) {
+      console.error('Failed to change locale', e)
+    }
+  }
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -127,6 +150,22 @@ export default function EmployeeLayout({
 
           <div className="flex items-center gap-2 ml-auto relative">
             <button
+              onClick={() => { toggleTheme() }}
+              title={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+              className="inline-flex items-center justify-center rounded-md p-1 border border-border bg-card"
+            >
+              {theme === 'dark' ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+
+            <button
               ref={buttonRef}
               onClick={() => setMenuOpen((s) => !s)}
               className="inline-flex items-center justify-center rounded-full overflow-hidden border border-border bg-card p-1"
@@ -152,26 +191,49 @@ export default function EmployeeLayout({
             {menuOpen && (
               <div
                 ref={menuRef}
-                className="absolute right-0 mt-2 w-44 bg-card border border-border rounded-md shadow-md z-50"
+                className="absolute right-0 mt-12 w-44 bg-card border border-border rounded-md shadow-md z-50"
               >
-                <div className="py-2">
-                  <div className="px-2">
-                    <LocaleSwitcher />
-                  </div>
-                  <div className="px-2 mt-2">
-                    <ThemeSwitcher />
-                  </div>
-                  <div className="px-2 mt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleLogout}
-                      className="w-full text-left"
+                <ul className="py-1">
+                  <li
+                    className="relative"
+                    onMouseEnter={() => setLocalesOpen(true)}
+                    onMouseLeave={() => setLocalesOpen(false)}
+                  >
+                    <button
+                      onClick={() => setLocalesOpen((s) => !s)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10 flex items-center justify-between"
                     >
-                      {t("common.logout")}
-                    </Button>
-                  </div>
-                </div>
+                      <span>Language</span>
+                      <svg className="w-3 h-3" viewBox="0 0 20 20" fill="none" aria-hidden>
+                        <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+
+                    {localesOpen && (
+                      <ul className="absolute left-0 top-full mt-1 w-44 bg-card border border-border rounded-md shadow-md z-50">
+                        {LOCALES.map((opt) => (
+                          <li key={opt.key}>
+                            <button
+                              onClick={() => setLocale(opt.key)}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent/10 ${opt.className || ''}`}
+                            >
+                              {opt.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+
+                  <li>
+                    <button
+                      onClick={() => { handleLogout() }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10"
+                    >
+                      {t('common.logout')}
+                    </button>
+                  </li>
+                </ul>
               </div>
             )}
           </div>

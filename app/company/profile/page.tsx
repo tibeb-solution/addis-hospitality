@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import AvatarCropper from '@/components/avatar-cropper'
 
 const BUSINESS_TYPES = [
   'hotel',
@@ -29,6 +29,7 @@ export default function CompanyProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [cropImage, setCropImage] = useState<string | null>(null)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -76,18 +77,32 @@ export default function CompanyProfilePage() {
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !user) return
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    setCropImage(url)
+  }
 
+  const handleCropCancel = () => {
+    setCropImage(null)
+  }
+
+  const handleCropComplete = async (blob: Blob) => {
+    if (!user) return
     setSaving(true)
     setError(null)
 
     try {
+      const previewUrl = URL.createObjectURL(blob)
+      setLogoUrl(previewUrl)
+
+      const uploadFile = new File([blob], `${user.id}-${Date.now()}.jpg`, { type: 'image/jpeg' })
+
       const supabase = createClient()
-      const fileName = `${user.id}/${Date.now()}`
+      const fileName = `${user.id}/${Date.now()}.jpg`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, uploadFile, { upsert: true })
 
       if (uploadError) throw uploadError
 
@@ -103,6 +118,8 @@ export default function CompanyProfilePage() {
       if (updateError) throw updateError
 
       setLogoUrl(publicUrl)
+      setCropImage(null)
+      URL.revokeObjectURL(previewUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.serverError'))
     } finally {
@@ -172,12 +189,7 @@ export default function CompanyProfilePage() {
           <div className="flex items-center gap-6">
             {logoUrl && (
               <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-muted">
-                <Image
-                  src={logoUrl}
-                  alt="Logo"
-                  fill
-                  className="object-cover"
-                />
+                <img src={logoUrl} alt="Logo" className="object-cover w-24 h-24" />
               </div>
             )}
             <label className="cursor-pointer">
@@ -193,6 +205,9 @@ export default function CompanyProfilePage() {
               </span>
             </label>
           </div>
+          {cropImage && (
+            <AvatarCropper imageSrc={cropImage} onCancel={handleCropCancel} onComplete={handleCropComplete} />
+          )}
         </div>
 
         {/* Basic Info Section */}
