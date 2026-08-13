@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 export default function EmployeeDashboard() {
   const t = useTranslations()
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [completeness, setCompleteness] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -32,6 +34,10 @@ export default function EmployeeDashboard() {
 
       if (data) {
         setProfile(data)
+        if (data.avatar_url) {
+          const { data: signed } = supabase.storage.from('avatars').getPublicUrl(data.avatar_url)
+          setAvatarUrl(signed.publicUrl || signed.signedUrl || '')
+        }
         calculateCompleteness(data)
       }
 
@@ -64,9 +70,16 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-8">
       {/* Welcome Card */}
-      <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-8 text-primary-foreground">
-        <h1 className="text-3xl font-bold mb-2">{t('employee.title')}</h1>
-        <p className="opacity-90">{t('landing.tagline')}</p>
+      <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-8 text-primary-foreground flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{t('employee.title')}</h1>
+          <p className="opacity-90">{t('landing.tagline')}</p>
+        </div>
+        {avatarUrl ? (
+          <div className="w-20 h-20 rounded-full overflow-hidden bg-muted shadow-md">
+            <Image src={avatarUrl} alt="avatar" width={80} height={80} className="object-cover" />
+          </div>
+        ) : null}
       </div>
 
       {/* Profile Status */}

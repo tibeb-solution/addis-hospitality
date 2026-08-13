@@ -5,16 +5,19 @@ import { useRouter, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 export default function AdminEmployeeDetailPage() {
   const t = useTranslations()
   const router = useRouter()
   const params = useParams()
   const [employee, setEmployee] = useState<any>(null)
+  const [documents, setDocuments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusNote, setStatusNote] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const loadEmployee = async () => {
@@ -28,6 +31,28 @@ export default function AdminEmployeeDetailPage() {
       if (data) {
         setEmployee(data)
         setStatusNote(data.status_note || '')
+        // Load documents for this employee so admins can review uploads
+        const { data: docs } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('owner_id', params.id as string)
+
+        setDocuments(docs || [])
+        // Load employee/company profile avatar (if available)
+        try {
+          const { data: profile } = await supabase
+            .from('employee_profiles')
+            .select('*')
+            .eq('id', params.id as string)
+            .single()
+
+          if (profile?.avatar_url) {
+            const { data: signed } = supabase.storage.from('avatars').getPublicUrl(profile.avatar_url)
+            setAvatarUrl(signed.publicUrl || signed.signedUrl || '')
+          }
+        } catch (e) {
+          // ignore if no employee profile exists
+        }
       }
       setLoading(false)
     }
@@ -73,7 +98,14 @@ export default function AdminEmployeeDetailPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{employee.full_name || employee.email}</h1>
+        <div className="flex items-center gap-4">
+          {avatarUrl && (
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-muted">
+              <Image src={avatarUrl} alt="avatar" width={64} height={64} className="object-cover" />
+            </div>
+          )}
+          <h1 className="text-3xl font-bold">{employee.full_name || employee.email}</h1>
+        </div>
         <Button variant="outline" onClick={() => router.back()}>
           {t('common.back')}
         </Button>
@@ -202,6 +234,37 @@ export default function AdminEmployeeDetailPage() {
           </div>
         </dl>
       </div>
+
+      {/* Documents */}
+      {documents.length > 0 && (
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <h3 className="font-semibold">{t('nav.documents')}</h3>
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <div key={doc.id} className="p-3 border border-border rounded-lg flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{doc.file_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t(`taxonomy.doc_${doc.document_type}`)} - {new Date(doc.uploaded_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a href={`/api/local-files/${doc.file_path}`} target="_blank" rel="noreferrer" className="text-sm text-primary underline">
+                    View
+                  </a>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    doc.status === 'approved' ? 'bg-green-500/20 text-green-700' :
+                    doc.status === 'rejected' ? 'bg-red-500/20 text-red-700' :
+                    'bg-yellow-500/20 text-yellow-700'
+                  }`}>
+                    {t(`taxonomy.doc_status_${doc.status}`)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
