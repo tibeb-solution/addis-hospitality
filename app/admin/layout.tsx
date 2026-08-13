@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { BrandLogo } from '@/components/brand-logo'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { ThemeSwitcher } from '@/components/theme-switcher'
+import SideNav from '@/components/side-nav'
+import { Menu } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { getCurrentUser, clearCurrentUser } from '@/lib/local-storage'
 
 export default function AdminLayout({
@@ -46,6 +49,10 @@ export default function AdminLayout({
     router.push('/auth/login')
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const pathname = usePathname()
+  useEffect(() => setSidebarOpen(false), [pathname])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -56,30 +63,13 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <Link href="/admin" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            <BrandLogo />
-            <span className="font-bold text-lg text-primary hidden sm:inline">
-              {t('admin.title')}
-            </span>
-          </Link>
-
-          <nav className="hidden lg:flex items-center gap-6">
-            <Link href="/admin" className="text-foreground hover:text-primary transition-colors">
-              {t('admin.dashboard')}
-            </Link>
-            <Link href="/admin/employees" className="text-foreground hover:text-primary transition-colors">
-              {t('admin.employeeList')}
-            </Link>
-            <Link href="/admin/companies" className="text-foreground hover:text-primary transition-colors">
-              {t('admin.companyList')}
-            </Link>
-            <Link href="/admin/audit" className="text-foreground hover:text-primary transition-colors">
-              {t('admin.auditLog')}
-            </Link>
-          </nav>
+          <div className="md:hidden">
+            <button onClick={() => setSidebarOpen(true)} className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card">
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
 
           <div className="flex items-center gap-2 ml-auto">
             <ThemeSwitcher />
@@ -95,10 +85,14 @@ export default function AdminLayout({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {children}
-      </main>
+      <div className="max-w-7xl mx-auto px-4 py-8 flex gap-8">
+        <SideNav role="admin" />
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+
+      {sidebarOpen && <SideNav role="admin" mobile onClose={() => setSidebarOpen(false)} />}
     </div>
   )
 }

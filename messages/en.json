@@ -67,6 +67,8 @@
     "dashboard": "Dashboard",
     "profile": "Profile",
     "documents": "Documents",
+    "jobs": "Jobs",
+    "applications": "Applications",
     "admin": "Admin",
     "employees": "Employees",
     "companies": "Companies",

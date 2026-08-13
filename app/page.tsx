@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
+import { LocaleSwitcher } from '@/components/locale-switcher'
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
@@ -113,6 +114,7 @@ export default function LandingPage() {
 
             <div className="absolute right-4 flex items-center gap-2">
               <ThemeSwitcher />
+              <LocaleSwitcher />
               <Link
                 href="/auth/login"
                 aria-label={t("auth.login")}
@@ -139,6 +141,10 @@ export default function LandingPage() {
         <div
           className={`${mobileMenuOpen ? "block" : "hidden"} md:hidden border-t border-border bg-card/95 px-4 pb-4`}
         >
+          <div className="pt-3 pb-2 flex items-center gap-2">
+            <ThemeSwitcher />
+            <LocaleSwitcher />
+          </div>
           <nav aria-label="Mobile main navigation" className="mt-3 space-y-2">
             {[
               ["nav.home", "#home"],

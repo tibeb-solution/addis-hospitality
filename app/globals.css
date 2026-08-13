@@ -249,3 +249,22 @@ nav a:hover::after { transform: scaleX(1); }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
   main .bg-card.border:hover, main .bg-gradient-to-r.from-primary.to-accent:hover { transform: none; }
 }
+
+/* Sidebar slide animations for mobile */
+@keyframes sidebar-slide-in {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.sidebar-slide-in {
+  animation: sidebar-slide-in 260ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+@keyframes sidebar-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sidebar-overlay-fade {
+  animation: sidebar-fade-in 200ms ease both;
+}

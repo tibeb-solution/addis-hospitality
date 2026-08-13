@@ -8,7 +8,10 @@ import "./globals.css";
 import Providers from "@/components/providers";
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+});
 
 export const metadata: Metadata = {
   title: "Addis Hospitality",

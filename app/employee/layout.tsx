@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { BrandLogo } from '@/components/brand-logo'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { ThemeSwitcher } from '@/components/theme-switcher'
+import SideNav from '@/components/side-nav'
+import { Menu } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { getCurrentUser, clearCurrentUser } from '@/lib/local-storage'
 
 export default function EmployeeLayout({
@@ -46,6 +49,10 @@ export default function EmployeeLayout({
     router.push('/auth/login')
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const pathname = usePathname()
+  useEffect(() => setSidebarOpen(false), [pathname])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -56,27 +63,13 @@ export default function EmployeeLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <Link href="/employee" className="hover:opacity-90 transition-opacity">
-            <BrandLogo />
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/employee" className="text-foreground hover:text-primary transition-colors">
-              {t('nav.dashboard')}
-            </Link>
-            <Link href="/employee/profile" className="text-foreground hover:text-primary transition-colors">
-              {t('nav.profile')}
-            </Link>
-            <Link href="/employee/jobs" className="text-foreground hover:text-primary transition-colors">
-              Jobs
-            </Link>
-            <Link href="/employee/documents" className="text-foreground hover:text-primary transition-colors">
-              {t('nav.documents')}
-            </Link>
-          </nav>
+          <div className="md:hidden">
+            <button onClick={() => setSidebarOpen(true)} className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card">
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
 
           <div className="flex items-center gap-2 ml-auto">
             <ThemeSwitcher />
@@ -92,10 +85,14 @@ export default function EmployeeLayout({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {children}
-      </main>
+      <div className="max-w-7xl mx-auto px-4 py-8 flex gap-8">
+        <SideNav role="employee" />
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+
+      {sidebarOpen && <SideNav role="employee" mobile onClose={() => setSidebarOpen(false)} />}
     </div>
   )
 }
