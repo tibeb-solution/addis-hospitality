@@ -1,84 +1,103 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useTranslations } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 
 export default function AdminCompaniesPage() {
-  const t = useTranslations()
-  const [companies, setCompanies] = useState<any[]>([])
-  const [filtered, setFiltered] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [verifiedFilter, setVerifiedFilter] = useState<string>('')
+  const t = useTranslations();
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [verifiedFilter, setVerifiedFilter] = useState<string>("");
 
   useEffect(() => {
     const loadCompanies = async () => {
-      const supabase = createClient()
+      const supabase = createClient();
 
       const { data } = await supabase
-        .from('company_profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("company_profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      setCompanies(data || [])
-      setFiltered(data || [])
-      setLoading(false)
-    }
+      // attach public urls for logos if present
+      const enriched = (data || []).map((comp: any) => {
+        if (comp.logo_url) {
+          try {
+            const { data: signed } = supabase.storage
+              .from("avatars")
+              .getPublicUrl(comp.logo_url);
+            return { ...comp, avatarUrl: signed.publicUrl || "" };
+          } catch {
+            return comp;
+          }
+        }
+        return comp;
+      });
 
-    loadCompanies()
-  }, [])
+      setCompanies(enriched);
+      setFiltered(enriched);
+      setLoading(false);
+    };
+
+    loadCompanies();
+  }, []);
 
   useEffect(() => {
-    let results = companies
+    let results = companies;
 
     if (search) {
       results = results.filter((comp) =>
-        comp.company_name?.toLowerCase().includes(search.toLowerCase())
-      )
+        comp.company_name?.toLowerCase().includes(search.toLowerCase()),
+      );
     }
 
     if (verifiedFilter) {
       results = results.filter((comp) =>
-        verifiedFilter === 'verified' ? comp.is_verified : !comp.is_verified
-      )
+        verifiedFilter === "verified" ? comp.is_verified : !comp.is_verified,
+      );
     }
 
-    setFiltered(results)
-  }, [search, verifiedFilter, companies])
+    setFiltered(results);
+  }, [search, verifiedFilter, companies]);
 
   if (loading) {
-    return <div>{t('common.loading')}</div>
+    return <div>{t("common.loading")}</div>;
   }
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">{t('admin.companyList')}</h1>
+      <h1 className="text-3xl font-bold">{t("admin.companyList")}</h1>
 
       {/* Filters */}
       <div className="bg-card border border-border rounded-lg p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t('admin.searchCompany')}</label>
+            <label className="text-sm font-medium">
+              {t("admin.searchCompany")}
+            </label>
             <input
-              placeholder={t('admin.searchCompany')}
+              placeholder={t("admin.searchCompany")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t('admin.verificationStatus')}</label>
+            <label className="text-sm font-medium">
+              {t("admin.verificationStatus")}
+            </label>
             <select
               value={verifiedFilter}
               onChange={(e) => setVerifiedFilter(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
             >
-              <option value="">{t('admin.filterBy')}</option>
-              <option value="verified">{t('company.verified')}</option>
-              <option value="pending">{t('company.verifyPending')}</option>
+              <option value="">{t("admin.filterBy")}</option>
+              <option value="verified">{t("company.verified")}</option>
+              <option value="pending">{t("company.verifyPending")}</option>
             </select>
           </div>
         </div>
@@ -88,43 +107,82 @@ export default function AdminCompaniesPage() {
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         {filtered.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            {t('admin.noResults')}
+            {t("admin.noResults")}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-muted border-b border-border">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium">{t('auth.companyName')}</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">{t('auth.businessType')}</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.registrationDate')}</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.verificationStatus')}</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium">{t('admin.action')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">
+                    &nbsp;
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">
+                    {t("auth.companyName")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">
+                    {t("auth.businessType")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">
+                    {t("admin.registrationDate")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">
+                    {t("admin.verificationStatus")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">
+                    {t("admin.action")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((comp) => (
-                  <tr key={comp.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-6 py-4 text-sm">{comp.company_name || '—'}</td>
+                  <tr
+                    key={comp.id}
+                    className="hover:bg-muted/50 transition-colors"
+                  >
                     <td className="px-6 py-4 text-sm">
-                      {t(`taxonomy.business_${comp.business_type}`) || '—'}
+                      {comp.avatarUrl ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden">
+                          <img
+                            src={comp.avatarUrl}
+                            alt="logo"
+                            width={40}
+                            height={40}
+                            className="object-cover w-10 h-10"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-muted" />
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {comp.company_name || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {t(`taxonomy.business_${comp.business_type}`) || "—"}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap">
-                      {comp.created_at ? new Date(comp.created_at).toLocaleDateString() : '—'}
+                      {comp.created_at
+                        ? new Date(comp.created_at).toLocaleDateString()
+                        : "—"}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                        comp.is_verified
-                          ? 'bg-green-500/20 text-green-700'
-                          : 'bg-yellow-500/20 text-yellow-700'
-                      }`}>
-                        {comp.is_verified ? t('company.verified') : t('company.verifyPending')}
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          comp.is_verified
+                            ? "bg-green-500/20 text-green-700"
+                            : "bg-yellow-500/20 text-yellow-700"
+                        }`}
+                      >
+                        {comp.is_verified
+                          ? t("company.verified")
+                          : t("company.verifyPending")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <Link href={`/admin/companies/${comp.id}`}>
                         <Button variant="outline" size="sm">
-                          {t('admin.viewDetails')}
+                          {t("admin.viewDetails")}
                         </Button>
                       </Link>
                     </td>
@@ -136,5 +194,5 @@ export default function AdminCompaniesPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
