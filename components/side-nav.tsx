@@ -43,24 +43,38 @@ export default function SideNav({
           },
           { href: "/admin/audit", label: t("admin.auditLog"), icon: Archive },
         ]
-      : [
-          {
-            href: role === "employee" ? "/employee" : "/company",
-            label: t("nav.dashboard"),
-            icon: Home,
-          },
-          { href: "/company/jobs", label: "Jobs", icon: Briefcase },
-          {
-            href: "/company/applications",
-            label: "Applications",
-            icon: FileText,
-          },
-          {
-            href: role === "employee" ? "/employee/jobs" : "/company/documents",
-            label: t("nav.documents"),
-            icon: Archive,
-          },
-        ];
+      : role === "employee"
+        ? [
+            {
+              href: "/employee",
+              label: t("nav.dashboard"),
+              icon: Home,
+            },
+            { href: "/employee/jobs", label: "Jobs", icon: Briefcase },
+            {
+              href: "/employee/documents",
+              label: t("nav.documents"),
+              icon: FileText,
+            },
+          ]
+        : [
+            {
+              href: "/company",
+              label: t("nav.dashboard"),
+              icon: Home,
+            },
+            { href: "/company/jobs", label: "Jobs", icon: Briefcase },
+            {
+              href: "/company/applications",
+              label: "Applications",
+              icon: FileText,
+            },
+            {
+              href: "/company/documents",
+              label: t("nav.documents"),
+              icon: Archive,
+            },
+          ];
 
   const base = mobile ? "fixed inset-0 z-50" : "hidden md:flex";
   const panel = mobile
