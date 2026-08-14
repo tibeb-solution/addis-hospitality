@@ -157,8 +157,6 @@ export default function SideNav({
             })}
           </ul>
         </nav>
-
-        <div className="text-sm text-muted-foreground">v0</div>
       </aside>
     </div>
   );
