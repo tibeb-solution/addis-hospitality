@@ -32,7 +32,8 @@ export default function LoginPage() {
     }
 
     try {
-      const user = findUserByEmail(email);
+      const normalizedEmail = email.trim().toLowerCase();
+      const user = findUserByEmail(normalizedEmail);
 
       if (!user) {
         setError(t("auth.invalidCredentials"));
@@ -46,7 +47,7 @@ export default function LoginPage() {
       }
 
       // Set current user and route based on role
-      setCurrentUser(user);
+      setCurrentUser({ ...user, email: user.email.trim() });
 
       if (user.role === "admin") {
         router.push("/admin");

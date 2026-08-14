@@ -10,11 +10,12 @@ export interface LocalUser {
   status: "active" | "pending" | "suspended" | "rejected";
   email_verified?: boolean;
   created_at: string;
-  security_questions?: { question: string; answer: string }[];
 }
 
 export interface EmployeeProfile extends LocalUser {
   avatar_path?: string;
+  avatar_url?: string | null;
+  avatar_status?: "pending" | "approved" | "rejected" | null;
   desired_position?: string;
   years_experience?: number;
   preferred_cities?: string;
@@ -22,11 +23,14 @@ export interface EmployeeProfile extends LocalUser {
   expected_salary_max?: number;
   skills?: string[];
   bio?: string;
+  status_note?: string;
 }
 
 export interface CompanyProfile extends LocalUser {
   company_name?: string;
   logo_path?: string;
+  logo_url?: string | null;
+  logo_status?: "pending" | "approved" | "rejected" | null;
   trade_license_number?: string;
   tin_number?: string;
   year_established?: number;
@@ -40,6 +44,11 @@ export interface CompanyProfile extends LocalUser {
   sub_city?: string;
   address?: string;
   is_verified?: boolean;
+  review_note?: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+  business_type?: string;
+  description?: string;
 }
 
 export interface Document {
@@ -56,6 +65,32 @@ export interface Document {
   review_note?: string;
 }
 
+export interface Job {
+  id: string;
+  company_id: string;
+  title: string;
+  description: string;
+  location: string;
+  salary_min?: number;
+  salary_max?: number;
+  employment_type: "full-time" | "part-time" | "contract" | "temporary";
+  requirements: string[];
+  posted_date: string;
+  status: "open" | "closed";
+}
+
+export interface JobApplication {
+  id: string;
+  job_id: string;
+  employee_id: string;
+  applied_date: string;
+  status: "applied" | "rejected" | "interview_scheduled" | "hired" | "withdrawn";
+  cover_letter?: string;
+  interview_date?: string;
+  interview_notes?: string;
+  rejection_reason?: string;
+}
+
 const STORAGE_KEYS = {
   USERS: "ah_users",
   CURRENT_USER: "ah_current_user",
@@ -63,6 +98,8 @@ const STORAGE_KEYS = {
   COMPANY_PROFILES: "ah_company_profiles",
   DOCUMENTS: "ah_documents",
   AUDIT_LOG: "ah_audit_log",
+  JOBS: "ah_jobs",
+  JOB_APPLICATIONS: "ah_job_applications",
 };
 
 // Users
@@ -87,9 +124,10 @@ export function createUser(
 ): LocalUser {
   const users = getUsers();
   const registeredAt = new Date().toISOString();
+  const normalizedEmail = normalizeEmail(email);
   const newUser: LocalUser = {
     id: Math.random().toString(36).substr(2, 9),
-    email,
+    email: normalizedEmail,
     password, // In production, hash this!
     role,
     full_name: data.full_name || data.company_name || "",
@@ -98,7 +136,6 @@ export function createUser(
     // Local mode has no email service, so newly created accounts are usable immediately.
     email_verified: true,
     created_at: registeredAt,
-    security_questions: data.security_questions || undefined,
   };
   users.push(newUser);
   saveUsers(users);
@@ -123,26 +160,13 @@ export function createUser(
   return newUser;
 }
 
-export function verifySecurityAnswers(
-  email: string,
-  answers: string[],
-): boolean {
-  const user = findUserByEmail(email);
-  if (!user || !user.security_questions) return false;
-  if (user.security_questions.length !== answers.length) return false;
-  for (let i = 0; i < answers.length; i++) {
-    if (
-      (user.security_questions[i].answer || "").trim().toLowerCase() !==
-      (answers[i] || "").trim().toLowerCase()
-    ) {
-      return false;
-    }
-  }
-  return true;
+export function normalizeEmail(email: string): string {
+  return (email || "").trim().toLowerCase();
 }
 
 export function findUserByEmail(email: string): LocalUser | undefined {
-  return getUsers().find((u) => u.email === email);
+  const normalized = normalizeEmail(email);
+  return getUsers().find((u) => normalizeEmail(u.email) === normalized);
 }
 
 export function findUserById(id: string): LocalUser | undefined {
@@ -153,15 +177,47 @@ export function findUserById(id: string): LocalUser | undefined {
 export function getCurrentUser(): LocalUser | null {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    return data ? JSON.parse(data) : null;
-  } catch {
+    if (!data) return null;
+
+    const user = JSON.parse(data);
+
+    if (!user || !user.id || !user.email || !user.role) {
+      clearCurrentUser();
+      return null;
+    }
+
+    const existingUser =
+      findUserByEmail(user.email) ?? getUsers().find((u) => u.id === user.id);
+
+    if (!existingUser) {
+      clearCurrentUser();
+      return null;
+    }
+
+    // Keep the authenticated session valid even if the stored email casing changes.
+    const refreshedUser = {
+      ...existingUser,
+      ...user,
+      id: existingUser.id,
+      email: existingUser.email,
+      role: existingUser.role,
+    };
+
+    setCurrentUser(refreshedUser);
+    return refreshedUser;
+  } catch (error) {
+    clearCurrentUser();
     return null;
   }
 }
 
 export function setCurrentUser(user: LocalUser | null): void {
   if (user) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    const normalizedUser = {
+      ...user,
+      email: normalizeEmail(String(user.email || "")),
+    };
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(normalizedUser));
   } else {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   }
@@ -342,12 +398,55 @@ export function updateUserPasswordByEmail(
   newPassword: string,
 ): boolean {
   const users = getUsers();
-  const index = users.findIndex((u) => u.email === email);
+  const index = users.findIndex(
+    (u) => normalizeEmail(u.email) === normalizeEmail(email),
+  );
   if (index === -1) return false;
 
   users[index].password = newPassword;
   saveUsers(users);
+  clearPasswordResetCode(email);
   return true;
+}
+
+export function generatePasswordResetCode(email: string): string {
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const payload = {
+    code,
+    expires_at: Date.now() + 10 * 60 * 1000,
+  };
+
+  const key = "ah_password_reset_codes";
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<string, typeof payload>;
+  all[normalizeEmail(email)] = payload;
+  localStorage.setItem(key, JSON.stringify(all));
+  localStorage.setItem("ah_password_reset_email", normalizeEmail(email));
+  return code;
+}
+
+export function verifyPasswordResetCode(email: string, code: string): boolean {
+  const key = "ah_password_reset_codes";
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+    string,
+    { code: string; expires_at: number }
+  >;
+  const record = all[normalizeEmail(email)];
+
+  if (!record) return false;
+  if (record.expires_at < Date.now()) {
+    delete all[normalizeEmail(email)];
+    localStorage.setItem(key, JSON.stringify(all));
+    return false;
+  }
+
+  return record.code === code;
+}
+
+export function clearPasswordResetCode(email: string): void {
+  const key = "ah_password_reset_codes";
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<string, unknown>;
+  delete all[normalizeEmail(email)];
+  localStorage.setItem(key, JSON.stringify(all));
 }
 
 // Initialize default admin user
@@ -376,4 +475,158 @@ export function initializeDefaultAdmin(): void {
 // Call initialization on module load
 if (typeof window !== "undefined") {
   initializeDefaultAdmin();
+}
+
+// Jobs
+export function getJobs(companyId?: string): Job[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.JOBS);
+    const jobs: Job[] = data ? JSON.parse(data) : [];
+    return companyId ? jobs.filter((j) => j.company_id === companyId) : jobs;
+  } catch {
+    return [];
+  }
+}
+
+export function saveJobs(jobs: Job[]): void {
+  localStorage.setItem(STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+}
+
+export function createJob(
+  companyId: string,
+  title: string,
+  description: string,
+  location: string,
+  employmentType: "full-time" | "part-time" | "contract" | "temporary",
+  requirements: string[],
+  salaryMin?: number,
+  salaryMax?: number,
+): Job {
+  const job: Job = {
+    id: Math.random().toString(36).substr(2, 9),
+    company_id: companyId,
+    title,
+    description,
+    location,
+    employment_type: employmentType,
+    requirements,
+    salary_min: salaryMin,
+    salary_max: salaryMax,
+    posted_date: new Date().toISOString(),
+    status: "open",
+  };
+  const jobs = getJobs();
+  jobs.push(job);
+  saveJobs(jobs);
+  return job;
+}
+
+export function getJob(jobId: string): Job | undefined {
+  return getJobs().find((j) => j.id === jobId);
+}
+
+export function updateJobStatus(jobId: string, status: "open" | "closed"): void {
+  const jobs = getJobs();
+  const job = jobs.find((j) => j.id === jobId);
+  if (job) {
+    job.status = status;
+    saveJobs(jobs);
+  }
+}
+
+export function deleteJob(jobId: string): void {
+  const jobs = getJobs().filter((j) => j.id !== jobId);
+  saveJobs(jobs);
+}
+
+// Job Applications
+export function getJobApplications(
+  filter?: { jobId?: string; employeeId?: string; companyId?: string },
+): JobApplication[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.JOB_APPLICATIONS);
+    const applications: JobApplication[] = data ? JSON.parse(data) : [];
+
+    if (!filter) return applications;
+
+    return applications.filter((app) => {
+      if (filter.jobId && app.job_id !== filter.jobId) return false;
+      if (filter.employeeId && app.employee_id !== filter.employeeId)
+        return false;
+      if (filter.companyId) {
+        const job = getJob(app.job_id);
+        if (!job || job.company_id !== filter.companyId) return false;
+      }
+      return true;
+    });
+  } catch {
+    return [];
+  }
+}
+
+export function saveJobApplications(applications: JobApplication[]): void {
+  localStorage.setItem(
+    STORAGE_KEYS.JOB_APPLICATIONS,
+    JSON.stringify(applications),
+  );
+}
+
+export function createJobApplication(
+  jobId: string,
+  employeeId: string,
+  coverLetter?: string,
+): JobApplication | null {
+  const job = getJob(jobId);
+  if (!job) return null;
+
+  // Check if employee already applied
+  const existing = getJobApplications({ jobId, employeeId });
+  if (existing.length > 0) return null;
+
+  const application: JobApplication = {
+    id: Math.random().toString(36).substr(2, 9),
+    job_id: jobId,
+    employee_id: employeeId,
+    applied_date: new Date().toISOString(),
+    status: "applied",
+    cover_letter: coverLetter,
+  };
+
+  const applications = getJobApplications();
+  applications.push(application);
+  saveJobApplications(applications);
+  return application;
+}
+
+export function getJobApplication(
+  applicationId: string,
+): JobApplication | undefined {
+  return getJobApplications().find((a) => a.id === applicationId);
+}
+
+export function updateJobApplicationStatus(
+  applicationId: string,
+  status: JobApplication["status"],
+  notes?: string,
+): void {
+  const applications = getJobApplications();
+  const app = applications.find((a) => a.id === applicationId);
+  if (app) {
+    app.status = status;
+    if (status === "interview_scheduled" && notes) {
+      app.interview_notes = notes;
+    } else if (status === "rejected" && notes) {
+      app.rejection_reason = notes;
+    }
+    saveJobApplications(applications);
+  }
+}
+
+export function withdrawJobApplication(applicationId: string): void {
+  const applications = getJobApplications();
+  const app = applications.find((a) => a.id === applicationId);
+  if (app) {
+    app.status = "withdrawn";
+    saveJobApplications(applications);
+  }
 }

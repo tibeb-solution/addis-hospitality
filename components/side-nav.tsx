@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Briefcase,
@@ -12,8 +12,11 @@ import {
   Archive,
   Grid,
   X,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { clearCurrentUser } from "@/lib/local-storage";
 
 export default function SideNav({
   role = "company",
@@ -26,6 +29,7 @@ export default function SideNav({
 }) {
   const t = useTranslations();
   const pathname = usePathname() || "/";
+  const router = useRouter();
 
   const items: { href: string; label: string; icon: any }[] =
     role === "admin"
@@ -78,8 +82,8 @@ export default function SideNav({
 
   const base = mobile ? "fixed inset-0 z-50" : "hidden md:flex";
   const panel = mobile
-    ? "w-72 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in"
-    : "flex-col w-72 h-[calc(100vh-64px)] sticky top-16 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";
+    ? "w-72 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in flex flex-col"
+    : "flex-col w-72 h-screen fixed left-0 top-0 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";
 
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const firstLinkRef = useRef<HTMLAnchorElement | null>(null);
@@ -171,6 +175,33 @@ export default function SideNav({
             })}
           </ul>
         </nav>
+
+        {/* Settings and Logout Buttons - Fixed at bottom */}
+        <div className="space-y-2 border-t border-sidebar-border pt-4 mt-auto">
+          <Link
+            href={
+              role === "employee"
+                ? "/employee/settings"
+                : role === "admin"
+                  ? "/admin/settings"
+                  : "/company/settings"
+            }
+            className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-sidebar-foreground hover:bg-sidebar-accent/10"
+          >
+            <Settings className="h-4 w-4" />
+            <span>{t("nav.settings")}</span>
+          </Link>
+          <button
+            onClick={() => {
+              clearCurrentUser();
+              router.push("/auth/login");
+            }}
+            className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-sidebar-foreground hover:bg-red-500/10 hover:text-red-500"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>{t("common.logout")}</span>
+          </button>
+        </div>
       </aside>
     </div>
   );

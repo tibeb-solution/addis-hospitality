@@ -96,9 +96,10 @@ export default function LandingPage() {
             <nav aria-label="Main navigation" className="hidden md:flex gap-8">
               {[
                 ["nav.home", "#home"],
-                ["nav.about", "#about"],
-                ["nav.news", "#news"],
-                ["nav.projects", "#projects"],
+                ["nav.about", "/about"],
+                ["nav.news", "/news"],
+                ["nav.services", "/services"],
+                ["nav.projects", "/projects"],
               ].map(([label, href]) => (
                 <Link
                   key={href}
@@ -148,9 +149,10 @@ export default function LandingPage() {
           <nav aria-label="Mobile main navigation" className="mt-3 space-y-2">
             {[
               ["nav.home", "#home"],
-              ["nav.about", "#about"],
-              ["nav.news", "#news"],
-              ["nav.projects", "#projects"],
+              ["nav.about", "/about"],
+              ["nav.news", "/news"],
+              ["nav.services", "/services"],
+              ["nav.projects", "/projects"],
             ].map(([label, href]) => (
               <Link
                 key={href}
@@ -202,94 +204,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="about" className="py-16 px-4 bg-card/50 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
-            {t("landing.features")}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Feature 1 */}
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-3 hover:border-primary/50 transition-colors">
-              <div className="w-11 h-11 bg-primary/20 rounded-2xl flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-base font-semibold">
-                {t("landing.feature1Title")}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t("landing.feature1Desc")}
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-3 hover:border-primary/50 transition-colors">
-              <div className="w-11 h-11 bg-accent/20 rounded-2xl flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-accent"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-base font-semibold">
-                {t("landing.feature2Title")}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t("landing.feature2Desc")}
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-3 hover:border-primary/50 transition-colors">
-              <div className="w-11 h-11 bg-green-500/20 rounded-2xl flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-base font-semibold">
-                {t("landing.feature3Title")}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t("landing.feature3Desc")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* How It Works Section */}
-      <section id="news" className="py-20 px-4 scroll-mt-20">
+      <section className="py-20 px-4 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
             {t("landing.howItWorks")}
@@ -344,10 +260,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section
-        id="projects"
-        className="py-16 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20"
-      >
+      <section className="py-16 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20">
         <div className="max-w-4xl mx-auto space-y-6 text-center text-primary-foreground">
           <h2 className="text-3xl sm:text-4xl font-bold">
             {t("landing.readyToStart")}
@@ -376,7 +289,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-8 px-4 bg-card/50">
         <div className="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-muted-foreground">
           <p>
-            &copy; 2024 {t("common.logo")}. {t("landing.allRightsReserved")}
+            &copy; 2026 {t("common.logo")}. {t("landing.allRightsReserved")}
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/privacy" className="hover:text-foreground">

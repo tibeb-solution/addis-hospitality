@@ -100,8 +100,9 @@ export default function CompanyLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <SideNav role="company" />
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 md:ml-72">
+        <div className="px-4 py-4 flex items-center justify-between gap-4">
           <div className="md:hidden">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -253,9 +254,8 @@ export default function CompanyLayout({
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 flex gap-8">
-        <SideNav role="company" />
-        <main className="flex-1">{children}</main>
+      <div className="md:ml-72 px-4 py-8 min-h-[calc(100vh-64px)]">
+        <main className="max-w-6xl mx-auto">{children}</main>
       </div>
 
       {sidebarOpen && (

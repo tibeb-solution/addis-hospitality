@@ -38,7 +38,7 @@ export default function AdminCompanyDetailPage() {
             const { data: signed } = await supabase.storage
               .from("avatars")
               .getPublicUrl(data.logo_url);
-            setLogoUrl(signed.publicUrl || signed.signedUrl || "");
+            setLogoUrl(signed.publicUrl || "");
             setLogoStatus(data.logo_status || null);
           } catch (e) {
             // ignore

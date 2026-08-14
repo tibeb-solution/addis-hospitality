@@ -73,14 +73,6 @@ export default function SignUpPage() {
         userData.city = formData.get("city") || "";
       }
 
-      // collect security questions/answers
-      const security_questions = [1, 2, 3].map((i) => ({
-        question: (formData.get(`question${i}`) as string) || "",
-        answer: (formData.get(`answer${i}`) as string) || "",
-      }));
-
-      userData.security_questions = security_questions;
-
       const user = createUser(email, password, role, userData);
       setCurrentUser(user);
 
@@ -289,34 +281,6 @@ export default function SignUpPage() {
             {loading ? t("common.loading") : t("auth.signUp")}
           </Button>
 
-          {/* Security Questions */}
-          <div className="space-y-2 pt-2">
-            <label className="text-sm font-medium">
-              {t("auth.securityQuestionsTitle")}
-            </label>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="grid grid-cols-1 gap-2">
-                <input
-                  name={`question${i}`}
-                  placeholder={t("auth.securityQuestionPlaceholder", {
-                    number: i,
-                  })}
-                  required
-                  disabled={loading}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <input
-                  name={`answer${i}`}
-                  placeholder={t("auth.securityAnswerPlaceholder", {
-                    number: i,
-                  })}
-                  required
-                  disabled={loading}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            ))}
-          </div>
         </form>
 
         {/* Login Link */}

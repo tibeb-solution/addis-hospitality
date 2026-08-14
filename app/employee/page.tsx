@@ -40,7 +40,7 @@ export default function EmployeeDashboard() {
           const { data: signed } = supabase.storage
             .from("avatars")
             .getPublicUrl(data.avatar_url);
-          setAvatarUrl(signed.publicUrl || signed.signedUrl || "");
+          setAvatarUrl(signed.publicUrl || "");
         }
         calculateCompleteness(data);
       }

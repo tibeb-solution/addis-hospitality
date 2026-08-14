@@ -52,7 +52,7 @@ export default function AdminEmployeeDetailPage() {
             const { data: signed } = supabase.storage
               .from("avatars")
               .getPublicUrl(profile.avatar_url);
-            setAvatarUrl(signed.publicUrl || signed.signedUrl || "");
+            setAvatarUrl(signed.publicUrl || "");
             setAvatarStatus(profile.avatar_status || null);
           }
         } catch (e) {
