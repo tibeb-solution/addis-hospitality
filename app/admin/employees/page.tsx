@@ -118,12 +118,12 @@ export default function AdminEmployeesPage() {
       {/* Employees Table */}
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-4 sm:p-8 text-center text-muted-foreground text-sm">
             {t("admin.noResults")}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[500px]">
               <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium">

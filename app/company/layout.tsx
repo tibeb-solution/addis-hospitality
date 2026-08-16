@@ -102,7 +102,7 @@ export default function CompanyLayout({
     <div className="min-h-screen bg-background">
       <SideNav role="company" />
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 md:ml-72">
-        <div className="px-4 py-4 flex items-center justify-between gap-4">
+        <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 min-h-[56px]">
           <div className="md:hidden">
             <button
               onClick={() => setSidebarOpen(true)}

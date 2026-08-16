@@ -65,7 +65,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-background">
       <SideNav role="admin" />
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 md:ml-72">
-        <div className="px-4 py-4 flex items-center justify-between gap-4">
+        <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 min-h-[56px]">
           <div className="md:hidden">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -75,17 +75,17 @@ export default function AdminLayout({
             </button>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1 sm:gap-2 ml-auto">
             <ThemeSwitcher />
             <LocaleSwitcher />
-            <Button variant="outline" size="sm" onClick={handleLogout}>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs sm:text-sm">
               {t("common.logout")}
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="md:ml-72 px-4 py-8 min-h-[calc(100vh-64px)]">
+      <div className="md:ml-72 px-2 sm:px-4 py-4 sm:py-8 min-h-[calc(100vh-56px)]">
         <main className="max-w-6xl mx-auto">{children}</main>
       </div>
 

@@ -25,38 +25,41 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top info bar */}
-      <div className="bg-slate-950 text-slate-100 shadow-sm shadow-slate-950/10">
-        <div className="mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-1.5 text-[10px] sm:px-5 sm:py-2 sm:text-xs">
-          <div className="flex flex-wrap items-center gap-1.5">
+      <div className="bg-slate-950 text-slate-100 shadow-sm shadow-slate-950/10 overflow-x-auto">
+        <div className="mx-auto flex flex-wrap items-center justify-between gap-1 px-2 py-1 text-[9px] sm:gap-2 sm:px-4 sm:py-1.5 sm:text-[10px] md:gap-2 md:px-5 md:py-2 md:text-xs">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
             <a
               href="mailto:addis.hospitalitysolutions@gmail.com"
-              className="group flex min-w-[180px] items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-3 py-1.5 transition hover:bg-slate-900"
+              className="group flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 py-1 sm:px-3 sm:py-1.5 transition hover:bg-slate-900 whitespace-nowrap"
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
-                <Mail className="h-4 w-4" />
+              <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
+                <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
               </span>
-              <span className="truncate font-medium">
+              <span className="truncate font-medium hidden sm:inline max-w-[140px] sm:max-w-[160px]">
                 addis.hospitalitysolutions@gmail.com
+              </span>
+              <span className="truncate font-medium sm:hidden max-w-[80px]">
+                Email
               </span>
             </a>
             <a
               href="tel:+251941248888"
-              className="group flex min-w-[130px] items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-3 py-1.5 transition hover:bg-slate-900"
+              className="group flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 py-1 sm:px-3 sm:py-1.5 transition hover:bg-slate-900 whitespace-nowrap"
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
-                <Phone className="h-4 w-4" />
+              <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
+                <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
               </span>
-              <span className="font-medium">+251 94 124 8888</span>
+              <span className="font-medium text-[8px] sm:text-[10px]">+251 941 248 88</span>
             </a>
-            <div className="group flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-3 py-1.5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
-                <MapPin className="h-4 w-4" />
+            <div className="hidden sm:flex group items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 sm:px-3 py-1 sm:py-1.5">
+              <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
               </span>
               <span className="font-medium">Addis Ababa</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 justify-start sm:justify-end">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 justify-start sm:justify-end flex-shrink-0">
             <Link
               href="/instagram"
               className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
@@ -170,33 +173,33 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section
         id="home"
-        className="relative py-14 px-4 sm:py-20 overflow-hidden scroll-mt-20"
+        className="relative py-10 px-4 sm:py-14 md:py-20 overflow-hidden scroll-mt-20"
       >
         <div className="absolute inset-0 -z-10 opacity-20">
-          <div className="absolute top-16 right-16 w-60 h-60 bg-primary rounded-full mix-blend-multiply filter blur-3xl"></div>
-          <div className="absolute bottom-16 left-16 w-60 h-60 bg-accent rounded-full mix-blend-multiply filter blur-3xl"></div>
+          <div className="absolute top-8 sm:top-16 right-8 sm:right-16 w-32 h-32 sm:w-60 sm:h-60 bg-primary rounded-full mix-blend-multiply filter blur-2xl sm:blur-3xl"></div>
+          <div className="absolute bottom-8 sm:bottom-16 left-8 sm:left-16 w-32 h-32 sm:w-60 sm:h-60 bg-accent rounded-full mix-blend-multiply filter blur-2xl sm:blur-3xl"></div>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-6 text-center">
+        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6 text-center">
           <BrandLogo variant="hero" />
 
-          <div className="space-y-3">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <div className="space-y-2 sm:space-y-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {t("landing.title")}
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto">
               {t("landing.tagline")}
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-6">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-4 sm:pt-6">
             <Link href="/auth/sign-up?role=employee">
-              <Button className="w-full sm:w-auto px-6 py-3">
+              <Button className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
                 {t("auth.signUpAsEmployee")}
               </Button>
             </Link>
             <Link href="/auth/sign-up?role=company">
-              <Button variant="outline" className="w-full sm:w-auto px-6 py-3">
+              <Button variant="outline" className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
                 {t("auth.signUpAsCompany")}
               </Button>
             </Link>
@@ -205,13 +208,13 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 px-4 scroll-mt-20">
+      <section className="py-12 sm:py-20 px-4 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-16">
             {t("landing.howItWorks")}
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-12">
             {/* For Employees */}
             <div className="space-y-6">
               <h3 className="text-2xl font-semibold">{t("employee.title")}</h3>
@@ -260,24 +263,24 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20">
-        <div className="max-w-4xl mx-auto space-y-6 text-center text-primary-foreground">
-          <h2 className="text-3xl sm:text-4xl font-bold">
+      <section className="py-12 sm:py-16 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 text-center text-primary-foreground">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
             {t("landing.readyToStart")}
           </h2>
 
-          <p className="text-base opacity-90 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base opacity-90 max-w-2xl mx-auto">
             {t("landing.ctaDescription")}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
             <Link href="/auth/sign-up?role=employee">
-              <Button variant="secondary" className="px-6 py-3">
+              <Button variant="secondary" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
                 {t("auth.signUpAsEmployee")}
               </Button>
             </Link>
             <Link href="/auth/sign-up?role=company">
-              <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 px-6 py-3">
+              <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
                 {t("auth.signUpAsCompany")}
               </Button>
             </Link>
@@ -286,12 +289,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 px-4 bg-card/50">
-        <div className="max-w-7xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-muted-foreground">
-          <p>
+      <footer className="border-t border-border py-6 sm:py-8 px-4 bg-card/50">
+        <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between text-xs sm:text-sm text-muted-foreground">
+          <p className="break-words">
             &copy; 2026 {t("common.logo")}. {t("landing.allRightsReserved")}
           </p>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <Link href="/privacy" className="hover:text-foreground">
               {t("landing.privacy")}
             </Link>
