@@ -101,31 +101,31 @@ export default function AdminEmployeeDetailPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-4">
           {avatarUrl && (
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-muted">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-muted flex-shrink-0">
               <img
                 src={avatarUrl}
                 alt="avatar"
                 width={64}
                 height={64}
-                className="object-cover w-16 h-16"
+                className="object-cover w-12 h-12 sm:w-16 sm:h-16"
               />
             </div>
           )}
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-xl sm:text-3xl font-bold break-words">
             {employee.full_name || employee.email}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {avatarStatus && (
-            <span className="text-sm px-2 py-1 rounded bg-muted">
+            <span className="text-xs sm:text-sm px-2 py-1 rounded bg-muted whitespace-nowrap">
               {avatarStatus}
             </span>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {

@@ -72,21 +72,25 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Welcome Card */}
-      <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-8 text-primary-foreground flex items-center justify-between">
+      <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-4 sm:p-8 text-primary-foreground flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">{t("employee.title")}</h1>
-          <p className="opacity-90">{t("landing.tagline")}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+            {t("employee.title")}
+          </h1>
+          <p className="text-sm sm:text-base opacity-90">
+            {t("landing.tagline")}
+          </p>
         </div>
         {avatarUrl ? (
-          <div className="w-20 h-20 rounded-full overflow-hidden bg-muted shadow-md">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-muted shadow-md flex-shrink-0">
             <img
               src={avatarUrl}
               alt="avatar"
               width={80}
               height={80}
-              className="object-cover w-20 h-20"
+              className="object-cover w-16 h-16 sm:w-20 sm:h-20"
             />
           </div>
         ) : null}
@@ -94,8 +98,8 @@ export default function EmployeeDashboard() {
 
       {/* Profile Status */}
       {!profile ? (
-        <div className="bg-card border border-border rounded-lg p-8 text-center space-y-4">
-          <h2 className="text-xl font-semibold">
+        <div className="bg-card border border-border rounded-lg p-4 sm:p-8 text-center space-y-4">
+          <h2 className="text-lg sm:text-xl font-semibold">
             {t("employee.noProfileYet")}
           </h2>
           <p className="text-muted-foreground">

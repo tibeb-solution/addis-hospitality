@@ -74,26 +74,26 @@ export default function AdminCompaniesPage() {
 
       {/* Filters */}
       <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label className="text-xs sm:text-sm font-medium">
               {t("admin.searchCompany")}
             </label>
             <input
               placeholder={t("admin.searchCompany")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label className="text-xs sm:text-sm font-medium">
               {t("admin.verificationStatus")}
             </label>
             <select
               value={verifiedFilter}
               onChange={(e) => setVerifiedFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-input rounded-md bg-background text-foreground"
             >
               <option value="">{t("admin.filterBy")}</option>
               <option value="verified">{t("company.verified")}</option>

@@ -181,22 +181,24 @@ export default function CompanyProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{t("company.title")}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("company.title")}</h1>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-8">
+      <form onSubmit={handleSave} className="space-y-6 sm:space-y-8">
         {/* Logo Section */}
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="font-semibold">{t("company.logo")}</h3>
-          <div className="flex items-center gap-6">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-6 space-y-4">
+          <h3 className="text-sm sm:text-base font-semibold">
+            {t("company.logo")}
+          </h3>
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
             {logoUrl && (
-              <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-muted">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                 <img
                   src={logoUrl}
                   alt="Logo"
-                  className="object-cover w-24 h-24"
+                  className="object-cover w-20 h-20 sm:w-24 sm:h-24"
                 />
               </div>
             )}

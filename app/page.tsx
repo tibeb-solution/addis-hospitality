@@ -49,7 +49,9 @@ export default function LandingPage() {
               <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
                 <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
               </span>
-              <span className="font-medium text-[8px] sm:text-[10px]">+251 941 248 88</span>
+              <span className="font-medium text-[8px] sm:text-[10px]">
+                +251 941 248 88
+              </span>
             </a>
             <div className="hidden sm:flex group items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 sm:px-3 py-1 sm:py-1.5">
               <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
@@ -199,7 +201,10 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/auth/sign-up?role=company">
-              <Button variant="outline" className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
+              >
                 {t("auth.signUpAsCompany")}
               </Button>
             </Link>
@@ -275,7 +280,10 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
             <Link href="/auth/sign-up?role=employee">
-              <Button variant="secondary" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
+              <Button
+                variant="secondary"
+                className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
+              >
                 {t("auth.signUpAsEmployee")}
               </Button>
             </Link>

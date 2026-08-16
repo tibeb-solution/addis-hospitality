@@ -16,10 +16,16 @@ export default function AdminSettings() {
     full_name: "",
     email: "",
   });
-  const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
+  const [password, setPassword] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  });
   const [showPasswords, setShowPasswords] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [messageType, setMessageType] = useState<"success" | "error">(
+    "success",
+  );
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -85,7 +91,7 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-2xl sm:max-w-3xl mx-auto space-y-6 sm:space-y-8 px-2 sm:px-0">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{t("nav.settings")}</h1>
         <p className="text-muted-foreground">
@@ -115,7 +121,9 @@ export default function AdminSettings() {
 
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
+              <label className="block text-sm font-medium mb-2">
+                Full Name
+              </label>
               <input
                 type="text"
                 value={formData.full_name}
