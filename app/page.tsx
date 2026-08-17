@@ -296,28 +296,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-6 sm:py-8 px-4 bg-card/50">
-        <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between text-xs sm:text-sm text-muted-foreground">
-          <p className="break-words">
-            &copy; 2026 {t("common.logo")}. {t("landing.allRightsReserved")}
-          </p>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <Link href="/privacy" className="hover:text-foreground">
-              {t("landing.privacy")}
-            </Link>
-            <Link href="/terms" className="hover:text-foreground">
-              {t("landing.terms")}
-            </Link>
-            <Link
-              href="/contact"
-              className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
-            >
-              Contact us
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

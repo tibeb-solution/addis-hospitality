@@ -346,5 +346,29 @@
     "details": "ዝርዝሮች",
     "statusChange": "የሁኔታ ለውጥ",
     "registrationDate": "የተመዘገቡበት ቀን"
+  },
+  "footer": {
+    "tagline": "በኢትዮጵያ ውስጥ አስናዳሪ ሙያተኞችን ከልዩ ዕድሎች ጋር ማገናኘት። ስራዎን ያድግ፣ ንግዳዬን ይገንቡ።",
+    "jobSeekers": "ሥራ ፈላጊዎች",
+    "employers": "ቅጥወኞች",
+    "company": "ኩባንያ",
+    "legal": "ህግ",
+    "browseJobs": "ሥራዎችን ያስሱ",
+    "myApplications": "የእኔ ማመልከቻዎች",
+    "savedJobs": "የተቀመጡ ሥራዎች",
+    "profile": "ገፅ",
+    "postJob": "ሥራ ያስቀምጡ",
+    "recruiterDashboard": "ዳሳሽ",
+    "applications": "ማመልከቻዎች",
+    "companyProfile": "የኩባንያ ገፅ",
+    "about": "ስለ",
+    "contact": "ያግኙን",
+    "blog": "ብሎግ",
+    "careers": "ስራ",
+    "privacyPolicy": "ግላዊነት ፖሊሲ",
+    "termsOfService": "አገልግሎት ውል",
+    "cookiePolicy": "ኩኪ ፖሊሲ",
+    "copyright": "ሁሉም መብቶች የተጠበቁ ናቸው።",
+    "builtBy": "ለሙያተኛ ኢንዱስትሪ ❤️ ያለ በግንባታ"
   }
 }

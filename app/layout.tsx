@@ -6,6 +6,7 @@ import { getMessages } from "next-intl/server";
 import { cookies } from "next/headers";
 import "./globals.css";
 import Providers from "@/components/providers";
+import { Footer } from "@/components/footer";
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({
@@ -67,6 +68,7 @@ export default async function RootLayout({
         </div>
         <Providers messages={messages} locale={locale}>
           {children}
+          <Footer />
           {process.env.NODE_ENV === "production" && <Analytics />}
         </Providers>
       </body>

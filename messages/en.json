@@ -346,5 +346,29 @@
     "details": "Details",
     "statusChange": "Status Change",
     "registrationDate": "Registration Date"
+  },
+  "footer": {
+    "tagline": "Connect hospitality professionals with exceptional opportunities across Ethiopia. Grow your career, build your business.",
+    "jobSeekers": "Job Seekers",
+    "employers": "Employers",
+    "company": "Company",
+    "legal": "Legal",
+    "browseJobs": "Browse Jobs",
+    "myApplications": "My Applications",
+    "savedJobs": "Saved Jobs",
+    "profile": "Profile",
+    "postJob": "Post a Job",
+    "recruiterDashboard": "Dashboard",
+    "applications": "Applications",
+    "companyProfile": "Company Profile",
+    "about": "About",
+    "contact": "Contact",
+    "blog": "Blog",
+    "careers": "Careers",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "cookiePolicy": "Cookie Policy",
+    "copyright": "All rights reserved.",
+    "builtBy": "Built with ❤️ for the hospitality industry"
   }
 }
