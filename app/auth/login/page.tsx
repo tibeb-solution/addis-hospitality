@@ -45,6 +45,16 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+      if (user.email_verified !== true) {
+        localStorage.setItem("ah_pending_verification_email", user.email);
+        const pendingCode = localStorage.getItem("ah_pending_verification_code");
+        if (pendingCode) {
+          localStorage.setItem("ah_pending_verification_code", pendingCode);
+        }
+        router.push("/auth/sign-up-success");
+        setLoading(false);
+        return;
+      }
 
       // Set current user and route based on role
       setCurrentUser({ ...user, email: user.email.trim() });

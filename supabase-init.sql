@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   role text NOT NULL DEFAULT 'employee',
   full_name text,
   phone text,
-  status text DEFAULT 'active',
+  status text DEFAULT 'pending',
+  email_verified boolean DEFAULT false,
   created_at timestamptz DEFAULT now(),
   reviewed_at timestamptz,
   status_note text,
@@ -178,8 +179,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_employee ON applications (employee_i
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (user_id, read_at, created_at DESC);
 
 -- Seed admin (change password/hashing as needed)
-INSERT INTO profiles (id, email, password, role, full_name, phone, status)
-VALUES ('00000000-0000-0000-0000-000000000001','admin@addishospitality.et','AddisAdmin2026!','admin','Admin','+251911000000','active')
+INSERT INTO profiles (id, email, password, role, full_name, phone, status, email_verified)
+VALUES ('00000000-0000-0000-0000-000000000001','admin@addishospitality.et','AddisAdmin2026!','admin','Admin','+251911000000','active', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- Notes:

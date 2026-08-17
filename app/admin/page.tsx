@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { recruitment } from "@/lib/recruitment";
 
 export default function AdminDashboard() {
   const t = useTranslations();
@@ -16,6 +17,8 @@ export default function AdminDashboard() {
     rejectedAccounts: 0,
     suspendedAccounts: 0,
   });
+  const [pendingAccounts, setPendingAccounts] = useState<any[]>([]);
+  const [pendingJobs, setPendingJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,13 +38,26 @@ export default function AdminDashboard() {
       // Get profile stats
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("status");
+        .select("id, email, full_name, role, status, email_verified, created_at");
 
       const statusMap =
         profiles?.reduce((acc: any, p: any) => {
           acc[p.status] = (acc[p.status] || 0) + 1;
           return acc;
         }, {}) || {};
+
+      setPendingAccounts(
+        (profiles || []).filter(
+          (profile) => profile.status !== "active" || profile.email_verified === false,
+        ).slice(0, 5),
+      );
+
+      setPendingJobs(
+        recruitment
+          .jobs()
+          .filter((job) => job.status === "pending_review")
+          .slice(0, 5),
+      );
 
       setStats({
         totalEmployees: empCount || 0,
@@ -126,6 +142,56 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Pending account reviews</h2>
+            <Link href="/admin/employees" className="text-sm text-primary hover:underline">View all</Link>
+          </div>
+          {pendingAccounts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending account approvals.</p>
+          ) : (
+            <div className="space-y-3">
+              {pendingAccounts.map((profile) => (
+                <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                  <div>
+                    <p className="font-medium">{profile.full_name || profile.email}</p>
+                    <p className="text-xs text-muted-foreground">{profile.role} · {profile.email}</p>
+                  </div>
+                  <span className="rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium capitalize text-yellow-700">
+                    {profile.email_verified === false ? "Email not verified" : profile.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Pending job approvals</h2>
+            <Link href="/admin/jobs" className="text-sm text-primary hover:underline">Open queue</Link>
+          </div>
+          {pendingJobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No jobs awaiting approval.</p>
+          ) : (
+            <div className="space-y-3">
+              {pendingJobs.map((job) => (
+                <div key={job.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                  <div>
+                    <p className="font-medium">{job.title}</p>
+                    <p className="text-xs text-muted-foreground">{job.company_name}</p>
+                  </div>
+                  <span className="rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium capitalize text-yellow-700">
+                    {job.status.replace("_", " ")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="bg-card border border-border rounded-lg p-6 space-y-4">
         <h2 className="text-xl font-semibold">{t("admin.action")}</h2>
         <div className="flex flex-wrap gap-4">

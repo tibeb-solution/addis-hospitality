@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { recruitment } from "@/lib/recruitment";
 
 export default function CompanyDashboard() {
   const t = useTranslations();
@@ -52,6 +53,44 @@ export default function CompanyDashboard() {
         <p className="text-sm sm:text-base opacity-90">
           {t("landing.tagline")}
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4 md:col-span-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-semibold text-lg">Job listings</h3>
+            <Link href="/company/jobs">
+              <Button variant="outline" size="sm">Manage jobs</Button>
+            </Link>
+          </div>
+          {recruitment.jobs().filter((job) => job.company_id === profile?.id && ["pending_review", "published", "rejected", "closed"].includes(job.status)).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No jobs submitted yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {recruitment
+                .jobs()
+                .filter((job) => job.company_id === profile?.id && ["pending_review", "published", "rejected", "closed"].includes(job.status))
+                .sort((a, b) => b.created_at.localeCompare(a.created_at))
+                .slice(0, 4)
+                .map((job) => (
+                  <div key={job.id} className="flex flex-col gap-2 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="font-medium">{job.title}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{job.status.replace("_", " ")}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {job.status !== "published" && (
+                        <Button size="sm" onClick={() => recruitment.updateJob(job.id, { status: "published" })}>Publish</Button>
+                      )}
+                      {job.status !== "rejected" && (
+                        <Button size="sm" variant="outline" onClick={() => recruitment.updateJob(job.id, { status: "rejected" })}>Reject</Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Profile Status */}

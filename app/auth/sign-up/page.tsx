@@ -7,9 +7,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import {
-  createUser,
   findUserByEmail,
-  setCurrentUser,
+  generateEmailVerificationCode,
+  resetLegacyUserForVerification,
 } from "@/lib/local-storage";
 
 type Role = "employee" | "company";
@@ -50,13 +50,6 @@ export default function SignUpPage() {
       return;
     }
 
-    // Check if email already exists
-    if (findUserByEmail(email)) {
-      setError(t("auth.emailAlreadyExists"));
-      setLoading(false);
-      return;
-    }
-
     try {
       // Build user data based on role
       const userData: Record<string, any> = {
@@ -73,10 +66,19 @@ export default function SignUpPage() {
         userData.city = formData.get("city") || "";
       }
 
-      const user = createUser(email, password, role, userData);
-      setCurrentUser(user);
+      const existing = findUserByEmail(email);
 
-      router.push("/auth/sign-up-success");
+      if (existing && existing.email_verified === true && existing.status === "active") {
+        setError(t("auth.emailAlreadyExists"));
+        setLoading(false);
+        return;
+      }
+
+      const user = resetLegacyUserForVerification(email, password, role, userData);
+      const verificationCode = generateEmailVerificationCode(user.email);
+      localStorage.setItem("ah_pending_verification_email", user.email);
+
+      router.push(`/auth/sign-up-success?code=${encodeURIComponent(verificationCode)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
       setLoading(false);

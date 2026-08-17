@@ -11,7 +11,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Heart,
 } from "lucide-react";
 
 export function Footer() {
@@ -53,18 +52,20 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.16),_transparent_30%),rgba(2,6,23,0.74)] text-slate-100 shadow-[0_-20px_60px_rgba(16,185,129,0.08)] backdrop-blur-xl">
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,0.88),rgba(15,23,42,0.7),rgba(15,23,42,0.88))]" aria-hidden="true" />
+    <footer className="relative overflow-hidden border-t border-emerald-500/20 bg-emerald-950 text-slate-100 shadow-[0_-18px_48px_rgba(16,185,129,0.12)]">
+      <div className="footer-gradient-motion absolute inset-0" aria-hidden="true" />
+      <div className="footer-line-field absolute inset-0" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,78,59,0.82),rgba(2,44,34,0.94))]" aria-hidden="true" />
 
       {/* Main Footer Content */}
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-5">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-9 sm:px-6 sm:py-10 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-5 lg:gap-10">
           {/* Brand Section */}
           <div className="md:col-span-1">
-            <div className="mb-6 inline-flex items-center justify-center">
-              <BrandLogo variant="header" className="h-12 w-auto rounded-md" />
+            <div className="mb-4 inline-flex items-center justify-center">
+              <BrandLogo variant="header" className="h-10 w-auto rounded-md" />
             </div>
-            <p className="mb-6 max-w-xs text-sm leading-relaxed text-slate-300/90">
+            <p className="mb-4 max-w-xs text-xs leading-relaxed text-emerald-50/80">
               {t("footer.tagline") ||
                 "Connect hospitality professionals with exceptional opportunities across Ethiopia. Grow your career, build your business."}
             </p>
@@ -76,9 +77,9 @@ export function Footer() {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/50 text-slate-400 transition hover:border-emerald-500 hover:bg-slate-800 hover:text-emerald-500"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-emerald-300/20 bg-emerald-950/40 text-emerald-100/70 transition hover:border-emerald-300/70 hover:bg-emerald-700/30 hover:text-white"
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
@@ -86,15 +87,15 @@ export function Footer() {
 
           {/* Navigation Columns */}
           <div className="md:col-span-1">
-            <h3 className="mb-4 font-semibold text-white">
+            <h3 className="mb-3 text-sm font-semibold text-white">
               {t("footer.jobSeekers") || "Job Seekers"}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {navigationLinks.jobSeekers.map(({ label, href }) => (
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-slate-400 transition hover:text-emerald-500"
+                    className="text-xs text-emerald-50/70 transition hover:text-white"
                   >
                     {label}
                   </Link>
@@ -104,15 +105,15 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-1">
-            <h3 className="mb-4 font-semibold text-white">
+            <h3 className="mb-3 text-sm font-semibold text-white">
               {t("footer.employers") || "Employers"}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {navigationLinks.employers.map(({ label, href }) => (
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-slate-400 transition hover:text-emerald-500"
+                    className="text-xs text-emerald-50/70 transition hover:text-white"
                   >
                     {label}
                   </Link>
@@ -122,15 +123,15 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-1">
-            <h3 className="mb-4 font-semibold text-white">
+            <h3 className="mb-3 text-sm font-semibold text-white">
               {t("footer.company") || "Company"}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {navigationLinks.company.map(({ label, href }) => (
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-slate-400 transition hover:text-emerald-500"
+                    className="text-xs text-emerald-50/70 transition hover:text-white"
                   >
                     {label}
                   </Link>
@@ -140,15 +141,15 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-1">
-            <h3 className="mb-4 font-semibold text-white">
+            <h3 className="mb-3 text-sm font-semibold text-white">
               {t("footer.legal") || "Legal"}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {navigationLinks.legal.map(({ label, href }) => (
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-sm text-slate-400 transition hover:text-emerald-500"
+                    className="text-xs text-emerald-50/70 transition hover:text-white"
                   >
                     {label}
                   </Link>
@@ -159,18 +160,18 @@ export function Footer() {
         </div>
 
         {/* Contact Section */}
-        <div className="my-12 border-t border-slate-800 pt-12">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="mt-8 border-t border-emerald-300/15 pt-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <a
               href="mailto:info@addishospitality.com"
-              className="group flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/30 p-4 transition hover:border-emerald-500 hover:bg-slate-900/60"
+              className="group flex items-center gap-3 rounded-md border border-emerald-300/15 bg-emerald-950/30 p-3 transition hover:border-emerald-300/60 hover:bg-emerald-800/30"
             >
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/20 text-emerald-500 group-hover:bg-emerald-600/30">
-                <Mail className="h-5 w-5" />
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-400/15 text-emerald-200 group-hover:bg-emerald-300/25">
+                <Mail className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-slate-500">Email</p>
-                <p className="text-sm font-medium text-slate-100">
+                <p className="text-[11px] text-emerald-50/55">Email</p>
+                <p className="text-sm font-medium text-white">
                   info@addishospitality.com
                 </p>
               </div>
@@ -178,24 +179,24 @@ export function Footer() {
 
             <a
               href="tel:+251941248888"
-              className="group flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/30 p-4 transition hover:border-emerald-500 hover:bg-slate-900/60"
+              className="group flex items-center gap-3 rounded-md border border-emerald-300/15 bg-emerald-950/30 p-3 transition hover:border-emerald-300/60 hover:bg-emerald-800/30"
             >
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/20 text-emerald-500 group-hover:bg-emerald-600/30">
-                <Phone className="h-5 w-5" />
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-400/15 text-emerald-200 group-hover:bg-emerald-300/25">
+                <Phone className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-slate-500">Phone</p>
-                <p className="text-sm font-medium text-slate-100">+251 94 124 8888</p>
+                <p className="text-[11px] text-emerald-50/55">Phone</p>
+                <p className="text-sm font-medium text-white">+251 94 124 8888</p>
               </div>
             </a>
 
-            <div className="group flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/30 p-4">
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/20 text-emerald-500">
-                <MapPin className="h-5 w-5" />
+            <div className="group flex items-center gap-3 rounded-md border border-emerald-300/15 bg-emerald-950/30 p-3">
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-400/15 text-emerald-200">
+                <MapPin className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-slate-500">Location</p>
-                <p className="text-sm font-medium text-slate-100">Addis Ababa, Ethiopia</p>
+                <p className="text-[11px] text-emerald-50/55">Location</p>
+                <p className="text-sm font-medium text-white">Addis Ababa, Ethiopia</p>
               </div>
             </div>
           </div>
@@ -203,10 +204,10 @@ export function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="relative z-10 border-t border-emerald-400/20 bg-slate-950/90">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative z-10 border-t border-emerald-300/15 bg-emerald-950/80">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-            <p className="text-sm font-semibold text-white">
+            <p className="text-xs font-semibold text-white sm:text-sm">
               &copy; {currentYear} Addis Hospitality.{" "}
               {t("footer.copyright") || "All rights reserved."}
             </p>
@@ -214,7 +215,7 @@ export function Footer() {
               href="https://tibeb-solutions-swda-two.vercel.app/"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 transition hover:text-white"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-200 transition hover:text-white sm:text-sm"
             >
               <span>Developed </span>
               <span>by Tibeb Solutions</span>

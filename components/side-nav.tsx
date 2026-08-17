@@ -81,10 +81,10 @@ export default function SideNav({
             },
           ];
 
-  const base = mobile ? "fixed inset-0 z-50" : "hidden md:flex";
+  const base = mobile ? "fixed inset-0 z-50" : "hidden md:flex md:sticky md:top-0 md:h-screen";
   const panel = mobile
     ? "w-72 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in flex flex-col"
-    : "flex-col w-72 h-screen fixed left-0 top-0 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";
+    : "flex-col w-72 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";
 
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const firstLinkRef = useRef<HTMLAnchorElement | null>(null);

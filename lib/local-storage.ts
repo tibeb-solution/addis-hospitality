@@ -132,9 +132,8 @@ export function createUser(
     role,
     full_name: data.full_name || data.company_name || "",
     phone: data.phone || "",
-    status: role === "company" ? "pending" : "active",
-    // Local mode has no email service, so newly created accounts are usable immediately.
-    email_verified: true,
+    status: "pending",
+    email_verified: false,
     created_at: registeredAt,
   };
   users.push(newUser);
@@ -167,6 +166,65 @@ export function normalizeEmail(email: string): string {
 export function findUserByEmail(email: string): LocalUser | undefined {
   const normalized = normalizeEmail(email);
   return getUsers().find((u) => normalizeEmail(u.email) === normalized);
+}
+
+export function resetLegacyUserForVerification(
+  email: string,
+  password: string,
+  role: "employee" | "company",
+  data: any,
+): LocalUser {
+  const users = getUsers();
+  const index = users.findIndex(
+    (u) => normalizeEmail(u.email) === normalizeEmail(email),
+  );
+
+  if (index === -1) {
+    return createUser(email, password, role, data);
+  }
+
+  const existingUser = users[index];
+  const updatedUser: LocalUser = {
+    ...existingUser,
+    email: normalizeEmail(email),
+    password,
+    role,
+    full_name: data.full_name || data.company_name || existingUser.full_name || "",
+    phone: data.phone || existingUser.phone || "",
+    status: "pending",
+    email_verified: false,
+  };
+
+  users[index] = updatedUser;
+  saveUsers(users);
+
+  if (role === "employee") {
+    const profiles = getEmployeeProfiles();
+    const existingProfileIndex = profiles.findIndex((p) => p.id === existingUser.id);
+    if (existingProfileIndex >= 0) {
+      profiles[existingProfileIndex] = {
+        ...profiles[existingProfileIndex],
+        ...updatedUser,
+        full_name: updatedUser.full_name,
+        phone: updatedUser.phone,
+      } as EmployeeProfile;
+    }
+    saveEmployeeProfiles(profiles);
+  } else {
+    const profiles = getCompanyProfiles();
+    const existingProfileIndex = profiles.findIndex((p) => p.id === existingUser.id);
+    if (existingProfileIndex >= 0) {
+      profiles[existingProfileIndex] = {
+        ...profiles[existingProfileIndex],
+        ...updatedUser,
+        company_name: data.company_name || profiles[existingProfileIndex].company_name || "",
+        business_type: data.business_type || profiles[existingProfileIndex].business_type || "",
+      } as CompanyProfile;
+    }
+    saveCompanyProfiles(profiles);
+  }
+
+  return updatedUser;
 }
 
 export function findUserById(id: string): LocalUser | undefined {
@@ -389,8 +447,18 @@ export function updateUserStatus(userId: string, status: string): void {
   const user = users.find((u) => u.id === userId);
   if (user) {
     user.status = status as any;
+    if (status === "active") {
+      user.email_verified = true;
+    }
     saveUsers(users);
   }
+}
+
+export function isUserApprovedForRole(user: LocalUser | null): boolean {
+  if (!user) return false;
+  if (user.email_verified === false) return false;
+  if (user.status !== "active") return false;
+  return true;
 }
 
 export function updateUserPasswordByEmail(
@@ -407,6 +475,72 @@ export function updateUserPasswordByEmail(
   saveUsers(users);
   clearPasswordResetCode(email);
   return true;
+}
+
+export function setUserEmailVerified(email: string, verified: boolean): boolean {
+  const users = getUsers();
+  const index = users.findIndex(
+    (u) => normalizeEmail(u.email) === normalizeEmail(email),
+  );
+
+  if (index === -1) return false;
+
+  users[index].email_verified = verified;
+  saveUsers(users);
+  clearEmailVerificationCode(email);
+  return true;
+}
+
+export function generateEmailVerificationCode(email: string): string {
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const payload = {
+    code,
+    expires_at: Date.now() + 10 * 60 * 1000,
+  };
+
+  const key = "ah_email_verification_codes";
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+    string,
+    typeof payload
+  >;
+  all[normalizeEmail(email)] = payload;
+  localStorage.setItem(key, JSON.stringify(all));
+  localStorage.setItem("ah_pending_verification_email", normalizeEmail(email));
+  localStorage.setItem("ah_pending_verification_code", code);
+  return code;
+}
+
+export function verifyEmailVerificationCode(email: string, code: string): boolean {
+  const key = "ah_email_verification_codes";
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+    string,
+    { code: string; expires_at: number }
+  >;
+  const normalizedEmail = normalizeEmail(email);
+  const record = all[normalizedEmail];
+
+  if (!record) return false;
+  if (record.expires_at < Date.now()) {
+    delete all[normalizedEmail];
+    localStorage.setItem(key, JSON.stringify(all));
+    return false;
+  }
+
+  if (record.code !== code) return false;
+
+  delete all[normalizedEmail];
+  localStorage.setItem(key, JSON.stringify(all));
+  return true;
+}
+
+export function clearEmailVerificationCode(email: string): void {
+  const key = "ah_email_verification_codes";
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+    string,
+    unknown
+  >;
+  delete all[normalizeEmail(email)];
+  localStorage.setItem(key, JSON.stringify(all));
 }
 
 export function generatePasswordResetCode(email: string): string {
@@ -430,16 +564,21 @@ export function verifyPasswordResetCode(email: string, code: string): boolean {
     string,
     { code: string; expires_at: number }
   >;
-  const record = all[normalizeEmail(email)];
+  const normalizedEmail = normalizeEmail(email);
+  const record = all[normalizedEmail];
 
   if (!record) return false;
   if (record.expires_at < Date.now()) {
-    delete all[normalizeEmail(email)];
+    delete all[normalizedEmail];
     localStorage.setItem(key, JSON.stringify(all));
     return false;
   }
 
-  return record.code === code;
+  if (record.code !== code) return false;
+
+  delete all[normalizedEmail];
+  localStorage.setItem(key, JSON.stringify(all));
+  return true;
 }
 
 export function clearPasswordResetCode(email: string): void {
@@ -465,6 +604,7 @@ export function initializeDefaultAdmin(): void {
       full_name: "Admin",
       phone: "+251911000000",
       status: "active",
+      email_verified: true,
       created_at: new Date().toISOString(),
     };
     users.push(adminUser);

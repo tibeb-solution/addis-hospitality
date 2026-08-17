@@ -16,6 +16,14 @@ export default function EmployeeSettings() {
     full_name: "",
     email: "",
     phone: "",
+    desired_position: "",
+    years_experience: "",
+    highest_education: "",
+    availability: "",
+    preferred_cities: "",
+    willing_to_relocate: false,
+    expected_salary_min: "",
+    expected_salary_max: "",
   });
   const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
   const [showPasswords, setShowPasswords] = useState(false);
@@ -33,6 +41,14 @@ export default function EmployeeSettings() {
       full_name: currentUser.full_name || "",
       email: currentUser.email || "",
       phone: currentUser.phone || "",
+      desired_position: currentUser.desired_position || "",
+      years_experience: currentUser.years_experience || "",
+      highest_education: currentUser.highest_education || "",
+      availability: currentUser.availability || "",
+      preferred_cities: currentUser.preferred_cities || "",
+      willing_to_relocate: Boolean(currentUser.willing_to_relocate),
+      expected_salary_min: currentUser.expected_salary_min || "",
+      expected_salary_max: currentUser.expected_salary_max || "",
     });
     setLoading(false);
   }, [router]);
@@ -41,7 +57,20 @@ export default function EmployeeSettings() {
     e.preventDefault();
     if (!user) return;
 
-    const updated = { ...user, ...formData };
+    const updated = {
+      ...user,
+      full_name: formData.full_name,
+      phone: formData.phone,
+      desired_position: formData.desired_position,
+      years_experience: formData.years_experience,
+      highest_education: formData.highest_education,
+      availability: formData.availability,
+      preferred_cities: formData.preferred_cities,
+      willing_to_relocate: formData.willing_to_relocate,
+      expected_salary_min: formData.expected_salary_min,
+      expected_salary_max: formData.expected_salary_max,
+    };
+
     setCurrentUser(updated);
     setUser(updated);
 
@@ -152,6 +181,123 @@ export default function EmployeeSettings() {
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Desired Position</label>
+              <input
+                type="text"
+                value={formData.desired_position}
+                onChange={(e) =>
+                  setFormData({ ...formData, desired_position: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Years of Experience</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.years_experience}
+                  onChange={(e) =>
+                    setFormData({ ...formData, years_experience: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Highest Education</label>
+                <select
+                  value={formData.highest_education}
+                  onChange={(e) =>
+                    setFormData({ ...formData, highest_education: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select</option>
+                  <option value="primary">Primary</option>
+                  <option value="secondary">Secondary</option>
+                  <option value="tvet">TVET</option>
+                  <option value="diploma">Diploma</option>
+                  <option value="bachelor">Bachelor</option>
+                  <option value="master">Master</option>
+                  <option value="doctorate">Doctorate</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Availability</label>
+                <select
+                  value={formData.availability}
+                  onChange={(e) =>
+                    setFormData({ ...formData, availability: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select</option>
+                  <option value="immediately">Immediately</option>
+                  <option value="within_two_weeks">Within 2 weeks</option>
+                  <option value="within_a_month">Within a month</option>
+                  <option value="not_available">Not available</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Preferred Cities</label>
+                <input
+                  type="text"
+                  value={formData.preferred_cities}
+                  onChange={(e) =>
+                    setFormData({ ...formData, preferred_cities: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Expected Salary Min</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.expected_salary_min}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expected_salary_min: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Expected Salary Max</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.expected_salary_max}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expected_salary_max: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={formData.willing_to_relocate}
+                onChange={(e) =>
+                  setFormData({ ...formData, willing_to_relocate: e.target.checked })
+                }
+              />
+              Willing to relocate
+            </label>
 
             <Button type="submit" className="w-full md:w-auto">
               {t("common.save")}

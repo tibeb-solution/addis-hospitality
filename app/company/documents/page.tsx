@@ -10,7 +10,6 @@ const DOCUMENT_TYPES = [
   'trade_license',
   'tin_certificate',
   'business_registration',
-  'other',
 ]
 
 export default function CompanyDocumentsPage() {

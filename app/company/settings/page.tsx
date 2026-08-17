@@ -20,8 +20,14 @@ export default function CompanySettings() {
   const [formData, setFormData] = useState({
     company_name: "",
     email: "",
-    contact_phone: "",
+    business_type: "",
+    trade_license_number: "",
+    tin_number: "",
     contact_person: "",
+    contact_phone: "",
+    region: "",
+    sub_city: "",
+    address: "",
   });
   const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
   const [showPasswords, setShowPasswords] = useState(false);
@@ -40,8 +46,14 @@ export default function CompanySettings() {
     setFormData({
       company_name: profile?.company_name || currentUser.full_name || "",
       email: currentUser.email || "",
+      business_type: profile?.business_type || "",
+      trade_license_number: profile?.trade_license_number || "",
+      tin_number: profile?.tin_number || "",
       contact_phone: profile?.contact_phone || currentUser.phone || "",
       contact_person: profile?.contact_person || currentUser.full_name || "",
+      region: profile?.region || "",
+      sub_city: profile?.sub_city || "",
+      address: profile?.address || "",
     });
     setLoading(false);
   }, [router]);
@@ -54,13 +66,27 @@ export default function CompanySettings() {
     const updatedProfile = {
       ...profile,
       company_name: formData.company_name,
+      business_type: formData.business_type,
+      trade_license_number: formData.trade_license_number,
+      tin_number: formData.tin_number,
       contact_phone: formData.contact_phone,
       contact_person: formData.contact_person,
+      region: formData.region,
+      sub_city: formData.sub_city,
+      address: formData.address,
     };
 
     updateCompanyProfile(user.id, updatedProfile);
-    setCurrentUser({ ...user, full_name: formData.company_name, phone: formData.contact_phone || user.phone });
-    setUser({ ...user, full_name: formData.company_name, phone: formData.contact_phone || user.phone });
+    setCurrentUser({
+      ...user,
+      full_name: formData.company_name,
+      phone: formData.contact_phone || user.phone,
+    });
+    setUser({
+      ...user,
+      full_name: formData.company_name,
+      phone: formData.contact_phone || user.phone,
+    });
 
     setMessageType("success");
     setMessage("Company settings updated successfully!");
@@ -158,30 +184,115 @@ export default function CompanySettings() {
               </p>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Business Type</label>
+                <select
+                  value={formData.business_type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, business_type: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select</option>
+                  <option value="hotel">Hotel</option>
+                  <option value="resort">Resort</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="cafe">Cafe</option>
+                  <option value="travel">Travel Agency</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Trade License Number</label>
+                <input
+                  type="text"
+                  value={formData.trade_license_number}
+                  onChange={(e) =>
+                    setFormData({ ...formData, trade_license_number: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Contact Person
-              </label>
+              <label className="block text-sm font-medium mb-2">TIN Number</label>
               <input
                 type="text"
-                value={formData.contact_person}
+                value={formData.tin_number}
                 onChange={(e) =>
-                  setFormData({ ...formData, contact_person: e.target.value })
+                  setFormData({ ...formData, tin_number: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Contact Phone</label>
-              <input
-                type="tel"
-                value={formData.contact_phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, contact_phone: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Contact Person
+                </label>
+                <input
+                  type="text"
+                  value={formData.contact_person}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contact_person: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Phone</label>
+                <input
+                  type="tel"
+                  value={formData.contact_phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contact_phone: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Region</label>
+                <input
+                  type="text"
+                  value={formData.region}
+                  onChange={(e) =>
+                    setFormData({ ...formData, region: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Sub-city</label>
+                <input
+                  type="text"
+                  value={formData.sub_city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sub_city: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Address</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
             </div>
 
             <Button type="submit" className="w-full md:w-auto">

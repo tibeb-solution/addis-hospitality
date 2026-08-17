@@ -9,12 +9,8 @@ import { Button } from '@/components/ui/button'
 const DOCUMENT_TYPES = [
   'national_id',
   'passport',
-  'birth_certificate',
-  'education_certificate',
-  'training_certificate',
-  'work_certificate',
   'cv',
-  'other',
+  'education_certificate',
 ]
 
 export default function EmployeeDocumentsPage() {

@@ -28,12 +28,20 @@ export default function AdminLayout({
       const currentUser = getCurrentUser();
 
       if (!currentUser) {
+        setLoading(false);
         router.push("/auth/login");
         return;
       }
 
       if (currentUser.role !== "admin") {
-        router.push("/auth/error");
+        setLoading(false);
+        router.push("/auth/login");
+        return;
+      }
+
+      if (currentUser.email_verified !== true) {
+        setLoading(false);
+        router.push("/auth/login");
         return;
       }
 
@@ -62,36 +70,39 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <SideNav role="admin" />
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 md:ml-72">
-        <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 min-h-[56px]">
-          <div className="md:hidden">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 ml-auto">
-            <ThemeSwitcher />
-            <LocaleSwitcher />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="text-xs sm:text-sm"
-            >
-              {t("common.logout")}
-            </Button>
+      <div className="flex-1 min-w-0">
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+          <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 min-h-[56px]">
+            <div className="md:hidden">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-2 ml-auto">
+              <ThemeSwitcher />
+              <LocaleSwitcher />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="text-xs sm:text-sm"
+              >
+                {t("common.logout")}
+              </Button>
+            </div>
           </div>
+        </header>
+
+        <div className="px-2 sm:px-4 py-4 sm:py-8 min-h-[calc(100vh-56px)]">
+          <main className="max-w-6xl mx-auto">{children}</main>
         </div>
-      </header>
-
-      <div className="md:ml-72 px-2 sm:px-4 py-4 sm:py-8 min-h-[calc(100vh-56px)]">
-        <main className="max-w-6xl mx-auto">{children}</main>
       </div>
 
       {sidebarOpen && (
