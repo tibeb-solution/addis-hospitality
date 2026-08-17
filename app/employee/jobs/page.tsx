@@ -110,7 +110,9 @@ export default function EmployeeJobsPage() {
               >
                 <h2 className="font-semibold">Interview invitation</h2>
                 <p className="mt-1 text-sm">
-                  {new Date(interview.starts_at).toLocaleString()} • {interview.meeting_type.replace("_", " ")} • {interview.location_or_link}
+                  {new Date(interview.starts_at).toLocaleString()} |{" "}
+                  {interview.meeting_type.replace("_", " ")} |{" "}
+                  {interview.location_or_link}
                 </p>
                 <div className="mt-3 flex gap-2">
                   <Button
@@ -157,11 +159,13 @@ export default function EmployeeJobsPage() {
                   <div>
                     <h3 className="font-semibold">{job.title}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {job.company_name} • {job.location} • {job.employment_type.replace("_", " ")}
+                      {job.company_name} | {job.location} |{" "}
+                      {job.employment_type.replace("_", " ")}
                     </p>
                     <p className="mt-2 text-sm whitespace-pre-wrap">{job.description}</p>
                     <p className="mt-3 text-xs text-muted-foreground">
-                      Skills: {job.skills.join(", ") || "Not specified"} • Match: {score}%
+                      Skills: {job.skills.join(", ") || "Not specified"} |
+                      Match: {score}%
                     </p>
                   </div>
                   <Button disabled={applied} onClick={() => setSelectedJob(job)}>
@@ -198,7 +202,8 @@ export default function EmployeeJobsPage() {
                 <div>
                   <h3 className="font-semibold">{job?.title || "Job posting"}</h3>
                   <p className="text-sm text-muted-foreground capitalize">
-                    {application.status} • Match score {application.match_score}%
+                    {application.status.replace("_", " ")} | Match score{" "}
+                    {application.match_score}%
                   </p>
                 </div>
                 {application.status === "hired" && !rated && (
@@ -237,11 +242,11 @@ export default function EmployeeJobsPage() {
             className="w-full rounded-md border border-input bg-background px-3 py-2"
             defaultValue="5"
           >
-            <option value="5">5 — Excellent</option>
-            <option value="4">4 — Good</option>
-            <option value="3">3 — Average</option>
-            <option value="2">2 — Poor</option>
-            <option value="1">1 — Very poor</option>
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Good</option>
+            <option value="3">3 - Average</option>
+            <option value="2">2 - Poor</option>
+            <option value="1">1 - Very poor</option>
           </select>
           <textarea
             name="review"

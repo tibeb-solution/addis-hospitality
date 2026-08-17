@@ -203,19 +203,21 @@ export function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-slate-800 bg-slate-900/50">
+      <div className="relative z-10 border-t border-emerald-400/20 bg-slate-950/90">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-slate-500">
-              © {currentYear} Addis Hospitality. {t("footer.copyright") || "All rights reserved."}
+          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+            <p className="text-sm font-semibold text-white">
+              &copy; {currentYear} Addis Hospitality.{" "}
+              {t("footer.copyright") || "All rights reserved."}
             </p>
             <a
-              href="#"
-              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-500 transition hover:text-emerald-400"
+              href="https://tibeb-solutions-swda-two.vercel.app/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 transition hover:text-white"
             >
-              <span>{t("footer.builtBy") || "Built with"}</span>
-              <Heart className="h-4 w-4" aria-hidden="true" />
-              <span>{t("footer.forTheIndustry") || "for the hospitality industry"}</span>
+              <span>Developed </span>
+              <span>by Tibeb Solutions</span>
             </a>
           </div>
         </div>

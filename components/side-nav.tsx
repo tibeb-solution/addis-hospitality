@@ -45,6 +45,7 @@ export default function SideNav({
             label: t("admin.companyList"),
             icon: Briefcase,
           },
+          { href: "/admin/jobs", label: "Job Approvals", icon: FileText },
           { href: "/admin/audit", label: t("admin.auditLog"), icon: Archive },
         ]
       : role === "employee"

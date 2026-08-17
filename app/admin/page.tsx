@@ -135,6 +135,9 @@ export default function AdminDashboard() {
           <Link href="/admin/companies">
             <Button variant="outline">{t("admin.companyList")}</Button>
           </Link>
+          <Link href="/admin/jobs">
+            <Button variant="outline">Job Approvals</Button>
+          </Link>
           <Link href="/admin/audit">
             <Button variant="outline">{t("admin.auditLog")}</Button>
           </Link>

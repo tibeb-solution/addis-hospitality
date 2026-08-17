@@ -1,6 +1,12 @@
 "use client";
 
-export type JobStatus = "draft" | "published" | "closed" | "expired";
+export type JobStatus =
+  | "draft"
+  | "pending_review"
+  | "published"
+  | "closed"
+  | "expired"
+  | "rejected";
 export type ApplicationStatus =
   | "applied"
   | "shortlisted"
@@ -79,6 +85,8 @@ const keys = {
   ratings: "ah_ratings",
 };
 
+const ADMIN_USER_ID = "admin-001";
+
 function id() {
   return crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
 }
@@ -108,14 +116,48 @@ export const recruitment = {
     const now = new Date().toISOString();
     const job = { ...input, id: id(), created_at: now, updated_at: now };
     write(keys.jobs, [...this.jobs(), job]);
+    if (job.status === "pending_review") {
+      this.notify(
+        ADMIN_USER_ID,
+        "Job pending approval",
+        `${job.company_name} submitted ${job.title} for review.`,
+        "job_review",
+      );
+    }
     return job;
   },
   updateJob(jobId: string, updates: Partial<Job>) {
-    write(keys.jobs, this.jobs().map((job) =>
-      job.id === jobId ? { ...job, ...updates, updated_at: new Date().toISOString() } : job,
-    ));
+    const before = this.jobs().find((job) => job.id === jobId);
+    const updatedAt = new Date().toISOString();
+    write(
+      keys.jobs,
+      this.jobs().map((job) =>
+        job.id === jobId ? { ...job, ...updates, updated_at: updatedAt } : job,
+      ),
+    );
+
+    if (before && updates.status && updates.status !== before.status) {
+      const statusMessages: Partial<Record<JobStatus, string>> = {
+        pending_review: "Your job posting was sent to admin review.",
+        published: "Your job posting was approved and is now visible to employees.",
+        rejected: "Your job posting was rejected by the admin.",
+        closed: "Your job posting was closed.",
+      };
+      this.notify(
+        before.company_id,
+        "Job status updated",
+        `${before.title}: ${statusMessages[updates.status] ?? `Status changed to ${updates.status}.`}`,
+        "job",
+      );
+    }
   },
   apply(job: Job, employeeId: string, profile: any, coverNote?: string) {
+    if (job.status !== "published") {
+      throw new Error("This job is not open for applications yet.");
+    }
+    if (job.application_deadline && new Date(job.application_deadline) < new Date()) {
+      throw new Error("The application deadline for this job has passed.");
+    }
     if (this.applications().some((item) => item.job_id === job.id && item.employee_id === employeeId)) {
       throw new Error("You have already applied for this job.");
     }

@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   salary_min integer CHECK (salary_min IS NULL OR salary_min >= 0),
   salary_max integer CHECK (salary_max IS NULL OR salary_max >= salary_min),
   application_deadline timestamptz,
-  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','closed','expired')),
+  status text NOT NULL DEFAULT 'pending_review' CHECK (status IN ('draft','pending_review','published','closed','expired','rejected')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

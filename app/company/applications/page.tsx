@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   getCurrentUser,
@@ -17,6 +17,7 @@ export default function CompanyApplicationsPage() {
   const [when, setWhen] = useState("");
   const [meetingType, setMeetingType] = useState("in_person");
   const [place, setPlace] = useState("");
+  const [message, setMessage] = useState("");
 
   const refresh = () => {
     const current = getCurrentUser();
@@ -50,6 +51,7 @@ export default function CompanyApplicationsPage() {
 
   const update = (application: Application, status: Application["status"]) => {
     recruitment.updateApplication(application.id, status);
+    setMessage(`Application marked as ${status.replace("_", " ")}.`);
     refresh();
   };
 
@@ -68,15 +70,9 @@ export default function CompanyApplicationsPage() {
     setScheduleFor(null);
     setWhen("");
     setPlace("");
+    setMessage("Interview invitation sent.");
     refresh();
   };
-
-  const candidateMap = useMemo(() => {
-    const all = [...getEmployeeProfiles(), ...recruitment.applications()];
-    return Object.fromEntries(
-      all.map((item: any) => [item.id, item]),
-    );
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -85,6 +81,7 @@ export default function CompanyApplicationsPage() {
         <p className="mt-1 text-muted-foreground">
           Review candidates and move them through a controlled hiring pipeline.
         </p>
+        {message && <p className="mt-2 text-sm text-primary">{message}</p>}
       </div>
 
       {applications.length === 0 ? (
@@ -120,9 +117,9 @@ export default function CompanyApplicationsPage() {
                   </div>
 
                   <p className="text-sm text-muted-foreground">
-                    Match score: {application.match_score}% • Status: {" "}
+                    Match score: {application.match_score}% | Status:{" "}
                     <span className="capitalize text-foreground">
-                      {application.status}
+                      {application.status.replace("_", " ")}
                     </span>
                   </p>
 
@@ -137,7 +134,15 @@ export default function CompanyApplicationsPage() {
                   <Button size="sm" variant="outline" onClick={() => update(application, "shortlisted")}>
                     Shortlist
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setScheduleFor(application)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      application.status === "rejected" ||
+                      application.status === "hired"
+                    }
+                    onClick={() => setScheduleFor(application)}
+                  >
                     Interview
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => update(application, "hired")}>
