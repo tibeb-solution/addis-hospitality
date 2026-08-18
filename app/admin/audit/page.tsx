@@ -32,7 +32,7 @@ export default function AdminAuditLogPage() {
         profiles
           ?.filter((profile: any) => profile.role === "employee")
           .map((emp: any) => ({
-            id: emp.id,
+            id: `employee-${emp.id}-${emp.reviewed_at || emp.created_at || "unknown"}`,
             user: emp.email,
             action: emp.reviewed_at ? "status_change" : "signup",
             details: `Status: ${emp.status}`,
@@ -44,7 +44,7 @@ export default function AdminAuditLogPage() {
 
       const companyLogs =
         companies?.map((company: any) => ({
-          id: `company-${company.id}`,
+          id: `company-${company.id}-${company.reviewed_at || company.created_at || "unknown"}`,
           user: company.email || company.company_name || "—",
           action: company.reviewed_at ? "status_change" : "signup",
           details: company.is_verified

@@ -88,14 +88,6 @@ export default function AdminLayout({
             <div className="flex items-center gap-1 sm:gap-2 ml-auto">
               <ThemeSwitcher />
               <LocaleSwitcher />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="text-xs sm:text-sm"
-              >
-                {t("common.logout")}
-              </Button>
             </div>
           </div>
         </header>

@@ -136,10 +136,14 @@ export default function CompanyLayout({
               <button
                 onClick={() => toggleTheme()}
                 title={
-                  theme === "dark" ? t("common.lightMode") : t("common.darkMode")
+                  theme === "dark"
+                    ? t("common.lightMode")
+                    : t("common.darkMode")
                 }
                 aria-label={
-                  theme === "dark" ? t("common.lightMode") : t("common.darkMode")
+                  theme === "dark"
+                    ? t("common.lightMode")
+                    : t("common.darkMode")
                 }
                 className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card mr-2 focus:outline-none focus:ring-2 focus:ring-primary"
               >
@@ -149,6 +153,8 @@ export default function CompanyLayout({
                   <Moon className="w-5 h-5" />
                 )}
               </button>
+
+              <LocaleSwitcher />
 
               <button
                 ref={buttonRef}
@@ -178,84 +184,7 @@ export default function CompanyLayout({
                   ref={menuRef}
                   className="absolute right-0 mt-12 w-44 bg-card border border-border rounded-md shadow-md z-50"
                 >
-                  <ul className="py-1">
-                    <li
-                      className="relative"
-                      onMouseEnter={() => setLocalesOpen(true)}
-                      onMouseLeave={() => setLocalesOpen(false)}
-                    >
-                      <button
-                        onClick={() => setLocalesOpen((s) => !s)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10 flex items-center justify-between"
-                      >
-                        <span>Language</span>
-                        <svg
-                          className="w-3 h-3"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          aria-hidden
-                        >
-                          <path
-                            d="M6 8l4 4 4-4"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-
-                      {localesOpen && (
-                        <ul className="absolute left-0 top-full mt-1 w-44 bg-card border border-border rounded-md shadow-md z-50">
-                          <li>
-                            <button
-                              onClick={async () => {
-                                await fetch("/api/locale", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ locale: "en" }),
-                                });
-                                setMenuOpen(false);
-                                setLocalesOpen(false);
-                                setTimeout(() => router.refresh(), 100);
-                              }}
-                              className={`w-full text-left px-3 py-2 text-sm`}
-                            >
-                              English
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              onClick={async () => {
-                                await fetch("/api/locale", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ locale: "am" }),
-                                });
-                                setMenuOpen(false);
-                                setLocalesOpen(false);
-                                setTimeout(() => router.refresh(), 100);
-                              }}
-                              className={`w-full text-left px-3 py-2 text-sm font-ethiopic`}
-                            >
-                              አማርኛ
-                            </button>
-                          </li>
-                        </ul>
-                      )}
-                    </li>
-
-                    <li>
-                      <button
-                        onClick={() => {
-                          handleLogout();
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10"
-                      >
-                        {t("common.logout")}
-                      </button>
-                    </li>
-                  </ul>
+                  <ul className="py-1" />
                 </div>
               )}
             </div>

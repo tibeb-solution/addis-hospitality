@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import SideNav from "@/components/side-nav";
@@ -64,31 +65,8 @@ export default function EmployeeLayout({
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [localesOpen, setLocalesOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
-
-  const LOCALES: { key: "en" | "am"; label: string; className?: string }[] = [
-    { key: "en", label: "English" },
-    { key: "am", label: "አማርኛ", className: "font-ethiopic" },
-  ];
-
-  const setLocale = async (locale: "en" | "am") => {
-    try {
-      const res = await fetch("/api/locale", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale }),
-      });
-      if (res.ok) {
-        setMenuOpen(false);
-        setLocalesOpen(false);
-        setTimeout(() => router.refresh(), 100);
-      }
-    } catch (e) {
-      console.error("Failed to change locale", e);
-    }
-  };
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -160,6 +138,7 @@ export default function EmployeeLayout({
 
             <div className="flex items-center gap-2 ml-auto relative">
               <ThemeSwitcher />
+              <LocaleSwitcher />
 
               <button
                 ref={buttonRef}
@@ -189,60 +168,7 @@ export default function EmployeeLayout({
                   ref={menuRef}
                   className="absolute right-0 mt-12 w-44 bg-card border border-border rounded-md shadow-md z-50"
                 >
-                  <ul className="py-1">
-                    <li
-                      className="relative"
-                      onMouseEnter={() => setLocalesOpen(true)}
-                      onMouseLeave={() => setLocalesOpen(false)}
-                    >
-                      <button
-                        onClick={() => setLocalesOpen((s) => !s)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10 flex items-center justify-between"
-                      >
-                        <span>Language</span>
-                        <svg
-                          className="w-3 h-3"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          aria-hidden
-                        >
-                          <path
-                            d="M6 8l4 4 4-4"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-
-                      {localesOpen && (
-                        <ul className="absolute left-0 top-full mt-1 w-44 bg-card border border-border rounded-md shadow-md z-50">
-                          {LOCALES.map((opt) => (
-                            <li key={opt.key}>
-                              <button
-                                onClick={() => setLocale(opt.key)}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent/10 ${opt.className || ""}`}
-                              >
-                                {opt.label}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-
-                    <li>
-                      <button
-                        onClick={() => {
-                          handleLogout();
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/10"
-                      >
-                        {t("common.logout")}
-                      </button>
-                    </li>
-                  </ul>
+                  <ul className="py-1" />
                 </div>
               )}
             </div>
