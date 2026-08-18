@@ -21,15 +21,27 @@ export function Footer() {
   const navigationLinks = {
     jobSeekers: [
       { label: t("footer.browseJobs") || "Browse Jobs", href: "/jobs" },
-      { label: t("footer.myApplications") || "My Applications", href: "/employee/jobs" },
-      { label: t("footer.savedJobs") || "Saved Jobs", href: "/employee/profile" },
+      {
+        label: t("footer.myApplications") || "My Applications",
+        href: "/employee/jobs",
+      },
+      {
+        label: t("footer.savedJobs") || "Saved Jobs",
+        href: "/employee/profile",
+      },
       { label: t("footer.profile") || "Profile", href: "/employee/profile" },
     ],
     employers: [
       { label: t("footer.postJob") || "Post a Job", href: "/company/jobs" },
       { label: t("footer.recruiterDashboard") || "Dashboard", href: "/admin" },
-      { label: t("footer.applications") || "Applications", href: "/admin/companies" },
-      { label: t("footer.companyProfile") || "Company Profile", href: "/company/profile" },
+      {
+        label: t("footer.applications") || "Applications",
+        href: "/admin/companies",
+      },
+      {
+        label: t("footer.companyProfile") || "Company Profile",
+        href: "/company/profile",
+      },
     ],
     company: [
       { label: t("footer.about") || "About", href: "/about" },
@@ -38,8 +50,14 @@ export function Footer() {
       { label: t("footer.careers") || "Careers", href: "/company" },
     ],
     legal: [
-      { label: t("footer.privacyPolicy") || "Privacy Policy", href: "/privacy" },
-      { label: t("footer.termsOfService") || "Terms of Service", href: "/terms" },
+      {
+        label: t("footer.privacyPolicy") || "Privacy Policy",
+        href: "/privacy",
+      },
+      {
+        label: t("footer.termsOfService") || "Terms of Service",
+        href: "/terms",
+      },
       { label: t("footer.cookiePolicy") || "Cookie Policy", href: "/terms" },
     ],
   };
@@ -53,9 +71,15 @@ export function Footer() {
 
   return (
     <footer className="relative overflow-hidden border-t border-emerald-500/20 bg-emerald-950 text-slate-100 shadow-[0_-18px_48px_rgba(16,185,129,0.12)]">
-      <div className="footer-gradient-motion absolute inset-0" aria-hidden="true" />
+      <div
+        className="footer-gradient-motion absolute inset-0"
+        aria-hidden="true"
+      />
       <div className="footer-line-field absolute inset-0" aria-hidden="true" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,78,59,0.82),rgba(2,44,34,0.94))]" aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,78,59,0.82),rgba(2,44,34,0.94))]"
+        aria-hidden="true"
+      />
 
       {/* Main Footer Content */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-9 sm:px-6 sm:py-10 lg:px-8">
@@ -92,7 +116,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               {navigationLinks.jobSeekers.map(({ label, href }) => (
-                <li key={href}>
+                <li key={`${href}-${label}`}>
                   <Link
                     href={href}
                     className="text-xs text-emerald-50/70 transition hover:text-white"
@@ -110,7 +134,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               {navigationLinks.employers.map(({ label, href }) => (
-                <li key={href}>
+                <li key={`${href}-${label}`}>
                   <Link
                     href={href}
                     className="text-xs text-emerald-50/70 transition hover:text-white"
@@ -128,7 +152,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               {navigationLinks.company.map(({ label, href }) => (
-                <li key={href}>
+                <li key={`${href}-${label}`}>
                   <Link
                     href={href}
                     className="text-xs text-emerald-50/70 transition hover:text-white"
@@ -146,7 +170,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               {navigationLinks.legal.map(({ label, href }) => (
-                <li key={href}>
+                <li key={`${href}-${label}`}>
                   <Link
                     href={href}
                     className="text-xs text-emerald-50/70 transition hover:text-white"
@@ -186,7 +210,9 @@ export function Footer() {
               </div>
               <div>
                 <p className="text-[11px] text-emerald-50/55">Phone</p>
-                <p className="text-sm font-medium text-white">+251 94 124 8888</p>
+                <p className="text-sm font-medium text-white">
+                  +251 94 124 8888
+                </p>
               </div>
             </a>
 
@@ -196,7 +222,9 @@ export function Footer() {
               </div>
               <div>
                 <p className="text-[11px] text-emerald-50/55">Location</p>
-                <p className="text-sm font-medium text-white">Addis Ababa, Ethiopia</p>
+                <p className="text-sm font-medium text-white">
+                  Addis Ababa, Ethiopia
+                </p>
               </div>
             </div>
           </div>

@@ -29,6 +29,8 @@
     "email": "ኢሜይል",
     "password": "ይለፍ ቃል",
     "passwordConfirm": "ይለፍ ቃል ያረጋግጡ",
+    "showPassword": "የይለፍ ቃል አሳይ",
+    "hidePassword": "የይለፍ ቃል ደብቅ",
     "forgotPassword": "ይለፍ ቃል ረስተውት?",
     "resetPassword": "ይለፍ ቃል ዳግም ያስጀምሩ",
     "noAccount": "መለያ የላዎት?",
