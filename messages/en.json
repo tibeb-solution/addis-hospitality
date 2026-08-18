@@ -21,7 +21,10 @@
     "upload": "Upload",
     "yes": "Yes",
     "no": "No",
-    "complete": "Complete"
+    "complete": "Complete",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "systemMode": "System mode"
   },
   "auth": {
     "signUp": "Sign Up",

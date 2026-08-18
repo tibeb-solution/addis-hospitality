@@ -21,7 +21,10 @@
     "upload": "ይወቅዱ",
     "yes": "አዎ",
     "no": "አይ",
-    "complete": "ሙሉ"
+    "complete": "ሙሉ",
+    "lightMode": "ብርሃን ሁኔታ",
+    "darkMode": "ጨለማ ሁኔታ",
+    "systemMode": "የስርዓት ሁኔታ"
   },
   "auth": {
     "signUp": "ይመዝገቡ",
