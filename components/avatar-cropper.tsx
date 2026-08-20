@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 
 interface Props {
@@ -82,13 +83,18 @@ export default function AvatarCropper({
     }
   }, [imageSrc, crop, zoom, onComplete]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+  if (typeof document === "undefined" || !document.body) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6"
+      style={{ position: "fixed", inset: 0, zIndex: 9999 }}
+    >
       <div
         ref={containerRef}
-        className="bg-card rounded-lg p-4 w-[90vw] max-w-2xl"
+        className="my-auto max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-card p-4 shadow-xl sm:p-6"
       >
-        <div className="relative h-80 bg-black rounded">
+        <div className="relative h-[min(50vh,34rem)] min-h-56 rounded bg-black">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -96,12 +102,15 @@ export default function AvatarCropper({
             aspect={1}
             onCropChange={setCrop}
             onZoomChange={setZoom}
+            objectFit="contain"
           />
         </div>
 
-        <div className="mt-4 flex items-center gap-4">
-          <label className="flex-1">
-            <div className="text-sm text-muted-foreground">Zoom</div>
+        <div className="mt-4 space-y-4">
+          <label className="block">
+            <div className="mb-2 text-sm text-muted-foreground">
+              Zoom out or in
+            </div>
             <input
               type="range"
               min={1}
@@ -113,19 +122,25 @@ export default function AvatarCropper({
             />
           </label>
 
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <button className="px-3 py-2 rounded border" onClick={onCancel}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              className="rounded border px-4 py-2"
+              onClick={onCancel}
+            >
               Cancel
             </button>
             <button
-              className="px-3 py-2 rounded bg-primary text-primary-foreground"
+              type="button"
+              className="rounded bg-primary px-4 py-2 text-primary-foreground"
               onClick={handleConfirm}
             >
-              Apply
+              Set photo
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

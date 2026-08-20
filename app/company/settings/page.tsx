@@ -11,12 +11,14 @@ import {
   updateUserPasswordByEmail,
   updateCompanyProfile,
 } from "@/lib/local-storage";
+import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { Mail, Lock, Building, Eye, EyeOff } from "lucide-react";
 
 export default function CompanySettings() {
   const t = useTranslations();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [logoPath, setLogoPath] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     company_name: "",
@@ -50,6 +52,7 @@ export default function CompanySettings() {
 
     const profile = getCompanyProfile(currentUser.id);
     setUser(currentUser);
+    setLogoPath(profile?.logo_url || null);
     setFormData({
       company_name: profile?.company_name || currentUser.full_name || "",
       email: currentUser.email || "",
@@ -164,6 +167,22 @@ export default function CompanySettings() {
           }`}
         >
           {message}
+        </div>
+      )}
+
+      {user && (
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Company logo</h2>
+          <ProfilePhotoEditor
+            userId={user.id}
+            table="company_profiles"
+            field="logo_url"
+            initialPath={logoPath}
+            label="Change logo"
+            alt="Company logo"
+            shape="square"
+            onSaved={setLogoPath}
+          />
         </div>
       )}
 

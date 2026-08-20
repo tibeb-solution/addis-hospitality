@@ -5,16 +5,19 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
+  getEmployeeProfile,
   getCurrentUser,
   setCurrentUser,
   updateUserPasswordByEmail,
 } from "@/lib/local-storage";
+import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 export default function EmployeeSettings() {
   const t = useTranslations();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -47,6 +50,7 @@ export default function EmployeeSettings() {
       return;
     }
     setUser(currentUser);
+    setAvatarPath(getEmployeeProfile(currentUser.id)?.avatar_url || null);
     setFormData({
       full_name: currentUser.full_name || "",
       email: currentUser.email || "",
@@ -150,6 +154,21 @@ export default function EmployeeSettings() {
           }`}
         >
           {message}
+        </div>
+      )}
+
+      {user && (
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Profile photo</h2>
+          <ProfilePhotoEditor
+            userId={user.id}
+            table="employee_profiles"
+            field="avatar_url"
+            initialPath={avatarPath}
+            label="Change photo"
+            alt="Profile photo"
+            onSaved={setAvatarPath}
+          />
         </div>
       )}
 
