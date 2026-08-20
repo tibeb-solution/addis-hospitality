@@ -111,7 +111,7 @@ export default function AdminCompaniesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[500px]">
+            <table className="w-full min-w-125">
               <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium">
@@ -159,7 +159,11 @@ export default function AdminCompaniesPage() {
                       {comp.company_name || "—"}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      {t(`taxonomy.business_${comp.business_type}`) || "—"}
+                      {comp.business_type
+                        ? t.has(`taxonomy.business_${comp.business_type}`)
+                          ? t(`taxonomy.business_${comp.business_type}`)
+                          : comp.business_type
+                        : "—"}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap">
                       {comp.created_at

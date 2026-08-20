@@ -14,6 +14,7 @@ import {
   X,
   Settings,
   LogOut,
+  CalendarDays,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { clearCurrentUser } from "@/lib/local-storage";
@@ -57,6 +58,11 @@ export default function SideNav({
             },
             { href: "/employee/jobs", label: "Jobs", icon: Briefcase },
             {
+              href: "/employee/schedule",
+              label: "Schedule & notifications",
+              icon: CalendarDays,
+            },
+            {
               href: "/employee/documents",
               label: t("nav.documents"),
               icon: FileText,
@@ -81,7 +87,9 @@ export default function SideNav({
             },
           ];
 
-  const base = mobile ? "fixed inset-0 z-50" : "hidden md:flex md:sticky md:top-0 md:h-screen";
+  const base = mobile
+    ? "fixed inset-0 z-50"
+    : "hidden md:flex md:sticky md:top-0 md:h-screen";
   const panel = mobile
     ? "w-72 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in flex flex-col"
     : "flex-col w-72 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";

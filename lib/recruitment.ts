@@ -139,7 +139,8 @@ export const recruitment = {
     if (before && updates.status && updates.status !== before.status) {
       const statusMessages: Partial<Record<JobStatus, string>> = {
         pending_review: "Your job posting was sent to admin review.",
-        published: "Your job posting was approved and is now visible to employees.",
+        published:
+          "Your job posting was approved and is now visible to employees.",
         rejected: "Your job posting was rejected by the admin.",
         closed: "Your job posting was closed.",
       };
@@ -155,53 +156,142 @@ export const recruitment = {
     if (job.status !== "published") {
       throw new Error("This job is not open for applications yet.");
     }
-    if (job.application_deadline && new Date(job.application_deadline) < new Date()) {
+    if (
+      job.application_deadline &&
+      new Date(job.application_deadline) < new Date()
+    ) {
       throw new Error("The application deadline for this job has passed.");
     }
-    if (this.applications().some((item) => item.job_id === job.id && item.employee_id === employeeId)) {
+    if (
+      this.applications().some(
+        (item) => item.job_id === job.id && item.employee_id === employeeId,
+      )
+    ) {
       throw new Error("You have already applied for this job.");
     }
     const now = new Date().toISOString();
     const application: Application = {
-      id: id(), job_id: job.id, employee_id: employeeId, status: "applied",
-      match_score: this.matchScore(job, profile), cover_note: coverNote,
-      created_at: now, updated_at: now,
+      id: id(),
+      job_id: job.id,
+      employee_id: employeeId,
+      status: "applied",
+      match_score: this.matchScore(job, profile),
+      cover_note: coverNote,
+      created_at: now,
+      updated_at: now,
     };
     write(keys.applications, [...this.applications(), application]);
-    this.notify(job.company_id, "New application", `A candidate applied for ${job.title}.`, "application");
+    this.notify(
+      job.company_id,
+      "New application",
+      `A candidate applied for ${job.title}.`,
+      "application",
+    );
+    this.notify(
+      ADMIN_USER_ID,
+      "New application",
+      `A candidate applied for ${job.title}.`,
+      "application",
+    );
     return application;
   },
   updateApplication(applicationId: string, status: ApplicationStatus) {
-    const application = this.applications().find((item) => item.id === applicationId);
+    const application = this.applications().find(
+      (item) => item.id === applicationId,
+    );
     if (!application) return;
-    write(keys.applications, this.applications().map((item) =>
-      item.id === applicationId ? { ...item, status, updated_at: new Date().toISOString() } : item,
-    ));
+    write(
+      keys.applications,
+      this.applications().map((item) =>
+        item.id === applicationId
+          ? { ...item, status, updated_at: new Date().toISOString() }
+          : item,
+      ),
+    );
     const job = this.jobs().find((item) => item.id === application.job_id);
-    this.notify(application.employee_id, "Application update", `Your application for ${job?.title ?? "a job"} is now ${status}.`, "application");
+    this.notify(
+      application.employee_id,
+      "Application update",
+      `Your application for ${job?.title ?? "a job"} is now ${status}.`,
+      "application",
+    );
+    this.notify(
+      ADMIN_USER_ID,
+      "Application update",
+      `${job?.title ?? "A job application"} is now ${status}.`,
+      "application",
+    );
   },
   scheduleInterview(input: Omit<Interview, "id" | "created_at" | "status">) {
-    const interview = { ...input, id: id(), status: "proposed" as const, created_at: new Date().toISOString() };
+    const interview = {
+      ...input,
+      id: id(),
+      status: "proposed" as const,
+      created_at: new Date().toISOString(),
+    };
     write(keys.interviews, [...this.interviews(), interview]);
     this.updateApplication(input.application_id, "interview");
-    this.notify(input.employee_id, "Interview invitation", `You have a proposed ${input.meeting_type.replace("_", " ")} interview.`, "interview");
+    const application = this.applications().find(
+      (item) => item.id === input.application_id,
+    );
+    const job = this.jobs().find((item) => item.id === application?.job_id);
+    this.notify(
+      input.employee_id,
+      "Interview invitation",
+      `You have a proposed ${input.meeting_type.replace("_", " ")} interview.`,
+      "interview",
+    );
+    this.notify(
+      ADMIN_USER_ID,
+      "Interview scheduled",
+      `An interview was scheduled for ${job?.title ?? "a job application"}.`,
+      "interview",
+    );
     return interview;
   },
   respondToInterview(interviewId: string, status: "accepted" | "declined") {
-    write(keys.interviews, this.interviews().map((item) => item.id === interviewId ? { ...item, status } : item));
+    write(
+      keys.interviews,
+      this.interviews().map((item) =>
+        item.id === interviewId ? { ...item, status } : item,
+      ),
+    );
   },
   notify(userId: string, title: string, body: string, type: string) {
-    const note: Notification = { id: id(), user_id: userId, title, body, type, created_at: new Date().toISOString() };
-    write(keys.notifications, [...read<Notification>(keys.notifications), note]);
+    const note: Notification = {
+      id: id(),
+      user_id: userId,
+      title,
+      body,
+      type,
+      created_at: new Date().toISOString(),
+    };
+    write(keys.notifications, [
+      ...read<Notification>(keys.notifications),
+      note,
+    ]);
   },
   markRead(notificationId: string) {
-    write(keys.notifications, read<Notification>(keys.notifications).map((item) =>
-      item.id === notificationId ? { ...item, read_at: new Date().toISOString() } : item,
-    ));
+    write(
+      keys.notifications,
+      read<Notification>(keys.notifications).map((item) =>
+        item.id === notificationId
+          ? { ...item, read_at: new Date().toISOString() }
+          : item,
+      ),
+    );
   },
   rate(input: Omit<Rating, "id" | "created_at">) {
-    if (this.ratings().some((rating) => rating.application_id === input.application_id && rating.author_id === input.author_id)) {
-      throw new Error("You have already submitted a rating for this employment.");
+    if (
+      this.ratings().some(
+        (rating) =>
+          rating.application_id === input.application_id &&
+          rating.author_id === input.author_id,
+      )
+    ) {
+      throw new Error(
+        "You have already submitted a rating for this employment.",
+      );
     }
     const rating = { ...input, id: id(), created_at: new Date().toISOString() };
     write(keys.ratings, [...this.ratings(), rating]);
@@ -209,16 +299,37 @@ export const recruitment = {
   },
   matchScore(job: Job, profile: any) {
     let score = 0;
-    const normalize = (values: unknown) => Array.isArray(values) ? values.map((value) => String(value).toLowerCase()) : String(values || "").toLowerCase().split(",").map((value) => value.trim()).filter(Boolean);
+    const normalize = (values: unknown) =>
+      Array.isArray(values)
+        ? values.map((value) => String(value).toLowerCase())
+        : String(values || "")
+            .toLowerCase()
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean);
     const profileSkills = normalize(profile?.skills);
     const jobSkills = normalize(job.skills);
-    const matchedSkills = jobSkills.filter((skill) => profileSkills.includes(skill)).length;
-    if (jobSkills.length) score += Math.round((matchedSkills / jobSkills.length) * 45);
-    if (Number(profile?.years_experience || 0) >= job.experience_required) score += 25;
-    if (String(profile?.preferred_cities || "").toLowerCase().includes(job.location.toLowerCase()) || profile?.willing_to_relocate) score += 15;
+    const matchedSkills = jobSkills.filter((skill) =>
+      profileSkills.includes(skill),
+    ).length;
+    if (jobSkills.length)
+      score += Math.round((matchedSkills / jobSkills.length) * 45);
+    if (Number(profile?.years_experience || 0) >= job.experience_required)
+      score += 25;
+    if (
+      String(profile?.preferred_cities || "")
+        .toLowerCase()
+        .includes(job.location.toLowerCase()) ||
+      profile?.willing_to_relocate
+    )
+      score += 15;
     const profileLanguages = normalize(profile?.languages);
     const jobLanguages = normalize(job.languages);
-    if (!jobLanguages.length || jobLanguages.some((language) => profileLanguages.includes(language))) score += 15;
+    if (
+      !jobLanguages.length ||
+      jobLanguages.some((language) => profileLanguages.includes(language))
+    )
+      score += 15;
     return Math.min(score, 100);
   },
 };

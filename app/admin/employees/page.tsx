@@ -13,6 +13,9 @@ export default function AdminEmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [professionFilter, setProfessionFilter] = useState("");
+  const [experienceFilter, setExperienceFilter] = useState("");
 
   useEffect(() => {
     const loadEmployees = async () => {
@@ -37,8 +40,13 @@ export default function AdminEmployeesPage() {
               const { data: signed } = supabase.storage
                 .from("avatars")
                 .getPublicUrl(profile.avatar_url);
-              return { ...emp, avatarUrl: signed.publicUrl || "" };
+              return {
+                ...emp,
+                ...profile,
+                avatarUrl: signed.publicUrl || "",
+              };
             }
+            if (profile) return { ...emp, ...profile };
           } catch (e) {
             // ignore
           }
@@ -69,8 +77,44 @@ export default function AdminEmployeesPage() {
       results = results.filter((emp) => emp.status === statusFilter);
     }
 
+    if (locationFilter) {
+      const location = locationFilter.toLowerCase();
+      results = results.filter((emp) =>
+        [emp.preferred_cities, emp.location, emp.region, emp.sub_city]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(location)),
+      );
+    }
+
+    if (professionFilter) {
+      const profession = professionFilter.toLowerCase();
+      results = results.filter((emp) =>
+        [emp.desired_position, emp.profession, emp.job_title]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(profession)),
+      );
+    }
+
+    if (experienceFilter) {
+      results = results.filter((emp) => {
+        const years = Number(emp.years_experience);
+        if (!Number.isFinite(years)) return false;
+        if (experienceFilter === "0-2") return years <= 2;
+        if (experienceFilter === "3-5") return years >= 3 && years <= 5;
+        if (experienceFilter === "6-10") return years >= 6 && years <= 10;
+        return years >= 11;
+      });
+    }
+
     setFiltered(results);
-  }, [search, statusFilter, employees]);
+  }, [
+    search,
+    statusFilter,
+    locationFilter,
+    professionFilter,
+    experienceFilter,
+    employees,
+  ]);
 
   if (loading) {
     return <div>{t("common.loading")}</div>;
@@ -82,7 +126,7 @@ export default function AdminEmployeesPage() {
 
       {/* Filters */}
       <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <div className="space-y-2">
             <label className="text-xs sm:text-sm font-medium">
               {t("admin.searchEmployee")}
@@ -112,6 +156,40 @@ export default function AdminEmployeesPage() {
               <option value="rejected">{t("taxonomy.status_rejected")}</option>
             </select>
           </div>
+          <div className="space-y-2">
+            <label className="text-xs sm:text-sm font-medium">Location</label>
+            <input
+              placeholder="Search location"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs sm:text-sm font-medium">Profession</label>
+            <input
+              placeholder="Search profession"
+              value={professionFilter}
+              onChange={(e) => setProfessionFilter(e.target.value)}
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs sm:text-sm font-medium">
+              Experience years
+            </label>
+            <select
+              value={experienceFilter}
+              onChange={(e) => setExperienceFilter(e.target.value)}
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-input rounded-md bg-background text-foreground"
+            >
+              <option value="">Any experience</option>
+              <option value="0-2">0-2 years</option>
+              <option value="3-5">3-5 years</option>
+              <option value="6-10">6-10 years</option>
+              <option value="11+">11+ years</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -123,7 +201,7 @@ export default function AdminEmployeesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[500px]">
+            <table className="w-full min-w-125">
               <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium">

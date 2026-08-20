@@ -16,6 +16,12 @@ import {
   Video,
   X,
   Layers3,
+  ArrowRight,
+  BriefcaseBusiness,
+  CalendarDays,
+  ClipboardCheck,
+  Hotel,
+  UsersRound,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -267,6 +273,79 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Services Section */}
+      <section className="border-y border-border bg-card/60 px-4 py-12 sm:py-20 scroll-mt-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+                Our services
+              </p>
+              <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
+                Practical hospitality support, from people to operations.
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+                We help hospitality businesses find the right people, run
+                memorable events, and keep their operations organized with
+                dependable systems.
+              </p>
+            </div>
+            <Link
+              href="/services"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+            >
+              Explore all services <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: BriefcaseBusiness,
+                title: "Employment agency",
+                description:
+                  "Recruitment and placement for hotels, restaurants, resorts, events, and other hospitality teams.",
+              },
+              {
+                icon: CalendarDays,
+                title: "Event organization",
+                description:
+                  "Planning, coordination, staffing, and guest-ready execution for hospitality and corporate events.",
+              },
+              {
+                icon: ClipboardCheck,
+                title: "Asset counting systems",
+                description:
+                  "Simple digital tools for tracking hospitality assets, stock, equipment, and operational accountability.",
+              },
+              {
+                icon: Hotel,
+                title: "Hospitality operations",
+                description:
+                  "Practical support that helps hospitality organizations improve daily service and operational consistency.",
+              },
+              {
+                icon: UsersRound,
+                title: "Workforce coordination",
+                description:
+                  "Connect qualified professionals with the right opportunities and help teams grow with confidence.",
+              },
+            ].map(({ icon: Icon, title, description }) => (
+              <div
+                key={title}
+                className="rounded-lg border border-border bg-background p-5 transition-colors hover:border-primary/50"
+              >
+                <Icon className="h-7 w-7 text-primary" />
+                <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-12 sm:py-16 px-4 bg-gradient-to-r from-primary to-accent scroll-mt-20">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 text-center text-primary-foreground">
@@ -295,7 +374,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

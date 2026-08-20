@@ -10,6 +10,13 @@ interface Props {
   onComplete: (blob: Blob) => void;
 }
 
+interface CropAreaPixels {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -22,9 +29,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
 
 async function getCroppedImg(
   imageSrc: string,
-  crop: { x: number; y: number },
-  zoom: number,
-  aspect = 1,
+  cropAreaPixels: CropAreaPixels | null,
   outputSize = 512,
 ): Promise<Blob> {
   const image = await createImage(imageSrc);
@@ -34,22 +39,23 @@ async function getCroppedImg(
   const naturalWidth = image.naturalWidth;
   const naturalHeight = image.naturalHeight;
 
-  // calculate crop box in pixels
-  const cropWidth = naturalWidth / zoom;
-  const cropHeight = naturalHeight / zoom;
-
-  const sx = naturalWidth / 2 - cropWidth / 2 + crop.x;
-  const sy = naturalHeight / 2 - cropHeight / 2 + crop.y;
+  const cropSize = Math.min(naturalWidth, naturalHeight);
+  const crop = cropAreaPixels || {
+    x: (naturalWidth - cropSize) / 2,
+    y: (naturalHeight - cropSize) / 2,
+    width: cropSize,
+    height: cropSize,
+  };
 
   canvas.width = outputSize;
   canvas.height = outputSize;
 
   ctx.drawImage(
     image,
-    sx,
-    sy,
-    cropWidth,
-    cropHeight,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
     0,
     0,
     outputSize,
@@ -72,16 +78,19 @@ export default function AvatarCropper({
 }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [cropAreaPixels, setCropAreaPixels] = useState<CropAreaPixels | null>(
+    null,
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const handleConfirm = useCallback(async () => {
     try {
-      const blob = await getCroppedImg(imageSrc, crop, zoom, 1, 512);
+      const blob = await getCroppedImg(imageSrc, cropAreaPixels, 512);
       onComplete(blob);
     } catch (e) {
       console.error(e);
     }
-  }, [imageSrc, crop, zoom, onComplete]);
+  }, [imageSrc, cropAreaPixels, onComplete]);
 
   if (typeof document === "undefined" || !document.body) return null;
 
@@ -102,6 +111,9 @@ export default function AvatarCropper({
             aspect={1}
             onCropChange={setCrop}
             onZoomChange={setZoom}
+            onCropComplete={(_, croppedAreaPixels) =>
+              setCropAreaPixels(croppedAreaPixels)
+            }
             objectFit="contain"
           />
         </div>

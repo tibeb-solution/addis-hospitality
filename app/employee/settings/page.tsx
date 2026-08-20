@@ -8,6 +8,7 @@ import {
   getEmployeeProfile,
   getCurrentUser,
   setCurrentUser,
+  updateEmployeeProfile,
   updateUserPasswordByEmail,
 } from "@/lib/local-storage";
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
@@ -50,19 +51,24 @@ export default function EmployeeSettings() {
       return;
     }
     setUser(currentUser);
-    setAvatarPath(getEmployeeProfile(currentUser.id)?.avatar_url || null);
+    const employeeProfile = getEmployeeProfile(currentUser.id);
+    setAvatarPath(employeeProfile?.avatar_url || null);
     setFormData({
-      full_name: currentUser.full_name || "",
+      full_name: employeeProfile?.full_name || currentUser.full_name || "",
       email: currentUser.email || "",
-      phone: currentUser.phone || "",
-      desired_position: currentUser.desired_position || "",
-      years_experience: currentUser.years_experience || "",
-      highest_education: currentUser.highest_education || "",
-      availability: currentUser.availability || "",
-      preferred_cities: currentUser.preferred_cities || "",
-      willing_to_relocate: Boolean(currentUser.willing_to_relocate),
-      expected_salary_min: currentUser.expected_salary_min || "",
-      expected_salary_max: currentUser.expected_salary_max || "",
+      phone: employeeProfile?.phone || currentUser.phone || "",
+      desired_position: employeeProfile?.desired_position || "",
+      years_experience: employeeProfile?.years_experience?.toString() || "",
+      highest_education: (employeeProfile as any)?.highest_education || "",
+      availability: (employeeProfile as any)?.availability || "",
+      preferred_cities: employeeProfile?.preferred_cities || "",
+      willing_to_relocate: Boolean(
+        (employeeProfile as any)?.willing_to_relocate,
+      ),
+      expected_salary_min:
+        employeeProfile?.expected_salary_min?.toString() || "",
+      expected_salary_max:
+        employeeProfile?.expected_salary_max?.toString() || "",
     });
     setLoading(false);
   }, [router]);
@@ -71,20 +77,28 @@ export default function EmployeeSettings() {
     e.preventDefault();
     if (!user) return;
 
-    const updated = {
-      ...user,
-      full_name: formData.full_name,
-      phone: formData.phone,
+    const profileUpdates = {
       desired_position: formData.desired_position,
-      years_experience: formData.years_experience,
+      years_experience: formData.years_experience
+        ? Number(formData.years_experience)
+        : undefined,
       highest_education: formData.highest_education,
       availability: formData.availability,
       preferred_cities: formData.preferred_cities,
       willing_to_relocate: formData.willing_to_relocate,
-      expected_salary_min: formData.expected_salary_min,
-      expected_salary_max: formData.expected_salary_max,
+      expected_salary_min: formData.expected_salary_min
+        ? Number(formData.expected_salary_min)
+        : undefined,
+      expected_salary_max: formData.expected_salary_max
+        ? Number(formData.expected_salary_max)
+        : undefined,
+      full_name: formData.full_name,
+      phone: formData.phone,
     };
 
+    updateEmployeeProfile(user.id, profileUpdates as any);
+
+    const updated = { ...user, ...profileUpdates };
     setCurrentUser(updated);
     setUser(updated);
 

@@ -84,7 +84,12 @@ export interface JobApplication {
   job_id: string;
   employee_id: string;
   applied_date: string;
-  status: "applied" | "rejected" | "interview_scheduled" | "hired" | "withdrawn";
+  status:
+    | "applied"
+    | "rejected"
+    | "interview_scheduled"
+    | "hired"
+    | "withdrawn";
   cover_letter?: string;
   interview_date?: string;
   interview_notes?: string;
@@ -189,7 +194,8 @@ export function resetLegacyUserForVerification(
     email: normalizeEmail(email),
     password,
     role,
-    full_name: data.full_name || data.company_name || existingUser.full_name || "",
+    full_name:
+      data.full_name || data.company_name || existingUser.full_name || "",
     phone: data.phone || existingUser.phone || "",
     status: "pending",
     email_verified: false,
@@ -200,7 +206,9 @@ export function resetLegacyUserForVerification(
 
   if (role === "employee") {
     const profiles = getEmployeeProfiles();
-    const existingProfileIndex = profiles.findIndex((p) => p.id === existingUser.id);
+    const existingProfileIndex = profiles.findIndex(
+      (p) => p.id === existingUser.id,
+    );
     if (existingProfileIndex >= 0) {
       profiles[existingProfileIndex] = {
         ...profiles[existingProfileIndex],
@@ -212,13 +220,21 @@ export function resetLegacyUserForVerification(
     saveEmployeeProfiles(profiles);
   } else {
     const profiles = getCompanyProfiles();
-    const existingProfileIndex = profiles.findIndex((p) => p.id === existingUser.id);
+    const existingProfileIndex = profiles.findIndex(
+      (p) => p.id === existingUser.id,
+    );
     if (existingProfileIndex >= 0) {
       profiles[existingProfileIndex] = {
         ...profiles[existingProfileIndex],
         ...updatedUser,
-        company_name: data.company_name || profiles[existingProfileIndex].company_name || "",
-        business_type: data.business_type || profiles[existingProfileIndex].business_type || "",
+        company_name:
+          data.company_name ||
+          profiles[existingProfileIndex].company_name ||
+          "",
+        business_type:
+          data.business_type ||
+          profiles[existingProfileIndex].business_type ||
+          "",
       } as CompanyProfile;
     }
     saveCompanyProfiles(profiles);
@@ -275,7 +291,10 @@ export function setCurrentUser(user: LocalUser | null): void {
       ...user,
       email: normalizeEmail(String(user.email || "")),
     };
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(normalizedUser));
+    localStorage.setItem(
+      STORAGE_KEYS.CURRENT_USER,
+      JSON.stringify(normalizedUser),
+    );
   } else {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
   }
@@ -316,8 +335,12 @@ export function updateEmployeeProfile(
   const index = profiles.findIndex((p) => p.id === userId);
   if (index >= 0) {
     profiles[index] = { ...profiles[index], ...updates };
-    saveEmployeeProfiles(profiles);
+  } else {
+    const user = getUsers().find((candidate) => candidate.id === userId);
+    if (!user) return;
+    profiles.push({ ...user, ...updates } as EmployeeProfile);
   }
+  saveEmployeeProfiles(profiles);
 }
 
 // Company profiles
@@ -477,7 +500,10 @@ export function updateUserPasswordByEmail(
   return true;
 }
 
-export function setUserEmailVerified(email: string, verified: boolean): boolean {
+export function setUserEmailVerified(
+  email: string,
+  verified: boolean,
+): boolean {
   const users = getUsers();
   const index = users.findIndex(
     (u) => normalizeEmail(u.email) === normalizeEmail(email),
@@ -510,7 +536,10 @@ export function generateEmailVerificationCode(email: string): string {
   return code;
 }
 
-export function verifyEmailVerificationCode(email: string, code: string): boolean {
+export function verifyEmailVerificationCode(
+  email: string,
+  code: string,
+): boolean {
   const key = "ah_email_verification_codes";
   const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
     string,
@@ -551,7 +580,10 @@ export function generatePasswordResetCode(email: string): string {
   };
 
   const key = "ah_password_reset_codes";
-  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<string, typeof payload>;
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+    string,
+    typeof payload
+  >;
   all[normalizeEmail(email)] = payload;
   localStorage.setItem(key, JSON.stringify(all));
   localStorage.setItem("ah_password_reset_email", normalizeEmail(email));
@@ -583,7 +615,10 @@ export function verifyPasswordResetCode(email: string, code: string): boolean {
 
 export function clearPasswordResetCode(email: string): void {
   const key = "ah_password_reset_codes";
-  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<string, unknown>;
+  const all = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+    string,
+    unknown
+  >;
   delete all[normalizeEmail(email)];
   localStorage.setItem(key, JSON.stringify(all));
 }
@@ -665,7 +700,10 @@ export function getJob(jobId: string): Job | undefined {
   return getJobs().find((j) => j.id === jobId);
 }
 
-export function updateJobStatus(jobId: string, status: "open" | "closed"): void {
+export function updateJobStatus(
+  jobId: string,
+  status: "open" | "closed",
+): void {
   const jobs = getJobs();
   const job = jobs.find((j) => j.id === jobId);
   if (job) {
@@ -680,9 +718,11 @@ export function deleteJob(jobId: string): void {
 }
 
 // Job Applications
-export function getJobApplications(
-  filter?: { jobId?: string; employeeId?: string; companyId?: string },
-): JobApplication[] {
+export function getJobApplications(filter?: {
+  jobId?: string;
+  employeeId?: string;
+  companyId?: string;
+}): JobApplication[] {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.JOB_APPLICATIONS);
     const applications: JobApplication[] = data ? JSON.parse(data) : [];

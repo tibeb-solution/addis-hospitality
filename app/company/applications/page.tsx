@@ -56,7 +56,11 @@ export default function CompanyApplicationsPage() {
   };
 
   const schedule = () => {
-    if (!scheduleFor || !user || !when || !place) return;
+    if (!scheduleFor || !user) return;
+    if (!when || !place) {
+      setMessage("Choose an interview date, time, and location or link.");
+      return;
+    }
 
     recruitment.scheduleInterview({
       application_id: scheduleFor.id,
@@ -93,7 +97,9 @@ export default function CompanyApplicationsPage() {
           const job = jobs.find((item) => item.id === application.job_id);
           const employee =
             getEmployeeProfile(application.employee_id) ||
-            getEmployeeProfiles().find((item) => item.id === application.employee_id);
+            getEmployeeProfiles().find(
+              (item) => item.id === application.employee_id,
+            );
 
           return (
             <article
@@ -131,7 +137,11 @@ export default function CompanyApplicationsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => update(application, "shortlisted")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => update(application, "shortlisted")}
+                  >
                     Shortlist
                   </Button>
                   <Button
@@ -145,10 +155,18 @@ export default function CompanyApplicationsPage() {
                   >
                     Interview
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => update(application, "hired")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => update(application, "hired")}
+                  >
                     Hire
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => update(application, "rejected")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => update(application, "rejected")}
+                  >
                     Reject
                   </Button>
                 </div>
