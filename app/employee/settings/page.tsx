@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, setCurrentUser } from "@/lib/local-storage";
+import {
+  getCurrentUser,
+  setCurrentUser,
+  updateUserPasswordByEmail,
+} from "@/lib/local-storage";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 export default function EmployeeSettings() {
@@ -25,10 +29,16 @@ export default function EmployeeSettings() {
     expected_salary_min: "",
     expected_salary_max: "",
   });
-  const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
+  const [password, setPassword] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  });
   const [showPasswords, setShowPasswords] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [messageType, setMessageType] = useState<"success" | "error">(
+    "success",
+  );
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -101,9 +111,16 @@ export default function EmployeeSettings() {
       return;
     }
 
-    const updated = { ...user, password: password.new };
-    setCurrentUser(updated);
-    setUser(updated);
+    const updated = updateUserPasswordByEmail(user.email, password.new);
+    if (!updated) {
+      setMessageType("error");
+      setMessage("Unable to update password");
+      return;
+    }
+
+    const updatedUser = { ...user, password: password.new };
+    setCurrentUser(updatedUser);
+    setUser(updatedUser);
     setPassword({ current: "", new: "", confirm: "" });
 
     setMessageType("success");
@@ -146,7 +163,9 @@ export default function EmployeeSettings() {
 
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
+              <label className="block text-sm font-medium mb-2">
+                Full Name
+              </label>
               <input
                 type="text"
                 value={formData.full_name}
@@ -183,7 +202,9 @@ export default function EmployeeSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Desired Position</label>
+              <label className="block text-sm font-medium mb-2">
+                Desired Position
+              </label>
               <input
                 type="text"
                 value={formData.desired_position}
@@ -196,24 +217,34 @@ export default function EmployeeSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Years of Experience</label>
+                <label className="block text-sm font-medium mb-2">
+                  Years of Experience
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={formData.years_experience}
                   onChange={(e) =>
-                    setFormData({ ...formData, years_experience: e.target.value })
+                    setFormData({
+                      ...formData,
+                      years_experience: e.target.value,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Highest Education</label>
+                <label className="block text-sm font-medium mb-2">
+                  Highest Education
+                </label>
                 <select
                   value={formData.highest_education}
                   onChange={(e) =>
-                    setFormData({ ...formData, highest_education: e.target.value })
+                    setFormData({
+                      ...formData,
+                      highest_education: e.target.value,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
@@ -231,7 +262,9 @@ export default function EmployeeSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Availability</label>
+                <label className="block text-sm font-medium mb-2">
+                  Availability
+                </label>
                 <select
                   value={formData.availability}
                   onChange={(e) =>
@@ -248,12 +281,17 @@ export default function EmployeeSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Preferred Cities</label>
+                <label className="block text-sm font-medium mb-2">
+                  Preferred Cities
+                </label>
                 <input
                   type="text"
                   value={formData.preferred_cities}
                   onChange={(e) =>
-                    setFormData({ ...formData, preferred_cities: e.target.value })
+                    setFormData({
+                      ...formData,
+                      preferred_cities: e.target.value,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -262,26 +300,36 @@ export default function EmployeeSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Expected Salary Min</label>
+                <label className="block text-sm font-medium mb-2">
+                  Expected Salary Min
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={formData.expected_salary_min}
                   onChange={(e) =>
-                    setFormData({ ...formData, expected_salary_min: e.target.value })
+                    setFormData({
+                      ...formData,
+                      expected_salary_min: e.target.value,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Expected Salary Max</label>
+                <label className="block text-sm font-medium mb-2">
+                  Expected Salary Max
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={formData.expected_salary_max}
                   onChange={(e) =>
-                    setFormData({ ...formData, expected_salary_max: e.target.value })
+                    setFormData({
+                      ...formData,
+                      expected_salary_max: e.target.value,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -293,7 +341,10 @@ export default function EmployeeSettings() {
                 type="checkbox"
                 checked={formData.willing_to_relocate}
                 onChange={(e) =>
-                  setFormData({ ...formData, willing_to_relocate: e.target.checked })
+                  setFormData({
+                    ...formData,
+                    willing_to_relocate: e.target.checked,
+                  })
                 }
               />
               Willing to relocate

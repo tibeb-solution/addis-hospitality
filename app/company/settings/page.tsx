@@ -8,6 +8,7 @@ import {
   getCompanyProfile,
   getCurrentUser,
   setCurrentUser,
+  updateUserPasswordByEmail,
   updateCompanyProfile,
 } from "@/lib/local-storage";
 import { Mail, Lock, Building, Eye, EyeOff } from "lucide-react";
@@ -29,10 +30,16 @@ export default function CompanySettings() {
     sub_city: "",
     address: "",
   });
-  const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
+  const [password, setPassword] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  });
   const [showPasswords, setShowPasswords] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [messageType, setMessageType] = useState<"success" | "error">(
+    "success",
+  );
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -62,7 +69,10 @@ export default function CompanySettings() {
     e.preventDefault();
     if (!user) return;
 
-    const profile = getCompanyProfile(user.id) || { id: user.id, email: user.email };
+    const profile = getCompanyProfile(user.id) || {
+      id: user.id,
+      email: user.email,
+    };
     const updatedProfile = {
       ...profile,
       company_name: formData.company_name,
@@ -115,9 +125,16 @@ export default function CompanySettings() {
       return;
     }
 
-    const updated = { ...user, password: password.new };
-    setCurrentUser(updated);
-    setUser(updated);
+    const updated = updateUserPasswordByEmail(user.email, password.new);
+    if (!updated) {
+      setMessageType("error");
+      setMessage("Unable to update password");
+      return;
+    }
+
+    const updatedUser = { ...user, password: password.new };
+    setCurrentUser(updatedUser);
+    setUser(updatedUser);
     setPassword({ current: "", new: "", confirm: "" });
 
     setMessageType("success");
@@ -160,7 +177,9 @@ export default function CompanySettings() {
 
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Company Name</label>
+              <label className="block text-sm font-medium mb-2">
+                Company Name
+              </label>
               <input
                 type="text"
                 value={formData.company_name}
@@ -186,7 +205,9 @@ export default function CompanySettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Business Type</label>
+                <label className="block text-sm font-medium mb-2">
+                  Business Type
+                </label>
                 <select
                   value={formData.business_type}
                   onChange={(e) =>
@@ -205,12 +226,17 @@ export default function CompanySettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Trade License Number</label>
+                <label className="block text-sm font-medium mb-2">
+                  Trade License Number
+                </label>
                 <input
                   type="text"
                   value={formData.trade_license_number}
                   onChange={(e) =>
-                    setFormData({ ...formData, trade_license_number: e.target.value })
+                    setFormData({
+                      ...formData,
+                      trade_license_number: e.target.value,
+                    })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -218,7 +244,9 @@ export default function CompanySettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">TIN Number</label>
+              <label className="block text-sm font-medium mb-2">
+                TIN Number
+              </label>
               <input
                 type="text"
                 value={formData.tin_number}
@@ -245,7 +273,9 @@ export default function CompanySettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Contact Phone</label>
+                <label className="block text-sm font-medium mb-2">
+                  Contact Phone
+                </label>
                 <input
                   type="tel"
                   value={formData.contact_phone}
@@ -271,7 +301,9 @@ export default function CompanySettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Sub-city</label>
+                <label className="block text-sm font-medium mb-2">
+                  Sub-city
+                </label>
                 <input
                   type="text"
                   value={formData.sub_city}
@@ -283,7 +315,9 @@ export default function CompanySettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Address</label>
+                <label className="block text-sm font-medium mb-2">
+                  Address
+                </label>
                 <input
                   type="text"
                   value={formData.address}

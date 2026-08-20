@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, setCurrentUser } from "@/lib/local-storage";
+import {
+  getCurrentUser,
+  setCurrentUser,
+  updateUserPasswordByEmail,
+} from "@/lib/local-storage";
 import { Mail, Lock, Shield, Eye, EyeOff } from "lucide-react";
 
 export default function AdminSettings() {
@@ -76,9 +80,16 @@ export default function AdminSettings() {
       return;
     }
 
-    const updated = { ...user, password: password.new };
-    setCurrentUser(updated);
-    setUser(updated);
+    const updated = updateUserPasswordByEmail(user.email, password.new);
+    if (!updated) {
+      setMessageType("error");
+      setMessage("Unable to update password");
+      return;
+    }
+
+    const updatedUser = { ...user, password: password.new };
+    setCurrentUser(updatedUser);
+    setUser(updatedUser);
     setPassword({ current: "", new: "", confirm: "" });
 
     setMessageType("success");
