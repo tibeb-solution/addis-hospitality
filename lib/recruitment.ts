@@ -45,6 +45,14 @@ export interface Application {
   updated_at: string;
 }
 
+export interface ApplicationDraft {
+  id: string;
+  job_id: string;
+  employee_id: string;
+  cover_note?: string;
+  updated_at: string;
+}
+
 export interface Interview {
   id: string;
   application_id: string;
@@ -80,6 +88,7 @@ export interface Rating {
 const keys = {
   jobs: "ah_jobs",
   applications: "ah_applications",
+  applicationDrafts: "ah_application_drafts",
   interviews: "ah_interviews",
   notifications: "ah_notifications",
   ratings: "ah_ratings",
@@ -103,9 +112,72 @@ function write<T>(key: string, value: T[]) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+export function deadlineTimestamp(deadline?: string) {
+  if (!deadline) return undefined;
+  return new Date(`${deadline}T23:59:59`).getTime();
+}
+
+export function isJobExpired(job: Job, now = Date.now()) {
+  const deadline = deadlineTimestamp(job.application_deadline);
+  return deadline !== undefined && deadline < now;
+}
+
+export function formatDeadlineCountdown(deadline?: string, now = Date.now()) {
+  const timestamp = deadlineTimestamp(deadline);
+  if (timestamp === undefined) return "No deadline";
+  const remaining = timestamp - now;
+  if (remaining <= 0) return "Expired";
+  const days = Math.floor(remaining / 86400000);
+  const hours = Math.floor((remaining % 86400000) / 3600000);
+  const minutes = Math.floor((remaining % 3600000) / 60000);
+  return `${days}d ${hours}h ${minutes}m left`;
+}
+
 export const recruitment = {
-  jobs: () => read<Job>(keys.jobs),
+  jobs: () => {
+    const jobs = read<Job>(keys.jobs);
+    const now = Date.now();
+    const expired = jobs.filter(
+      (job) => job.status === "published" && isJobExpired(job, now),
+    );
+
+    if (!expired.length) return jobs;
+
+    const expiredIds = new Set(expired.map((job) => job.id));
+    const updatedJobs = jobs.map((job) =>
+      expiredIds.has(job.id)
+        ? {
+            ...job,
+            status: "expired" as const,
+            updated_at: new Date(now).toISOString(),
+          }
+        : job,
+    );
+    write(keys.jobs, updatedJobs);
+
+    const employees = read<{ id: string; role: string }>("ah_users").filter(
+      (user) => user.role === "employee",
+    );
+    expired.forEach((job) => {
+      recruitment.notify(
+        job.company_id,
+        "Job posting expired",
+        `${job.title} reached its application deadline.`,
+        "job_expired",
+      );
+      employees.forEach((employee) =>
+        recruitment.notify(
+          employee.id,
+          "Job posting expired",
+          `${job.title} at ${job.company_name} is no longer accepting applications.`,
+          "job_expired",
+        ),
+      );
+    });
+    return updatedJobs;
+  },
   applications: () => read<Application>(keys.applications),
+  applicationDrafts: () => read<ApplicationDraft>(keys.applicationDrafts),
   interviews: () => read<Interview>(keys.interviews),
   notifications: (userId: string) =>
     read<Notification>(keys.notifications)
@@ -125,6 +197,40 @@ export const recruitment = {
       );
     }
     return job;
+  },
+  saveApplicationDraft(jobId: string, employeeId: string, coverNote: string) {
+    const drafts = this.applicationDrafts();
+    const existing = drafts.find(
+      (draft) => draft.job_id === jobId && draft.employee_id === employeeId,
+    );
+    const draft: ApplicationDraft = {
+      id: existing?.id || id(),
+      job_id: jobId,
+      employee_id: employeeId,
+      cover_note: coverNote,
+      updated_at: new Date().toISOString(),
+    };
+    write(
+      keys.applicationDrafts,
+      existing
+        ? drafts.map((item) => (item.id === existing.id ? draft : item))
+        : [...drafts, draft],
+    );
+    return draft;
+  },
+  getApplicationDraft(jobId: string, employeeId: string) {
+    return this.applicationDrafts().find(
+      (draft) => draft.job_id === jobId && draft.employee_id === employeeId,
+    );
+  },
+  deleteApplicationDraft(jobId: string, employeeId: string) {
+    write(
+      keys.applicationDrafts,
+      this.applicationDrafts().filter(
+        (draft) =>
+          !(draft.job_id === jobId && draft.employee_id === employeeId),
+      ),
+    );
   },
   updateJob(jobId: string, updates: Partial<Job>) {
     const before = this.jobs().find((job) => job.id === jobId);
@@ -156,10 +262,7 @@ export const recruitment = {
     if (job.status !== "published") {
       throw new Error("This job is not open for applications yet.");
     }
-    if (
-      job.application_deadline &&
-      new Date(job.application_deadline) < new Date()
-    ) {
+    if (job.application_deadline && isJobExpired(job)) {
       throw new Error("The application deadline for this job has passed.");
     }
     if (

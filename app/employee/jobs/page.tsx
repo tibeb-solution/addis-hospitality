@@ -3,7 +3,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, getEmployeeProfile } from "@/lib/local-storage";
-import { Application, Interview, Job, recruitment } from "@/lib/recruitment";
+import {
+  Application,
+  Interview,
+  Job,
+  formatDeadlineCountdown,
+  isJobExpired,
+  recruitment,
+} from "@/lib/recruitment";
 
 export default function EmployeeJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -13,6 +20,7 @@ export default function EmployeeJobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [message, setMessage] = useState("");
   const [ratingFor, setRatingFor] = useState<Application | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const refresh = () => {
     const current = getCurrentUser();
@@ -21,12 +29,7 @@ export default function EmployeeJobsPage() {
     setJobs(
       recruitment
         .jobs()
-        .filter(
-          (job) =>
-            job.status === "published" &&
-            (!job.application_deadline ||
-              new Date(job.application_deadline) >= new Date()),
-        )
+        .filter((job) => job.status === "published" && !isJobExpired(job))
         .sort((a, b) => b.created_at.localeCompare(a.created_at)),
     );
 
@@ -45,7 +48,21 @@ export default function EmployeeJobsPage() {
 
   useEffect(() => {
     refresh();
+    const timer = window.setInterval(() => setNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
   }, []);
+
+  const openApplication = (job: Job) => {
+    setSelectedJob(job);
+    if (user) {
+      recruitment.saveApplicationDraft(
+        job.id,
+        user.id,
+        recruitment.getApplicationDraft(job.id, user.id)?.cover_note || "",
+      );
+    }
+    setMessage("");
+  };
 
   const apply = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,8 +70,11 @@ export default function EmployeeJobsPage() {
 
     try {
       const profile = getEmployeeProfile(user.id);
-      const note = String(new FormData(event.currentTarget).get("cover_note") || "");
+      const note = String(
+        new FormData(event.currentTarget).get("cover_note") || "",
+      );
       recruitment.apply(selectedJob, user.id, profile, note);
+      recruitment.deleteApplicationDraft(selectedJob.id, user.id);
       setMessage(`Application sent for ${selectedJob.title}.`);
       setSelectedJob(null);
       refresh();
@@ -94,7 +114,8 @@ export default function EmployeeJobsPage() {
       <div>
         <h1 className="text-3xl font-bold">Jobs and applications</h1>
         <p className="mt-1 text-muted-foreground">
-          Find hospitality work, track applications, and respond to interview invitations.
+          Find hospitality work, track applications, and respond to interview
+          invitations.
         </p>
         {message && <p className="mt-2 text-sm text-primary">{message}</p>}
       </div>
@@ -150,11 +171,18 @@ export default function EmployeeJobsPage() {
           </p>
         ) : (
           jobs.map((job) => {
-            const applied = applications.some((application) => application.job_id === job.id);
-            const score = user ? recruitment.matchScore(job, getEmployeeProfile(user.id)) : 0;
+            const applied = applications.some(
+              (application) => application.job_id === job.id,
+            );
+            const score = user
+              ? recruitment.matchScore(job, getEmployeeProfile(user.id))
+              : 0;
 
             return (
-              <article key={job.id} className="rounded-lg border border-border bg-card p-5">
+              <article
+                key={job.id}
+                className="rounded-lg border border-border bg-card p-5"
+              >
                 <div className="flex flex-col gap-3 md:flex-row md:justify-between">
                   <div>
                     <h3 className="font-semibold">{job.title}</h3>
@@ -162,14 +190,40 @@ export default function EmployeeJobsPage() {
                       {job.company_name} | {job.location} |{" "}
                       {job.employment_type.replace("_", " ")}
                     </p>
-                    <p className="mt-2 text-sm whitespace-pre-wrap">{job.description}</p>
+                    <p className="mt-2 text-sm whitespace-pre-wrap">
+                      {job.description}
+                    </p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       Skills: {job.skills.join(", ") || "Not specified"} |
                       Match: {score}%
                     </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Posted {new Date(job.created_at).toLocaleString()} |
+                      Deadline:{" "}
+                      {job.application_deadline
+                        ? new Date(
+                            `${job.application_deadline}T23:59:59`,
+                          ).toLocaleDateString()
+                        : "Open"}
+                      {job.application_deadline && (
+                        <span className="ml-2 font-semibold text-red-600">
+                          {formatDeadlineCountdown(
+                            job.application_deadline,
+                            now,
+                          )}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                  <Button disabled={applied} onClick={() => setSelectedJob(job)}>
-                    {applied ? "Applied" : "Apply"}
+                  <Button
+                    disabled={applied}
+                    onClick={() => openApplication(job)}
+                  >
+                    {applied
+                      ? "Applied"
+                      : recruitment.getApplicationDraft(job.id, user?.id || "")
+                        ? "Continue"
+                        : "Apply"}
                   </Button>
                 </div>
               </article>
@@ -181,17 +235,22 @@ export default function EmployeeJobsPage() {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Your applications</h2>
         {applications.length === 0 ? (
-          <p className="text-muted-foreground">You have not applied to a job yet.</p>
+          <p className="text-muted-foreground">
+            You have not applied to a job yet.
+          </p>
         ) : (
           applications.map((application) => {
-            const job = recruitment.jobs().find((item) => item.id === application.job_id);
+            const job = recruitment
+              .jobs()
+              .find((item) => item.id === application.job_id);
             const rated =
               user &&
               recruitment
                 .ratings()
                 .some(
                   (rating) =>
-                    rating.application_id === application.id && rating.author_id === user.id,
+                    rating.application_id === application.id &&
+                    rating.author_id === user.id,
                 );
 
             return (
@@ -200,14 +259,20 @@ export default function EmployeeJobsPage() {
                 className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 md:flex-row md:items-center md:justify-between"
               >
                 <div>
-                  <h3 className="font-semibold">{job?.title || "Job posting"}</h3>
+                  <h3 className="font-semibold">
+                    {job?.title || "Job posting"}
+                  </h3>
                   <p className="text-sm text-muted-foreground capitalize">
                     {application.status.replace("_", " ")} | Match score{" "}
                     {application.match_score}%
                   </p>
                 </div>
                 {application.status === "hired" && !rated && (
-                  <Button variant="outline" size="sm" onClick={() => setRatingFor(application)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRatingFor(application)}
+                  >
                     Rate employer
                   </Button>
                 )}
@@ -218,16 +283,35 @@ export default function EmployeeJobsPage() {
       </section>
 
       {selectedJob && (
-        <form onSubmit={apply} className="space-y-3 rounded-lg border border-primary bg-card p-5">
+        <form
+          onSubmit={apply}
+          className="space-y-3 rounded-lg border border-primary bg-card p-5"
+        >
           <h2 className="font-semibold">Apply for {selectedJob.title}</h2>
           <textarea
             name="cover_note"
             className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2"
             placeholder="Optional note to the employer"
+            defaultValue={
+              recruitment.getApplicationDraft(selectedJob.id, user?.id || "")
+                ?.cover_note || ""
+            }
+            onChange={(event) =>
+              user &&
+              recruitment.saveApplicationDraft(
+                selectedJob.id,
+                user.id,
+                event.target.value,
+              )
+            }
           />
           <div className="flex gap-2">
             <Button type="submit">Send application</Button>
-            <Button type="button" variant="outline" onClick={() => setSelectedJob(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSelectedJob(null)}
+            >
               Cancel
             </Button>
           </div>
@@ -235,7 +319,10 @@ export default function EmployeeJobsPage() {
       )}
 
       {ratingFor && (
-        <form onSubmit={submitRating} className="space-y-3 rounded-lg border border-primary bg-card p-5">
+        <form
+          onSubmit={submitRating}
+          className="space-y-3 rounded-lg border border-primary bg-card p-5"
+        >
           <h2 className="font-semibold">Rate your employer</h2>
           <select
             name="score"
@@ -255,7 +342,11 @@ export default function EmployeeJobsPage() {
           />
           <div className="flex gap-2">
             <Button type="submit">Submit rating</Button>
-            <Button type="button" variant="outline" onClick={() => setRatingFor(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRatingFor(null)}
+            >
               Cancel
             </Button>
           </div>

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getCompanyProfile, getCurrentUser } from "@/lib/local-storage";
-import { Job, recruitment } from "@/lib/recruitment";
+import { Job, formatDeadlineCountdown, recruitment } from "@/lib/recruitment";
 
 const fieldClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
@@ -16,6 +16,7 @@ export default function CompanyJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [user, setUser] = useState<any>(null);
   const [notice, setNotice] = useState("");
+  const [now, setNow] = useState(() => Date.now());
 
   const refresh = () => {
     const current = getCurrentUser();
@@ -28,7 +29,11 @@ export default function CompanyJobsPage() {
     );
   };
 
-  useEffect(refresh, []);
+  useEffect(() => {
+    refresh();
+    const timer = window.setInterval(() => setNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -77,8 +82,8 @@ export default function CompanyJobsPage() {
       <div>
         <h1 className="text-3xl font-bold">Jobs</h1>
         <p className="mt-1 text-muted-foreground">
-          Submit vacancies for admin approval, then track applications once
-          they are live.
+          Submit vacancies for admin approval, then track applications once they
+          are live.
         </p>
       </div>
 
@@ -138,11 +143,7 @@ export default function CompanyJobsPage() {
           placeholder="Maximum monthly salary (ETB)"
           className={fieldClass}
         />
-        <input
-          name="application_deadline"
-          type="date"
-          className={fieldClass}
-        />
+        <input name="application_deadline" type="date" className={fieldClass} />
         <textarea
           required
           name="description"
@@ -182,6 +183,20 @@ export default function CompanyJobsPage() {
                   <p className="text-sm text-muted-foreground">
                     {job.location} | {job.employment_type.replace("_", " ")} |{" "}
                     {applicationCount} applications
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Posted {new Date(job.created_at).toLocaleString()} |
+                    Deadline:{" "}
+                    {job.application_deadline
+                      ? new Date(
+                          `${job.application_deadline}T23:59:59`,
+                        ).toLocaleDateString()
+                      : "Open"}
+                    {job.application_deadline && (
+                      <span className="ml-2 font-semibold text-red-600">
+                        {formatDeadlineCountdown(job.application_deadline, now)}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div className="flex gap-2">
