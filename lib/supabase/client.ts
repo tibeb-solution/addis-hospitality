@@ -295,8 +295,9 @@ let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 export function isSupabaseConfigured() {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://katuecvwrvqhgoidqsea.supabase.co") &&
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+
   );
 }
 
