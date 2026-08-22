@@ -19,10 +19,10 @@ function formatStatus(status: Job["status"] | "all") {
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
-  const [filter, setFilter] = useState<Job["status"] | "all">(
-    "pending_review",
-  );
+  const [applicationCounts, setApplicationCounts] = useState<
+    Record<string, number>
+  >({});
+  const [filter, setFilter] = useState<Job["status"] | "all">("pending_review");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -32,7 +32,9 @@ export default function AdminJobsPage() {
         recruitment.jobs(),
         recruitment.applications(),
       ]);
-      setJobs(loadedJobs.sort((a, b) => b.created_at.localeCompare(a.created_at)));
+      setJobs(
+        loadedJobs.sort((a, b) => b.created_at.localeCompare(a.created_at)),
+      );
       setApplicationCounts(
         applications.reduce<Record<string, number>>((counts, application) => {
           counts[application.job_id] = (counts[application.job_id] || 0) + 1;
@@ -41,7 +43,9 @@ export default function AdminJobsPage() {
       );
       setError("");
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load jobs.");
+      setError(
+        loadError instanceof Error ? loadError.message : "Unable to load jobs.",
+      );
     }
   };
 
@@ -95,13 +99,7 @@ export default function AdminJobsPage() {
 
       <div className="flex flex-wrap gap-2">
         {(
-          [
-            "pending_review",
-            "published",
-            "rejected",
-            "closed",
-            "all",
-          ] as const
+          ["pending_review", "published", "rejected", "closed", "all"] as const
         ).map((status) => (
           <Button
             key={status}
@@ -139,8 +137,8 @@ export default function AdminJobsPage() {
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {job.company_name} |{" "}
-                        {job.location} | {job.employment_type.replace("_", " ")}
+                        {job.company_name} | {job.location} |{" "}
+                        {job.employment_type.replace("_", " ")}
                       </p>
                     </div>
 
@@ -150,12 +148,18 @@ export default function AdminJobsPage() {
 
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                       <span>Experience: {job.experience_required}+ years</span>
-                      <span>Education: {job.education_required || "Not specified"}</span>
-                      <span>Skills: {job.skills.join(", ") || "Not specified"}</span>
+                      <span>
+                        Education: {job.education_required || "Not specified"}
+                      </span>
+                      <span>
+                        Skills: {job.skills.join(", ") || "Not specified"}
+                      </span>
                       <span>
                         Languages: {job.languages.join(", ") || "Not specified"}
                       </span>
-                      <span>Applications: {applicationCounts[job.id] || 0}</span>
+                      <span>
+                        Applications: {applicationCounts[job.id] || 0}
+                      </span>
                     </div>
                   </div>
 

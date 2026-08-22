@@ -4,7 +4,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getCompanyProfile, getCurrentUser } from "@/lib/local-storage";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { Job, formatDeadlineDate, formatDeadlineCountdown, recruitment } from "@/lib/recruitment";
+import {
+  Job,
+  formatDeadlineDate,
+  formatDeadlineCountdown,
+  recruitment,
+} from "@/lib/recruitment";
 
 const fieldClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
@@ -15,14 +20,18 @@ function statusLabel(status: Job["status"]) {
 
 export default function CompanyJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [applicationCount, setApplicationCount] = useState<Record<string, number>>({});
+  const [applicationCount, setApplicationCount] = useState<
+    Record<string, number>
+  >({});
   const [user, setUser] = useState<any>(null);
   const [notice, setNotice] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
   const refresh = async () => {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const current = isSupabaseConfigured() ? session?.user : getCurrentUser();
     setUser(current);
     const [companyJobs, applications] = await Promise.all([
@@ -55,39 +64,48 @@ export default function CompanyJobsPage() {
     const form = event.currentTarget;
     const data = new FormData(form);
     const profile = isSupabaseConfigured()
-      ? (await createClient().from("company_profiles").select("company_name").eq("id", user.id).maybeSingle()).data
+      ? (
+          await createClient()
+            .from("company_profiles")
+            .select("company_name")
+            .eq("id", user.id)
+            .maybeSingle()
+        ).data
       : getCompanyProfile(user.id);
 
     try {
       await recruitment.createJob({
-      company_id: user.id,
-      company_name: profile?.company_name || user.full_name,
-      title: String(data.get("title") || ""),
-      description: String(data.get("description") || ""),
-      location: String(data.get("location") || ""),
-      employment_type: String(data.get("employment_type") || "full_time"),
-      experience_required: Number(data.get("experience_required") || 0),
-      education_required: String(data.get("education_required") || "") || undefined,
-      skills: String(data.get("skills") || "")
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean),
-      languages: String(data.get("languages") || "")
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean),
-      salary_min: data.get("salary_min")
-        ? Number(data.get("salary_min"))
-        : undefined,
-      salary_max: data.get("salary_max")
-        ? Number(data.get("salary_max"))
-        : undefined,
-      application_deadline:
-        String(data.get("application_deadline") || "") || undefined,
-      status: "pending_review",
+        company_id: user.id,
+        company_name: profile?.company_name || user.full_name,
+        title: String(data.get("title") || ""),
+        description: String(data.get("description") || ""),
+        location: String(data.get("location") || ""),
+        employment_type: String(data.get("employment_type") || "full_time"),
+        experience_required: Number(data.get("experience_required") || 0),
+        education_required:
+          String(data.get("education_required") || "") || undefined,
+        skills: String(data.get("skills") || "")
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+        languages: String(data.get("languages") || "")
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+        salary_min: data.get("salary_min")
+          ? Number(data.get("salary_min"))
+          : undefined,
+        salary_max: data.get("salary_max")
+          ? Number(data.get("salary_max"))
+          : undefined,
+        application_deadline:
+          String(data.get("application_deadline") || "") || undefined,
+        status: "pending_review",
       });
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Unable to submit job.");
+      setNotice(
+        error instanceof Error ? error.message : "Unable to submit job.",
+      );
       return;
     }
 
@@ -140,7 +158,11 @@ export default function CompanyJobsPage() {
           placeholder="Required years of experience"
           className={fieldClass}
         />
-        <select name="education_required" defaultValue="" className={fieldClass}>
+        <select
+          name="education_required"
+          defaultValue=""
+          className={fieldClass}
+        >
           <option value="">Education level required (optional)</option>
           <option value="primary">Primary</option>
           <option value="secondary">Secondary</option>
@@ -213,9 +235,9 @@ export default function CompanyJobsPage() {
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Posted {new Date(job.created_at).toLocaleString()} |
-                    Deadline:{" "}
-                    {formatDeadlineDate(job.application_deadline)}
-                    {job.education_required && ` | Education: ${job.education_required}`}
+                    Deadline: {formatDeadlineDate(job.application_deadline)}
+                    {job.education_required &&
+                      ` | Education: ${job.education_required}`}
                     {job.application_deadline && (
                       <span className="ml-2 font-semibold text-red-600">
                         {formatDeadlineCountdown(job.application_deadline, now)}
@@ -228,7 +250,9 @@ export default function CompanyJobsPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        void recruitment.updateJob(job.id, { status: "closed" }).then(refresh);
+                        void recruitment
+                          .updateJob(job.id, { status: "closed" })
+                          .then(refresh);
                       }}
                     >
                       Close posting
@@ -238,9 +262,11 @@ export default function CompanyJobsPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        void recruitment.updateJob(job.id, {
-                          status: "pending_review",
-                        }).then(refresh);
+                        void recruitment
+                          .updateJob(job.id, {
+                            status: "pending_review",
+                          })
+                          .then(refresh);
                       }}
                     >
                       Send for review again

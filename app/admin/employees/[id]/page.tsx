@@ -91,17 +91,35 @@ export default function AdminEmployeeDetailPage() {
     }
   };
 
-  const handleDocumentStatus = async (documentId: string, status: "approved" | "rejected") => {
+  const handleDocumentStatus = async (
+    documentId: string,
+    status: "approved" | "rejected",
+  ) => {
     setUpdating(true);
     setError(null);
     try {
       const supabase = createClient();
       const { error: updateError } = await supabase
         .from("documents")
-        .update({ status, reviewed_at: new Date().toISOString(), review_note: statusNote })
+        .update({
+          status,
+          reviewed_at: new Date().toISOString(),
+          review_note: statusNote,
+        })
         .eq("id", documentId);
       if (updateError) throw updateError;
-      setDocuments((items) => items.map((item) => item.id === documentId ? { ...item, status, reviewed_at: new Date().toISOString(), review_note: statusNote } : item));
+      setDocuments((items) =>
+        items.map((item) =>
+          item.id === documentId
+            ? {
+                ...item,
+                status,
+                reviewed_at: new Date().toISOString(),
+                review_note: statusNote,
+              }
+            : item,
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
@@ -147,9 +165,12 @@ export default function AdminEmployeeDetailPage() {
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {
                 try {
-                  await createClient().from("employee_profiles").update({
-                    avatar_status: "approved",
-                  }).eq("id", params.id as string);
+                  await createClient()
+                    .from("employee_profiles")
+                    .update({
+                      avatar_status: "approved",
+                    })
+                    .eq("id", params.id as string);
                   setAvatarStatus("approved");
                   logAction(
                     (await createClient().auth.getUser()).data.user?.id ||
@@ -169,9 +190,12 @@ export default function AdminEmployeeDetailPage() {
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {
                 try {
-                  await createClient().from("employee_profiles").update({
-                    avatar_status: "rejected",
-                  }).eq("id", params.id as string);
+                  await createClient()
+                    .from("employee_profiles")
+                    .update({
+                      avatar_status: "rejected",
+                    })
+                    .eq("id", params.id as string);
                   setAvatarStatus("rejected");
                   logAction(
                     (await createClient().auth.getUser()).data.user?.id ||
@@ -191,10 +215,13 @@ export default function AdminEmployeeDetailPage() {
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {
                 try {
-                  await createClient().from("employee_profiles").update({
-                    avatar_url: null,
-                    avatar_status: null,
-                  }).eq("id", params.id as string);
+                  await createClient()
+                    .from("employee_profiles")
+                    .update({
+                      avatar_url: null,
+                      avatar_status: null,
+                    })
+                    .eq("id", params.id as string);
                   setAvatarUrl(null);
                   setAvatarStatus(null);
                   logAction(
@@ -377,20 +404,41 @@ export default function AdminEmployeeDetailPage() {
                     type="button"
                     className="text-sm text-primary underline"
                     onClick={async () => {
-                      const { data, error } = await createClient().storage.from("documents").createSignedUrl(doc.file_path, 3600);
+                      const { data, error } = await createClient()
+                        .storage.from("documents")
+                        .createSignedUrl(doc.file_path, 3600);
                       if (error) return;
-                      if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                      if (data?.signedUrl)
+                        window.open(
+                          data.signedUrl,
+                          "_blank",
+                          "noopener,noreferrer",
+                        );
                     }}
                   >
                     View
                   </button>
                   {doc.status !== "approved" && (
-                    <button type="button" disabled={updating} className="text-sm text-green-700 underline" onClick={() => void handleDocumentStatus(doc.id, "approved")}>
+                    <button
+                      type="button"
+                      disabled={updating}
+                      className="text-sm text-green-700 underline"
+                      onClick={() =>
+                        void handleDocumentStatus(doc.id, "approved")
+                      }
+                    >
                       Verify
                     </button>
                   )}
                   {doc.status !== "rejected" && (
-                    <button type="button" disabled={updating} className="text-sm text-red-700 underline" onClick={() => void handleDocumentStatus(doc.id, "rejected")}>
+                    <button
+                      type="button"
+                      disabled={updating}
+                      className="text-sm text-red-700 underline"
+                      onClick={() =>
+                        void handleDocumentStatus(doc.id, "rejected")
+                      }
+                    >
                       Reject
                     </button>
                   )}

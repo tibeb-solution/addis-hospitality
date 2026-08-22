@@ -28,15 +28,25 @@ export default function EmployeeJobsPage() {
   const [applying, setApplying] = useState(false);
 
   const refresh = async () => {
-    const { data: { user: authUser } } = await createClient().auth.getUser();
+    const {
+      data: { user: authUser },
+    } = await createClient().auth.getUser();
     const current = isSupabaseConfigured() ? authUser : getCurrentUser();
     setUser(current);
 
-    const [availableJobs, allApplications, allInterviews, allDrafts, allRatings] = await Promise.all([
+    const [
+      availableJobs,
+      allApplications,
+      allInterviews,
+      allDrafts,
+      allRatings,
+    ] = await Promise.all([
       recruitment.jobs(),
       recruitment.applications(),
       recruitment.interviews(),
-      current?.id ? recruitment.applicationDrafts(current.id) : Promise.resolve([]),
+      current?.id
+        ? recruitment.applicationDrafts(current.id)
+        : Promise.resolve([]),
       recruitment.ratings(),
     ]);
     setJobs(
@@ -46,13 +56,15 @@ export default function EmployeeJobsPage() {
     );
 
     setApplications(
-      allApplications
-        .filter((application) => application.employee_id === current?.id),
+      allApplications.filter(
+        (application) => application.employee_id === current?.id,
+      ),
     );
 
     setInterviews(
-      allInterviews
-        .filter((interview) => interview.employee_id === current?.id),
+      allInterviews.filter(
+        (interview) => interview.employee_id === current?.id,
+      ),
     );
     setDrafts(allDrafts);
     setRatings(allRatings);
@@ -85,7 +97,13 @@ export default function EmployeeJobsPage() {
       setApplying(true);
       setMessage("");
       const profile = isSupabaseConfigured()
-        ? (await createClient().from("employee_profiles").select("*").eq("id", user.id).maybeSingle()).data
+        ? (
+            await createClient()
+              .from("employee_profiles")
+              .select("*")
+              .eq("id", user.id)
+              .maybeSingle()
+          ).data
         : getEmployeeProfile(user.id);
       const note = String(
         new FormData(event.currentTarget).get("cover_note") || "",
@@ -94,7 +112,10 @@ export default function EmployeeJobsPage() {
       try {
         await recruitment.deleteApplicationDraft(selectedJob.id, user.id);
       } catch (draftError) {
-        console.warn("Application was sent, but draft cleanup failed.", draftError);
+        console.warn(
+          "Application was sent, but draft cleanup failed.",
+          draftError,
+        );
       }
       const appliedTitle = selectedJob.title;
       setSelectedJob(null);
@@ -161,7 +182,10 @@ export default function EmployeeJobsPage() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      void recruitment.respondToInterview(interview.id, "accepted");
+                      void recruitment.respondToInterview(
+                        interview.id,
+                        "accepted",
+                      );
                       setMessage("Interview accepted.");
                       void refresh();
                     }}
@@ -172,7 +196,10 @@ export default function EmployeeJobsPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      void recruitment.respondToInterview(interview.id, "declined");
+                      void recruitment.respondToInterview(
+                        interview.id,
+                        "declined",
+                      );
                       setMessage("Interview declined.");
                       void refresh();
                     }}
@@ -217,13 +244,12 @@ export default function EmployeeJobsPage() {
                     </p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       Skills: {job.skills.join(", ") || "Not specified"} |
-                      Match: {score}% |
-                      Education: {job.education_required || "Not specified"}
+                      Match: {score}% | Education:{" "}
+                      {job.education_required || "Not specified"}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
                       Posted {new Date(job.created_at).toLocaleString()} |
-                      Deadline:{" "}
-                      {formatDeadlineDate(job.application_deadline)}
+                      Deadline: {formatDeadlineDate(job.application_deadline)}
                       {job.application_deadline && (
                         <span className="ml-2 font-semibold text-red-600">
                           {formatDeadlineCountdown(
@@ -240,7 +266,11 @@ export default function EmployeeJobsPage() {
                   >
                     {applied
                       ? "Applied"
-                      : drafts.some((draft) => draft.job_id === job.id && draft.employee_id === user?.id)
+                      : drafts.some(
+                            (draft) =>
+                              draft.job_id === job.id &&
+                              draft.employee_id === user?.id,
+                          )
                         ? "Continue"
                         : "Apply"}
                   </Button>
@@ -263,10 +293,10 @@ export default function EmployeeJobsPage() {
             const rated =
               user &&
               ratings.some(
-                  (rating) =>
-                    rating.application_id === application.id &&
-                    rating.author_id === user.id,
-                );
+                (rating) =>
+                  rating.application_id === application.id &&
+                  rating.author_id === user.id,
+              );
 
             return (
               <article
@@ -308,8 +338,11 @@ export default function EmployeeJobsPage() {
             className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2"
             placeholder="Optional note to the employer"
             defaultValue={
-              drafts.find((draft) => draft.job_id === selectedJob.id && draft.employee_id === user?.id)
-                ?.cover_note || ""
+              drafts.find(
+                (draft) =>
+                  draft.job_id === selectedJob.id &&
+                  draft.employee_id === user?.id,
+              )?.cover_note || ""
             }
             onChange={(event) =>
               user &&

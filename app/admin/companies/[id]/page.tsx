@@ -23,14 +23,31 @@ export default function AdminCompanyDetailPage() {
     const loadCompany = async () => {
       const supabase = createClient();
       const companyId = String(params.id || "");
-      const [{ data, error: companyError }, { data: account, error: accountError }, { data: docs, error: documentsError }] = await Promise.all([
-        supabase.from("company_profiles").select("*").eq("id", companyId).maybeSingle(),
-        supabase.from("profiles").select("id, email, full_name, phone, status, created_at").eq("id", companyId).maybeSingle(),
+      const [
+        { data, error: companyError },
+        { data: account, error: accountError },
+        { data: docs, error: documentsError },
+      ] = await Promise.all([
+        supabase
+          .from("company_profiles")
+          .select("*")
+          .eq("id", companyId)
+          .maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("id, email, full_name, phone, status, created_at")
+          .eq("id", companyId)
+          .maybeSingle(),
         supabase.from("documents").select("*").eq("owner_id", companyId),
       ]);
 
       if (companyError || accountError || documentsError) {
-        setError(companyError?.message || accountError?.message || documentsError?.message || "Unable to load company details.");
+        setError(
+          companyError?.message ||
+            accountError?.message ||
+            documentsError?.message ||
+            "Unable to load company details.",
+        );
         setLoading(false);
         return;
       }
@@ -89,7 +106,11 @@ export default function AdminCompanyDetailPage() {
 
       if (accountError) throw accountError;
 
-      setCompany({ ...company, is_verified: verified, status: verified ? "active" : "pending" });
+      setCompany({
+        ...company,
+        is_verified: verified,
+        status: verified ? "active" : "pending",
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
@@ -97,17 +118,35 @@ export default function AdminCompanyDetailPage() {
     }
   };
 
-  const handleDocumentStatus = async (documentId: string, status: "approved" | "rejected") => {
+  const handleDocumentStatus = async (
+    documentId: string,
+    status: "approved" | "rejected",
+  ) => {
     setUpdating(true);
     setError(null);
     try {
       const supabase = createClient();
       const { error: updateError } = await supabase
         .from("documents")
-        .update({ status, reviewed_at: new Date().toISOString(), review_note: reviewNote })
+        .update({
+          status,
+          reviewed_at: new Date().toISOString(),
+          review_note: reviewNote,
+        })
         .eq("id", documentId);
       if (updateError) throw updateError;
-      setDocuments((items) => items.map((item) => item.id === documentId ? { ...item, status, reviewed_at: new Date().toISOString(), review_note: reviewNote } : item));
+      setDocuments((items) =>
+        items.map((item) =>
+          item.id === documentId
+            ? {
+                ...item,
+                status,
+                reviewed_at: new Date().toISOString(),
+                review_note: reviewNote,
+              }
+            : item,
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
@@ -156,9 +195,12 @@ export default function AdminCompanyDetailPage() {
                 className="px-3 py-1 rounded border text-sm"
                 onClick={async () => {
                   try {
-                    await createClient().from("company_profiles").update({
-                      logo_status: "approved",
-                    }).eq("id", params.id as string);
+                    await createClient()
+                      .from("company_profiles")
+                      .update({
+                        logo_status: "approved",
+                      })
+                      .eq("id", params.id as string);
                     setLogoStatus("approved");
                     logAction(
                       (await createClient().auth.getUser()).data.user?.id ||
@@ -178,9 +220,12 @@ export default function AdminCompanyDetailPage() {
                 className="px-3 py-1 rounded border text-sm"
                 onClick={async () => {
                   try {
-                    await createClient().from("company_profiles").update({
-                      logo_status: "rejected",
-                    }).eq("id", params.id as string);
+                    await createClient()
+                      .from("company_profiles")
+                      .update({
+                        logo_status: "rejected",
+                      })
+                      .eq("id", params.id as string);
                     setLogoStatus("rejected");
                     logAction(
                       (await createClient().auth.getUser()).data.user?.id ||
@@ -200,10 +245,13 @@ export default function AdminCompanyDetailPage() {
                 className="px-3 py-1 rounded border text-sm"
                 onClick={async () => {
                   try {
-                    await createClient().from("company_profiles").update({
-                      logo_url: null,
-                      logo_status: null,
-                    }).eq("id", params.id as string);
+                    await createClient()
+                      .from("company_profiles")
+                      .update({
+                        logo_url: null,
+                        logo_status: null,
+                      })
+                      .eq("id", params.id as string);
                     setLogoUrl(null);
                     setLogoStatus(null);
                     logAction(
@@ -361,20 +409,41 @@ export default function AdminCompanyDetailPage() {
                     type="button"
                     className="text-sm text-primary underline"
                     onClick={async () => {
-                      const { data, error } = await createClient().storage.from("documents").createSignedUrl(doc.file_path, 3600);
+                      const { data, error } = await createClient()
+                        .storage.from("documents")
+                        .createSignedUrl(doc.file_path, 3600);
                       if (error) return;
-                      if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                      if (data?.signedUrl)
+                        window.open(
+                          data.signedUrl,
+                          "_blank",
+                          "noopener,noreferrer",
+                        );
                     }}
                   >
                     View
                   </button>
                   {doc.status !== "approved" && (
-                    <button type="button" disabled={updating} className="text-sm text-green-700 underline" onClick={() => void handleDocumentStatus(doc.id, "approved")}>
+                    <button
+                      type="button"
+                      disabled={updating}
+                      className="text-sm text-green-700 underline"
+                      onClick={() =>
+                        void handleDocumentStatus(doc.id, "approved")
+                      }
+                    >
                       Verify
                     </button>
                   )}
                   {doc.status !== "rejected" && (
-                    <button type="button" disabled={updating} className="text-sm text-red-700 underline" onClick={() => void handleDocumentStatus(doc.id, "rejected")}>
+                    <button
+                      type="button"
+                      disabled={updating}
+                      className="text-sm text-red-700 underline"
+                      onClick={() =>
+                        void handleDocumentStatus(doc.id, "rejected")
+                      }
+                    >
                       Reject
                     </button>
                   )}
