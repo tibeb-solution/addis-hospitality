@@ -99,7 +99,12 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+            `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: "select_account" },
+        },
       });
       if (oauthError) setError(oauthError.message);
     } catch (err) {

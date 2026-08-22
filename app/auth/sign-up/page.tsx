@@ -30,7 +30,10 @@ export default function SignUpPage() {
       const { error: oauthError } = await createClient().auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?role=${role}&next=${encodeURIComponent(next)}`,
+          redirectTo: `${
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+            `${window.location.origin}/auth/callback`
+          }?role=${role}&next=${encodeURIComponent(next)}`,
           queryParams: { prompt: "select_account" },
         },
       });
