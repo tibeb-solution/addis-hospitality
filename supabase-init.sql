@@ -25,10 +25,10 @@ ALTER TABLE profiles DROP COLUMN IF EXISTS password;
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS trigger
 LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = public
+SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
-  selected_role text := COALESCE(NEW.raw_user_meta_data->>'role', 'employee');
+  selected_role text := 'employee';
 BEGIN
   INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
   VALUES (
@@ -264,13 +264,16 @@ CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id::text = auth.uid()::text AND role = 'admin'
+    WHERE auth_user_id = auth.uid() AND role = 'admin' AND status = 'active'
   );
 $$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 
 -- Row-level security for browser clients.
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -310,14 +313,21 @@ CREATE POLICY employee_profiles_access ON employee_profiles FOR ALL TO authentic
   WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS employee_profiles_read ON employee_profiles;
 CREATE POLICY employee_profiles_read ON employee_profiles FOR SELECT TO authenticated
-  USING (true);
+  USING (id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.applications a
+    JOIN public.jobs j ON j.id = a.job_id
+    WHERE a.employee_id = employee_profiles.id AND j.company_id::text = auth.uid()::text
+  ));
 DROP POLICY IF EXISTS company_profiles_access ON company_profiles;
 CREATE POLICY company_profiles_access ON company_profiles FOR ALL TO authenticated
   USING (id::text = auth.uid()::text OR public.is_admin())
   WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS company_profiles_read ON company_profiles;
 CREATE POLICY company_profiles_read ON company_profiles FOR SELECT TO authenticated
-  USING (true);
+  USING (id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.jobs j
+    WHERE j.company_id = company_profiles.id AND j.status = 'published'
+  ));
 
 DROP POLICY IF EXISTS documents_access ON documents;
 CREATE POLICY documents_access ON documents FOR ALL TO authenticated

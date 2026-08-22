@@ -143,7 +143,7 @@ export function createUser(
   const newUser: LocalUser = {
     id: Math.random().toString(36).substr(2, 9),
     email: normalizedEmail,
-    password, // In production, hash this!
+    password: "",
     role,
     full_name: data.full_name || data.company_name || "",
     phone: data.phone || "",
@@ -202,7 +202,7 @@ export function resetLegacyUserForVerification(
   const updatedUser: LocalUser = {
     ...existingUser,
     email: normalizeEmail(email),
-    password,
+    password: "",
     role,
     full_name:
       data.full_name || data.company_name || existingUser.full_name || "",
@@ -631,35 +631,6 @@ export function clearPasswordResetCode(email: string): void {
   >;
   delete all[normalizeEmail(email)];
   localStorage.setItem(key, JSON.stringify(all));
-}
-
-// Initialize default admin user
-export function initializeDefaultAdmin(): void {
-  const users = getUsers();
-  const adminExists = users.some(
-    (u) => u.email === "admin@addishospitality.et",
-  );
-
-  if (!adminExists) {
-    const adminUser: LocalUser = {
-      id: "admin-001",
-      email: "admin@addishospitality.et",
-      password: "AddisAdmin2026!",
-      role: "admin",
-      full_name: "Admin",
-      phone: "+251911000000",
-      status: "active",
-      email_verified: true,
-      created_at: new Date().toISOString(),
-    };
-    users.push(adminUser);
-    saveUsers(users);
-  }
-}
-
-// Call initialization on module load
-if (typeof window !== "undefined") {
-  initializeDefaultAdmin();
 }
 
 // Jobs

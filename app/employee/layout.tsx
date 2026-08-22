@@ -40,7 +40,7 @@ export default function EmployeeLayout({
             return;
           }
           const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
-          const currentUser = { ...authUser, ...profile, id: authUser.id, email: authUser.email, role: profile?.role ?? authUser.user_metadata?.role ?? "employee", email_verified: true };
+          const currentUser = { ...authUser, ...profile, id: authUser.id, email: authUser.email, role: profile?.role ?? "employee", email_verified: true };
           if (currentUser.role !== "employee" && currentUser.role !== "admin") {
             setLoading(false);
             router.push("/auth/login");
