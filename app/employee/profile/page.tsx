@@ -161,7 +161,9 @@ export default function EmployeeProfilePage() {
         residence_woreda: formData.get("residence_woreda"),
         residence_area: formData.get("residence_area"),
         emergency_contact_name: formData.get("emergency_contact_name"),
-        emergency_contact_relationship: formData.get("emergency_contact_relationship"),
+        emergency_contact_relationship: formData.get(
+          "emergency_contact_relationship",
+        ),
         emergency_contact_phone: formData.get("emergency_contact_phone"),
         desired_position: formData.get("desired_position"),
         years_experience: formData.get("years_experience"),
@@ -249,22 +251,28 @@ export default function EmployeeProfilePage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("employee.gender")}</label>
+              <label className="text-sm font-medium">
+                {t("employee.gender")}
+              </label>
               <select
                 name="gender"
                 defaultValue={profile?.gender || ""}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
                 <option value="">{t("employee.gender")}</option>
-                {["male", "female", "other", "prefer_not_to_say"].map((value) => (
-                  <option key={value} value={value}>
-                    {t(`taxonomy.gender_${value}`)}
-                  </option>
-                ))}
+                {["male", "female", "other", "prefer_not_to_say"].map(
+                  (value) => (
+                    <option key={value} value={value}>
+                      {t(`taxonomy.gender_${value}`)}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("employee.dateOfBirth")}</label>
+              <label className="text-sm font-medium">
+                {t("employee.dateOfBirth")}
+              </label>
               <div className="flex items-center gap-3">
                 <input
                   name="date_of_birth"
@@ -279,7 +287,9 @@ export default function EmployeeProfilePage() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("employee.alternativePhone")}</label>
+              <label className="text-sm font-medium">
+                {t("employee.alternativePhone")}
+              </label>
               <input
                 name="alternative_phone"
                 type="tel"

@@ -25,7 +25,8 @@ function getAge(dateOfBirth: string): number | null {
     today.getMonth() < birthDate.getMonth() ||
     (today.getMonth() === birthDate.getMonth() &&
       today.getDate() < birthDate.getDate())
-  ) age -= 1;
+  )
+    age -= 1;
   return age >= 0 ? age : null;
 }
 
@@ -73,14 +74,29 @@ export default function EmployeeSettings() {
     if (isSupabaseConfigured()) {
       const loadSupabaseProfile = async () => {
         const supabase = createClient();
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (!authUser) { router.push("/auth/login"); return; }
-        const { data: profile } = await supabase.from("employee_profiles").select("*").eq("id", authUser.id).single();
-        const account = { ...authUser, ...profile, id: authUser.id, email: authUser.email };
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        if (!authUser) {
+          router.push("/auth/login");
+          return;
+        }
+        const { data: profile } = await supabase
+          .from("employee_profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+        const account = {
+          ...authUser,
+          ...profile,
+          id: authUser.id,
+          email: authUser.email,
+        };
         setUser(account);
         setAvatarPath(profile?.avatar_url || null);
         setFormData({
-          full_name: profile?.full_name || authUser.user_metadata?.full_name || "",
+          full_name:
+            profile?.full_name || authUser.user_metadata?.full_name || "",
           email: authUser.email || "",
           phone: profile?.phone || "",
           gender: profile?.gender || "",
@@ -91,7 +107,8 @@ export default function EmployeeSettings() {
           residence_woreda: profile?.residence_woreda || "",
           residence_area: profile?.residence_area || "",
           emergency_contact_name: profile?.emergency_contact_name || "",
-          emergency_contact_relationship: profile?.emergency_contact_relationship || "",
+          emergency_contact_relationship:
+            profile?.emergency_contact_relationship || "",
           emergency_contact_phone: profile?.emergency_contact_phone || "",
           desired_position: profile?.desired_position || "",
           years_experience: profile?.years_experience?.toString() || "",
@@ -126,9 +143,12 @@ export default function EmployeeSettings() {
       residence_sub_city: (employeeProfile as any)?.residence_sub_city || "",
       residence_woreda: (employeeProfile as any)?.residence_woreda || "",
       residence_area: (employeeProfile as any)?.residence_area || "",
-      emergency_contact_name: (employeeProfile as any)?.emergency_contact_name || "",
-      emergency_contact_relationship: (employeeProfile as any)?.emergency_contact_relationship || "",
-      emergency_contact_phone: (employeeProfile as any)?.emergency_contact_phone || "",
+      emergency_contact_name:
+        (employeeProfile as any)?.emergency_contact_name || "",
+      emergency_contact_relationship:
+        (employeeProfile as any)?.emergency_contact_relationship || "",
+      emergency_contact_phone:
+        (employeeProfile as any)?.emergency_contact_phone || "",
       desired_position: employeeProfile?.desired_position || "",
       years_experience: employeeProfile?.years_experience?.toString() || "",
       highest_education: (employeeProfile as any)?.highest_education || "",
@@ -180,10 +200,23 @@ export default function EmployeeSettings() {
 
     if (isSupabaseConfigured()) {
       const supabase = createClient();
-      const { error } = await supabase.from("employee_profiles").upsert({ id: user.id, ...profileUpdates });
-      if (error) { setMessageType("error"); setMessage(error.message); return; }
-      const { error: accountError } = await supabase.from("profiles").update({ full_name: formData.full_name, phone: formData.phone }).eq("id", user.id);
-      if (accountError) { setMessageType("error"); setMessage(accountError.message); return; }
+      const { error } = await supabase
+        .from("employee_profiles")
+        .upsert({ id: user.id, ...profileUpdates });
+      if (error) {
+        setMessageType("error");
+        setMessage(error.message);
+        return;
+      }
+      const { error: accountError } = await supabase
+        .from("profiles")
+        .update({ full_name: formData.full_name, phone: formData.phone })
+        .eq("id", user.id);
+      if (accountError) {
+        setMessageType("error");
+        setMessage(accountError.message);
+        return;
+      }
     } else {
       updateEmployeeProfile(user.id, profileUpdates as any);
     }
@@ -202,12 +235,27 @@ export default function EmployeeSettings() {
     if (!user) return;
 
     if (isSupabaseConfigured()) {
-      if (password.new !== password.confirm) { setMessageType("error"); setMessage("New passwords do not match"); return; }
-      if (password.new.length < 8) { setMessageType("error"); setMessage("Password must be at least 8 characters"); return; }
-      const { error } = await createClient().auth.updateUser({ password: password.new });
-      if (error) { setMessageType("error"); setMessage(error.message); return; }
+      if (password.new !== password.confirm) {
+        setMessageType("error");
+        setMessage("New passwords do not match");
+        return;
+      }
+      if (password.new.length < 8) {
+        setMessageType("error");
+        setMessage("Password must be at least 8 characters");
+        return;
+      }
+      const { error } = await createClient().auth.updateUser({
+        password: password.new,
+      });
+      if (error) {
+        setMessageType("error");
+        setMessage(error.message);
+        return;
+      }
       setPassword({ current: "", new: "", confirm: "" });
-      setMessageType("success"); setMessage("Password changed successfully!");
+      setMessageType("success");
+      setMessage("Password changed successfully!");
       return;
     }
 
@@ -338,7 +386,9 @@ export default function EmployeeSettings() {
               <label className="block text-sm font-medium mb-2">Gender</label>
               <select
                 value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, gender: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select</option>
@@ -350,12 +400,16 @@ export default function EmployeeSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Date of Birth</label>
+              <label className="block text-sm font-medium mb-2">
+                Date of Birth
+              </label>
               <div className="flex items-center gap-3">
                 <input
                   type="date"
                   value={formData.date_of_birth}
-                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date_of_birth: e.target.value })
+                  }
                   className="min-w-0 flex-1 px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <span className="shrink-0 text-sm text-muted-foreground">
@@ -365,11 +419,18 @@ export default function EmployeeSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Alternative Phone Number</label>
+              <label className="block text-sm font-medium mb-2">
+                Alternative Phone Number
+              </label>
               <input
                 type="tel"
                 value={formData.alternative_phone}
-                onChange={(e) => setFormData({ ...formData, alternative_phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    alternative_phone: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -377,17 +438,23 @@ export default function EmployeeSettings() {
             <div className="border-t border-border pt-4 md:col-span-2">
               <h3 className="font-semibold mb-4">Current Residence</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {([
-                  ["residence_city", "City"],
-                  ["residence_sub_city", "Sub-city"],
-                  ["residence_woreda", "Woreda"],
-                  ["residence_area", "Area"],
-                ] as const).map(([key, label]) => (
+                {(
+                  [
+                    ["residence_city", "City"],
+                    ["residence_sub_city", "Sub-city"],
+                    ["residence_woreda", "Woreda"],
+                    ["residence_area", "Area"],
+                  ] as const
+                ).map(([key, label]) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium mb-2">{label}</label>
+                    <label className="block text-sm font-medium mb-2">
+                      {label}
+                    </label>
                     <input
                       value={formData[key]}
-                      onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, [key]: e.target.value })
+                      }
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
@@ -398,17 +465,23 @@ export default function EmployeeSettings() {
             <div className="border-t border-border pt-4 md:col-span-2">
               <h3 className="font-semibold mb-4">Emergency Contact</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {([
-                  ["emergency_contact_name", "Name"],
-                  ["emergency_contact_relationship", "Relationship"],
-                  ["emergency_contact_phone", "Phone"],
-                ] as const).map(([key, label]) => (
+                {(
+                  [
+                    ["emergency_contact_name", "Name"],
+                    ["emergency_contact_relationship", "Relationship"],
+                    ["emergency_contact_phone", "Phone"],
+                  ] as const
+                ).map(([key, label]) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium mb-2">{label}</label>
+                    <label className="block text-sm font-medium mb-2">
+                      {label}
+                    </label>
                     <input
                       type={key === "emergency_contact_phone" ? "tel" : "text"}
                       value={formData[key]}
-                      onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, [key]: e.target.value })
+                      }
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
@@ -575,36 +648,42 @@ export default function EmployeeSettings() {
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6">
             <Lock className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">{isSupabaseConfigured() ? "Set or change password" : "Change Password"}</h2>
+            <h2 className="text-xl font-semibold">
+              {isSupabaseConfigured()
+                ? "Set or change password"
+                : "Change Password"}
+            </h2>
           </div>
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
-            {!isSupabaseConfigured() && <div className="relative">
-              <label className="block text-sm font-medium mb-2">
-                Current Password
-              </label>
+            {!isSupabaseConfigured() && (
               <div className="relative">
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={password.current}
-                  onChange={(e) =>
-                    setPassword({ ...password, current: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords(!showPasswords)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPasswords ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+                <label className="block text-sm font-medium mb-2">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswords ? "text" : "password"}
+                    value={password.current}
+                    onChange={(e) =>
+                      setPassword({ ...password, current: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords(!showPasswords)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPasswords ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>}
+            )}
 
             <div>
               <label className="block text-sm font-medium mb-2">
