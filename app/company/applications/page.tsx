@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  getCurrentUser,
-  getEmployeeProfile,
-  getEmployeeProfiles,
-} from "@/lib/local-storage";
+import { getCurrentUser } from "@/lib/local-storage";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Application, Job, recruitment } from "@/lib/recruitment";
 
 export default function CompanyApplicationsPage() {
@@ -18,9 +15,12 @@ export default function CompanyApplicationsPage() {
   const [meetingType, setMeetingType] = useState("in_person");
   const [place, setPlace] = useState("");
   const [message, setMessage] = useState("");
+  const [employees, setEmployees] = useState<Record<string, any>>({});
 
-  const refresh = () => {
-    const current = getCurrentUser();
+  const refresh = async () => {
+    const supabase = createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const current = isSupabaseConfigured() ? authUser : getCurrentUser();
     setUser(current);
 
     if (!current) {
@@ -29,40 +29,42 @@ export default function CompanyApplicationsPage() {
       return;
     }
 
-    const ownJobs = recruitment
-      .jobs()
+    const ownJobs = (await recruitment.jobs())
       .filter((job) => job.company_id === current.id)
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
     setJobs(ownJobs);
-    setApplications(
-      recruitment
-        .applications()
-        .filter((application) =>
-          ownJobs.some((job) => job.id === application.job_id),
-        )
-        .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    );
+    const companyApplications = (await recruitment.applications())
+      .filter((application) =>
+        ownJobs.some((job) => job.id === application.job_id),
+      )
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    const employeeIds = [...new Set(companyApplications.map((application) => application.employee_id))];
+    const { data: employeeProfiles } = employeeIds.length && isSupabaseConfigured()
+      ? await supabase.from("profiles").select("id, full_name, email, phone").in("id", employeeIds)
+      : { data: [] };
+    setEmployees(Object.fromEntries((employeeProfiles || []).map((employee: any) => [employee.id, employee])));
+    setApplications(companyApplications);
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, []);
 
-  const update = (application: Application, status: Application["status"]) => {
-    recruitment.updateApplication(application.id, status);
+  const update = async (application: Application, status: Application["status"]) => {
+    await recruitment.updateApplication(application.id, status);
     setMessage(`Application marked as ${status.replace("_", " ")}.`);
-    refresh();
+    await refresh();
   };
 
-  const schedule = () => {
+  const schedule = async () => {
     if (!scheduleFor || !user) return;
     if (!when || !place) {
       setMessage("Choose an interview date, time, and location or link.");
       return;
     }
 
-    recruitment.scheduleInterview({
+    await recruitment.scheduleInterview({
       application_id: scheduleFor.id,
       company_id: user.id,
       employee_id: scheduleFor.employee_id,
@@ -75,7 +77,7 @@ export default function CompanyApplicationsPage() {
     setWhen("");
     setPlace("");
     setMessage("Interview invitation sent.");
-    refresh();
+    await refresh();
   };
 
   return (
@@ -95,11 +97,7 @@ export default function CompanyApplicationsPage() {
       ) : (
         applications.map((application) => {
           const job = jobs.find((item) => item.id === application.job_id);
-          const employee =
-            getEmployeeProfile(application.employee_id) ||
-            getEmployeeProfiles().find(
-              (item) => item.id === application.employee_id,
-            );
+          const employee = employees[application.employee_id];
 
           return (
             <article

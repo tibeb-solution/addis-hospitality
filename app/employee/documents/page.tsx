@@ -72,13 +72,10 @@ export default function EmployeeDocumentsPage() {
     setError(null)
 
     try {
-      const form = new FormData()
-      form.append('file', file)
-      form.append('ownerId', user.id)
-      const upload = await fetch('/api/local-files', { method: 'POST', body: form })
-      const uploaded = await upload.json()
-      if (!upload.ok) throw new Error(uploaded.error || 'Unable to save the file locally')
       const supabase = createClient()
+      const filePath = `${user.id}/${crypto.randomUUID()}-${file.name}`
+      const { error: storageError } = await supabase.storage.from('documents').upload(filePath, file, { upsert: false })
+      if (storageError) throw storageError
 
       // Create document record
       const { data: doc, error: insertError } = await supabase
@@ -88,7 +85,7 @@ export default function EmployeeDocumentsPage() {
             owner_id: user.id,
             document_type: selectedType,
             file_name: file.name,
-            file_path: uploaded.path,
+            file_path: filePath,
             file_size: file.size,
             status: 'pending',
           },
@@ -113,10 +110,11 @@ export default function EmployeeDocumentsPage() {
     try {
       const supabase = createClient()
 
-      await fetch('/api/local-files', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: filePath }) })
-
       // Delete record
-      await supabase.from('documents').delete().eq('id', docId)
+      const { error: storageError } = await supabase.storage.from('documents').remove([filePath])
+      if (storageError) throw storageError
+      const { error: deleteError } = await supabase.from('documents').delete().eq('id', docId)
+      if (deleteError) throw deleteError
 
       setDocuments(documents.filter((d) => d.id !== docId))
     } catch (err) {
@@ -210,7 +208,11 @@ export default function EmployeeDocumentsPage() {
                 >
                   {t('common.delete')}
                 </Button>
-                <a className="ml-2 text-sm text-primary underline" href={`/api/local-files/${doc.file_path}`} target="_blank" rel="noreferrer">Open</a>
+                <button className="ml-2 text-sm text-primary underline" onClick={async () => {
+                  const { data, error: signedError } = await createClient().storage.from('documents').createSignedUrl(doc.file_path, 3600)
+                  if (signedError) setError(signedError.message)
+                  else if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+                }}>Open</button>
               </div>
             ))}
           </div>

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
-import { updateEmployeeProfile, logAction } from "@/lib/local-storage";
 import { Button } from "@/components/ui/button";
 // use plain <img> for avatars (data URLs / local storage friendly)
 
@@ -130,9 +129,9 @@ export default function AdminEmployeeDetailPage() {
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {
                 try {
-                  await updateEmployeeProfile(params.id as string, {
+                  await createClient().from("employee_profiles").update({
                     avatar_status: "approved",
-                  });
+                  }).eq("id", params.id as string);
                   setAvatarStatus("approved");
                   logAction(
                     (await createClient().auth.getUser()).data.user?.id ||
@@ -152,9 +151,9 @@ export default function AdminEmployeeDetailPage() {
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {
                 try {
-                  await updateEmployeeProfile(params.id as string, {
+                  await createClient().from("employee_profiles").update({
                     avatar_status: "rejected",
-                  });
+                  }).eq("id", params.id as string);
                   setAvatarStatus("rejected");
                   logAction(
                     (await createClient().auth.getUser()).data.user?.id ||
@@ -174,10 +173,10 @@ export default function AdminEmployeeDetailPage() {
               className="px-3 py-1 rounded border text-sm"
               onClick={async () => {
                 try {
-                  await updateEmployeeProfile(params.id as string, {
+                  await createClient().from("employee_profiles").update({
                     avatar_url: null,
                     avatar_status: null,
-                  });
+                  }).eq("id", params.id as string);
                   setAvatarUrl(null);
                   setAvatarStatus(null);
                   logAction(
@@ -356,14 +355,17 @@ export default function AdminEmployeeDetailPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a
-                    href={`/api/local-files/${doc.file_path}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
                     className="text-sm text-primary underline"
+                    onClick={async () => {
+                      const { data, error } = await createClient().storage.from("documents").createSignedUrl(doc.file_path, 3600);
+                      if (error) return;
+                      if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                    }}
                   >
                     View
-                  </a>
+                  </button>
                   <span
                     className={`px-2 py-1 rounded text-xs font-medium ${
                       doc.status === "approved"

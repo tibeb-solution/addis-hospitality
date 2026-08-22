@@ -21,38 +21,35 @@ export default function AdminEmployeesPage() {
     const loadEmployees = async () => {
       const supabase = createClient();
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("role", "employee")
         .order("created_at", { ascending: false });
 
-      // attach avatar public URLs when available
-      const enriched = await Promise.all(
-        (data || []).map(async (emp: any) => {
-          try {
-            const { data: profile } = await supabase
-              .from("employee_profiles")
-              .select("*")
-              .eq("id", emp.id)
-              .single();
-            if (profile?.avatar_url) {
-              const { data: signed } = supabase.storage
-                .from("avatars")
-                .getPublicUrl(profile.avatar_url);
-              return {
-                ...emp,
-                ...profile,
-                avatarUrl: signed.publicUrl || "",
-              };
-            }
-            if (profile) return { ...emp, ...profile };
-          } catch (e) {
-            // ignore
-          }
-          return emp;
-        }),
+      if (error) {
+        console.error("Unable to load employees", error);
+        setLoading(false);
+        return;
+      }
+
+      const employeeIds = (data || []).map((employee: any) => employee.id);
+      const { data: employeeProfiles } = employeeIds.length
+        ? await supabase.from("employee_profiles").select("*").in("id", employeeIds)
+        : { data: [] };
+      const profilesById = new Map(
+        (employeeProfiles || []).map((profile: any) => [profile.id, profile]),
       );
+
+      // Enrich the account list from one batched profile query.
+      const enriched = (data || []).map((employee: any) => {
+        const profile = profilesById.get(employee.id);
+        if (!profile) return employee;
+        const avatarUrl = profile.avatar_url
+          ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_url).data.publicUrl
+          : "";
+        return { ...employee, ...profile, avatarUrl };
+      });
 
       setEmployees(enriched);
       setFiltered(enriched);

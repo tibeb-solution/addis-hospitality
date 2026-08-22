@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getCompanyProfile } from "@/lib/local-storage";
 import { Job, recruitment } from "@/lib/recruitment";
 
 const statusClass: Record<Job["status"], string> = {
@@ -20,21 +19,34 @@ function formatStatus(status: Job["status"] | "all") {
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [filter, setFilter] = useState<Job["status"] | "all">(
     "pending_review",
   );
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const refresh = () => {
-    setJobs(
-      recruitment
-        .jobs()
-        .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    );
+  const refresh = async () => {
+    try {
+      const [loadedJobs, applications] = await Promise.all([
+        recruitment.jobs(),
+        recruitment.applications(),
+      ]);
+      setJobs(loadedJobs.sort((a, b) => b.created_at.localeCompare(a.created_at)));
+      setApplicationCounts(
+        applications.reduce<Record<string, number>>((counts, application) => {
+          counts[application.job_id] = (counts[application.job_id] || 0) + 1;
+          return counts;
+        }, {}),
+      );
+      setError("");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load jobs.");
+    }
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, []);
 
   const visibleJobs = useMemo(
@@ -63,10 +75,10 @@ export default function AdminJobsPage() {
     [jobs],
   );
 
-  const updateStatus = (job: Job, status: Job["status"]) => {
-    recruitment.updateJob(job.id, { status });
+  const updateStatus = async (job: Job, status: Job["status"]) => {
+    await recruitment.updateJob(job.id, { status });
     setMessage(`${job.title} is now ${formatStatus(status)}.`);
-    refresh();
+    await refresh();
   };
 
   return (
@@ -78,6 +90,7 @@ export default function AdminJobsPage() {
           them.
         </p>
         {message && <p className="mt-2 text-sm text-primary">{message}</p>}
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -109,11 +122,6 @@ export default function AdminJobsPage() {
       ) : (
         <section className="space-y-4">
           {visibleJobs.map((job) => {
-            const company = getCompanyProfile(job.company_id);
-            const applications = recruitment
-              .applications()
-              .filter((application) => application.job_id === job.id).length;
-
             return (
               <article
                 key={job.id}
@@ -131,7 +139,7 @@ export default function AdminJobsPage() {
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {company?.company_name || job.company_name} |{" "}
+                        {job.company_name} |{" "}
                         {job.location} | {job.employment_type.replace("_", " ")}
                       </p>
                     </div>
@@ -146,7 +154,7 @@ export default function AdminJobsPage() {
                       <span>
                         Languages: {job.languages.join(", ") || "Not specified"}
                       </span>
-                      <span>Applications: {applications}</span>
+                      <span>Applications: {applicationCounts[job.id] || 0}</span>
                     </div>
                   </div>
 

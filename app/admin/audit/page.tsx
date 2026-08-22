@@ -15,18 +15,17 @@ export default function AdminAuditLogPage() {
   useEffect(() => {
     const loadLogs = async () => {
       const supabase = createClient();
-
-      const { data: profiles } = await supabase
+      const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, email, status, reviewed_at, created_at")
-        .order("reviewed_at", { ascending: false })
+        .select("id, email, role, status, reviewed_at, created_at, full_name")
+        .order("created_at", { ascending: false })
         .limit(100);
 
-      const { data: companies } = await supabase
-        .from("company_profiles")
-        .select("id, email, company_name, is_verified, reviewed_at, created_at")
-        .order("reviewed_at", { ascending: false })
-        .limit(100);
+      if (error) {
+        console.error("Unable to load audit log", error);
+        setLoading(false);
+        return;
+      }
 
       const employeeLogs =
         profiles
@@ -43,9 +42,11 @@ export default function AdminAuditLogPage() {
           })) || [];
 
       const companyLogs =
-        companies?.map((company: any) => ({
+        profiles
+          ?.filter((profile: any) => profile.role === "company")
+          .map((company: any) => ({
           id: `company-${company.id}-${company.reviewed_at || company.created_at || "unknown"}`,
-          user: company.email || company.company_name || "—",
+          user: company.email || company.full_name || "—",
           action: company.reviewed_at ? "status_change" : "signup",
           details: company.is_verified
             ? "Company verification: approved"
@@ -53,7 +54,7 @@ export default function AdminAuditLogPage() {
           timestamp: company.reviewed_at || company.created_at,
           approvedAt: company.is_verified ? company.reviewed_at : null,
           reviewedAt: company.reviewed_at,
-        })) || [];
+          })) || [];
 
       const auditLogs = [...employeeLogs, ...companyLogs].sort(
         (a, b) =>

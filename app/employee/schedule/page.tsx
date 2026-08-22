@@ -10,31 +10,30 @@ export default function EmployeeSchedulePage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [message, setMessage] = useState("");
 
-  const refresh = () => {
+  const refresh = async () => {
     const user = getCurrentUser();
     if (!user) return;
     setInterviews(
-      recruitment
-        .interviews()
+      (await recruitment.interviews())
         .filter((interview) => interview.employee_id === user.id)
         .sort((a, b) => b.starts_at.localeCompare(a.starts_at)),
     );
-    setNotifications(recruitment.notifications(user.id));
+    setNotifications(await recruitment.notifications(user.id));
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, []);
 
-  const respond = (interview: Interview, status: "accepted" | "declined") => {
-    recruitment.respondToInterview(interview.id, status);
+  const respond = async (interview: Interview, status: "accepted" | "declined") => {
+    await recruitment.respondToInterview(interview.id, status);
     setMessage(`Interview ${status}.`);
-    refresh();
+    await refresh();
   };
 
-  const markRead = (notification: Notification) => {
-    recruitment.markRead(notification.id);
-    refresh();
+  const markRead = async (notification: Notification) => {
+    await recruitment.markRead(notification.id);
+    await refresh();
   };
 
   return (

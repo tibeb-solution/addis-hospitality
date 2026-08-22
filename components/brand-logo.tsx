@@ -19,7 +19,7 @@ export function BrandLogo({ variant = 'header', className }: BrandLogoProps) {
       alt="Addis Hospitality Service"
       width={720}
       height={383}
-      priority={variant === 'hero'}
+      priority={variant === 'hero' || variant === 'auth'}
       className={cn(variantClasses[variant], className)}
     />
   )

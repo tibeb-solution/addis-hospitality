@@ -7,6 +7,7 @@ import Link from "next/link";
 import { updateUserPasswordByEmail, verifyPasswordResetCode } from "@/lib/local-storage";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function ResetPasswordPage() {
   const t = useTranslations();
@@ -35,6 +36,32 @@ export default function ResetPasswordPage() {
     const code = String(formData.get("code") || "").trim();
     const password = String(formData.get("password") || "");
     const passwordConfirm = String(formData.get("passwordConfirm") || "");
+
+    if (isSupabaseConfigured()) {
+      if (!password || !passwordConfirm) {
+        setError(t("validation.required") || "Password is required.");
+        setLoading(false);
+        return;
+      }
+      if (password !== passwordConfirm) {
+        setError(t("auth.passwordsMustMatch") || "Passwords do not match.");
+        setLoading(false);
+        return;
+      }
+      if (password.length < 8) {
+        setError(t("auth.passwordTooShort") || "Password must be at least 8 characters.");
+        setLoading(false);
+        return;
+      }
+      const { error: updateError } = await createClient().auth.updateUser({ password });
+      if (updateError) {
+        setError(updateError.message);
+        setLoading(false);
+        return;
+      }
+      router.push("/auth/login");
+      return;
+    }
 
     if (!pendingEmail) {
       setError(t("errors.unauthorized") || "Reset session not found.");
@@ -125,7 +152,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <form onSubmit={handleUpdatePassword} className="space-y-6">
-          <div className="space-y-2">
+          {!isSupabaseConfigured() && <div className="space-y-2">
             <label className="text-sm font-medium">Verification code</label>
             <input
               name="code"
@@ -137,7 +164,7 @@ export default function ResetPasswordPage() {
               required
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
+          </div>}
 
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("auth.password")}</label>

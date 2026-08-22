@@ -27,83 +27,77 @@ export default function AdminDashboard() {
   useEffect(() => {
     const loadStats = async () => {
       const supabase = createClient();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-      // Get employee count
-      const { count: empCount } = await supabase
-        .from("employee_profiles")
-        .select("id", { count: "exact", head: true });
+        const { count: empCount } = await supabase
+          .from("employee_profiles")
+          .select("id", { count: "exact", head: true });
 
-      // Get company count
-      const { count: compCount } = await supabase
-        .from("company_profiles")
-        .select("id", { count: "exact", head: true });
+        const { count: compCount } = await supabase
+          .from("company_profiles")
+          .select("id", { count: "exact", head: true });
 
-      // Get profile stats
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select(
-          "id, email, full_name, role, status, email_verified, created_at",
-        );
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select(
+            "id, email, full_name, role, status, email_verified, created_at",
+          );
 
-      const statusMap =
-        profiles?.reduce((acc: any, p: any) => {
-          acc[p.status] = (acc[p.status] || 0) + 1;
+        const [jobs, notifications, interviews, applications] = await Promise.all([
+          recruitment.jobs(),
+          recruitment.notifications(user?.id || "admin-001"),
+          recruitment.interviews(),
+          recruitment.applications(),
+        ]);
+
+        const statusMap =
+          profiles?.reduce((acc: any, profile: any) => {
+          acc[profile.status] = (acc[profile.status] || 0) + 1;
           return acc;
         }, {}) || {};
 
-      setPendingAccounts(
-        (profiles || [])
-          .filter(
-            (profile) =>
-              profile.status !== "active" || profile.email_verified === false,
-          )
-          .slice(0, 5),
-      );
+        setPendingAccounts(
+          (profiles || [])
+            .filter(
+              (profile: any) =>
+                profile.status !== "active" || profile.email_verified === false,
+            )
+            .slice(0, 5),
+        );
 
-      setPendingJobs(
-        recruitment
-          .jobs()
-          .filter((job) => job.status === "pending_review")
-          .slice(0, 5),
-      );
-      setHiringNotifications(
-        recruitment
-          .notifications("admin-001")
-          .filter((notification) =>
-            ["application", "interview"].includes(notification.type),
-          )
-          .slice(0, 8),
-      );
-      setScheduledInterviews(
-        recruitment
-          .interviews()
-          .map((interview) => {
-            const application = recruitment
-              .applications()
-              .find((item) => item.id === interview.application_id);
-            const job = recruitment
-              .jobs()
-              .find((item) => item.id === application?.job_id);
-            const employee = getEmployeeProfile(interview.employee_id);
-            return {
-              ...interview,
-              employeeName: employee?.full_name || "Employee",
-              jobTitle: job?.title || "Job application",
-            };
-          })
-          .sort((a, b) => b.starts_at.localeCompare(a.starts_at)),
-      );
+        setPendingJobs(jobs.filter((job) => job.status === "pending_review").slice(0, 5));
+        setHiringNotifications(notifications.filter((notification) => ["application", "interview"].includes(notification.type)).slice(0, 8));
+        setScheduledInterviews(
+          interviews
+            .map((interview) => {
+              const application = applications.find((item) => item.id === interview.application_id);
+              const job = jobs.find((item) => item.id === application?.job_id);
+              const employee =
+                getEmployeeProfile(interview.employee_id) ||
+                profiles?.find((profile: any) => profile.id === interview.employee_id);
+              return {
+                ...interview,
+                employeeName: employee?.full_name || "Employee",
+                jobTitle: job?.title || "Job application",
+              };
+            })
+            .sort((a, b) => b.starts_at.localeCompare(a.starts_at)),
+        );
 
-      setStats({
-        totalEmployees: empCount || 0,
-        totalCompanies: compCount || 0,
-        activeAccounts: statusMap.active || 0,
-        pendingApproval: statusMap.pending || 0,
-        rejectedAccounts: statusMap.rejected || 0,
-        suspendedAccounts: statusMap.suspended || 0,
-      });
-
-      setLoading(false);
+        setStats({
+          totalEmployees: empCount || 0,
+          totalCompanies: compCount || 0,
+          activeAccounts: statusMap.active || 0,
+          pendingApproval: statusMap.pending || 0,
+          rejectedAccounts: statusMap.rejected || 0,
+          suspendedAccounts: statusMap.suspended || 0,
+        });
+      } catch (error) {
+        console.error("Unable to load admin dashboard", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadStats();

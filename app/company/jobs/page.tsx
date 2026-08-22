@@ -3,7 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getCompanyProfile, getCurrentUser } from "@/lib/local-storage";
-import { Job, formatDeadlineCountdown, recruitment } from "@/lib/recruitment";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { Job, formatDeadlineDate, formatDeadlineCountdown, recruitment } from "@/lib/recruitment";
 
 const fieldClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
@@ -14,36 +15,51 @@ function statusLabel(status: Job["status"]) {
 
 export default function CompanyJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [applicationCount, setApplicationCount] = useState<Record<string, number>>({});
   const [user, setUser] = useState<any>(null);
   const [notice, setNotice] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
-  const refresh = () => {
-    const current = getCurrentUser();
+  const refresh = async () => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const current = isSupabaseConfigured() ? session?.user : getCurrentUser();
     setUser(current);
+    const [companyJobs, applications] = await Promise.all([
+      recruitment.jobs(),
+      recruitment.applications(),
+    ]);
     setJobs(
-      recruitment
-        .jobs()
+      companyJobs
         .filter((job) => job.company_id === current?.id)
         .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    );
+    setApplicationCount(
+      applications.reduce<Record<string, number>>((counts, application) => {
+        counts[application.job_id] = (counts[application.job_id] || 0) + 1;
+        return counts;
+      }, {}),
     );
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
     const timer = window.setInterval(() => setNow(Date.now()), 60000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) return;
 
     const form = event.currentTarget;
     const data = new FormData(form);
-    const profile = getCompanyProfile(user.id);
+    const profile = isSupabaseConfigured()
+      ? (await createClient().from("company_profiles").select("company_name").eq("id", user.id).maybeSingle()).data
+      : getCompanyProfile(user.id);
 
-    recruitment.createJob({
+    try {
+      await recruitment.createJob({
       company_id: user.id,
       company_name: profile?.company_name || user.full_name,
       title: String(data.get("title") || ""),
@@ -68,13 +84,17 @@ export default function CompanyJobsPage() {
       application_deadline:
         String(data.get("application_deadline") || "") || undefined,
       status: "pending_review",
-    });
+      });
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Unable to submit job.");
+      return;
+    }
 
     form.reset();
     setNotice(
       "Job submitted to admin review. Employees will see it after approval.",
     );
-    refresh();
+    await refresh();
   };
 
   return (
@@ -164,10 +184,6 @@ export default function CompanyJobsPage() {
           </p>
         ) : (
           jobs.map((job) => {
-            const applicationCount = recruitment
-              .applications()
-              .filter((application) => application.job_id === job.id).length;
-
             return (
               <article
                 key={job.id}
@@ -182,16 +198,12 @@ export default function CompanyJobsPage() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {job.location} | {job.employment_type.replace("_", " ")} |{" "}
-                    {applicationCount} applications
+                    {applicationCount[job.id] || 0} applications
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Posted {new Date(job.created_at).toLocaleString()} |
                     Deadline:{" "}
-                    {job.application_deadline
-                      ? new Date(
-                          `${job.application_deadline}T23:59:59`,
-                        ).toLocaleDateString()
-                      : "Open"}
+                    {formatDeadlineDate(job.application_deadline)}
                     {job.application_deadline && (
                       <span className="ml-2 font-semibold text-red-600">
                         {formatDeadlineCountdown(job.application_deadline, now)}
@@ -204,8 +216,7 @@ export default function CompanyJobsPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        recruitment.updateJob(job.id, { status: "closed" });
-                        refresh();
+                        void recruitment.updateJob(job.id, { status: "closed" }).then(refresh);
                       }}
                     >
                       Close posting
@@ -215,10 +226,9 @@ export default function CompanyJobsPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        recruitment.updateJob(job.id, {
+                        void recruitment.updateJob(job.id, {
                           status: "pending_review",
-                        });
-                        refresh();
+                        }).then(refresh);
                       }}
                     >
                       Send for review again

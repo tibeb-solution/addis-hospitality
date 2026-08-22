@@ -10,6 +10,7 @@ import {
   getDocuments,
   saveDocuments,
 } from "@/lib/local-storage";
+import { createBrowserClient } from "@supabase/ssr";
 
 const TABLE_KEY_MAP: Record<string, string> = {
   profiles: "ah_users",
@@ -197,7 +198,7 @@ function createQuery(table: string) {
   return query;
 }
 
-export function createClient() {
+function createLocalClient() {
   function auth() {
     return {
       async getUser() {
@@ -207,6 +208,9 @@ export function createClient() {
         return { data: { session: null } };
       },
       async exchangeCodeForSession(_code: string) {
+        return { error: null };
+      },
+      async signOut() {
         return { error: null };
       },
       async resetPasswordForEmail(_email: string, _opts?: any) {
@@ -285,4 +289,26 @@ export function createClient() {
     from,
     storage: storage(),
   };
+}
+
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+
+export function isSupabaseConfigured() {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+}
+
+export function createClient() {
+  if (!isSupabaseConfigured()) return createLocalClient();
+
+  if (!browserClient) {
+    browserClient = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+  }
+
+  return browserClient;
 }

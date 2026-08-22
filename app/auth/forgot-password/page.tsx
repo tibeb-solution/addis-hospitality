@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   findUserByEmail,
   generatePasswordResetCode,
@@ -36,6 +37,19 @@ export default function ForgotPasswordPage() {
     }
 
     try {
+      if (isSupabaseConfigured()) {
+        const { error: resetError } = await createClient().auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+        if (resetError) {
+          setError(resetError.message);
+        } else {
+          setSuccess(true);
+        }
+        setLoading(false);
+        return;
+      }
+
       const user = findUserByEmail(email);
       const normalizedEmail = email.trim().toLowerCase();
 

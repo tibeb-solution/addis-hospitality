@@ -12,6 +12,7 @@ export default function CompanyDashboard() {
   const t = useTranslations();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function CompanyDashboard() {
         .single();
 
       setProfile(data || null);
+      setJobs((await recruitment.jobs()).filter((job) => job.company_id === user.id));
       setLoading(false);
     };
 
@@ -63,13 +65,12 @@ export default function CompanyDashboard() {
               <Button variant="outline" size="sm">Manage jobs</Button>
             </Link>
           </div>
-          {recruitment.jobs().filter((job) => job.company_id === profile?.id && ["pending_review", "published", "rejected", "closed"].includes(job.status)).length === 0 ? (
+          {jobs.filter((job) => ["pending_review", "published", "rejected", "closed"].includes(job.status)).length === 0 ? (
             <p className="text-sm text-muted-foreground">No jobs submitted yet.</p>
           ) : (
             <div className="space-y-3">
-              {recruitment
-                .jobs()
-                .filter((job) => job.company_id === profile?.id && ["pending_review", "published", "rejected", "closed"].includes(job.status))
+              {jobs
+                .filter((job) => ["pending_review", "published", "rejected", "closed"].includes(job.status))
                 .sort((a, b) => b.created_at.localeCompare(a.created_at))
                 .slice(0, 4)
                 .map((job) => (
@@ -80,10 +81,10 @@ export default function CompanyDashboard() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {job.status !== "published" && (
-                        <Button size="sm" onClick={() => recruitment.updateJob(job.id, { status: "published" })}>Publish</Button>
+                        <Button size="sm" onClick={() => void recruitment.updateJob(job.id, { status: "published" })}>Publish</Button>
                       )}
                       {job.status !== "rejected" && (
-                        <Button size="sm" variant="outline" onClick={() => recruitment.updateJob(job.id, { status: "rejected" })}>Reject</Button>
+                        <Button size="sm" variant="outline" onClick={() => void recruitment.updateJob(job.id, { status: "rejected" })}>Reject</Button>
                       )}
                     </div>
                   </div>

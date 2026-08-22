@@ -12,6 +12,7 @@ import {
   updateUserPasswordByEmail,
 } from "@/lib/local-storage";
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 export default function EmployeeSettings() {
@@ -45,6 +46,33 @@ export default function EmployeeSettings() {
   );
 
   useEffect(() => {
+    if (isSupabaseConfigured()) {
+      const loadSupabaseProfile = async () => {
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) { router.push("/auth/login"); return; }
+        const { data: profile } = await supabase.from("employee_profiles").select("*").eq("id", authUser.id).single();
+        const account = { ...authUser, ...profile, id: authUser.id, email: authUser.email };
+        setUser(account);
+        setAvatarPath(profile?.avatar_url || null);
+        setFormData({
+          full_name: profile?.full_name || authUser.user_metadata?.full_name || "",
+          email: authUser.email || "",
+          phone: profile?.phone || "",
+          desired_position: profile?.desired_position || "",
+          years_experience: profile?.years_experience?.toString() || "",
+          highest_education: profile?.highest_education || "",
+          availability: profile?.availability || "",
+          preferred_cities: profile?.preferred_cities || "",
+          willing_to_relocate: Boolean(profile?.willing_to_relocate),
+          expected_salary_min: profile?.expected_salary_min?.toString() || "",
+          expected_salary_max: profile?.expected_salary_max?.toString() || "",
+        });
+        setLoading(false);
+      };
+      void loadSupabaseProfile();
+      return;
+    }
     const currentUser = getCurrentUser();
     if (!currentUser) {
       router.push("/auth/login");
@@ -96,7 +124,15 @@ export default function EmployeeSettings() {
       phone: formData.phone,
     };
 
-    updateEmployeeProfile(user.id, profileUpdates as any);
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { error } = await supabase.from("employee_profiles").upsert({ id: user.id, ...profileUpdates });
+      if (error) { setMessageType("error"); setMessage(error.message); return; }
+      const { error: accountError } = await supabase.from("profiles").update({ full_name: formData.full_name, phone: formData.phone }).eq("id", user.id);
+      if (accountError) { setMessageType("error"); setMessage(accountError.message); return; }
+    } else {
+      updateEmployeeProfile(user.id, profileUpdates as any);
+    }
 
     const updated = { ...user, ...profileUpdates };
     setCurrentUser(updated);
@@ -110,6 +146,16 @@ export default function EmployeeSettings() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (isSupabaseConfigured()) {
+      if (password.new !== password.confirm) { setMessageType("error"); setMessage("New passwords do not match"); return; }
+      if (password.new.length < 8) { setMessageType("error"); setMessage("Password must be at least 8 characters"); return; }
+      const { error } = await createClient().auth.updateUser({ password: password.new });
+      if (error) { setMessageType("error"); setMessage(error.message); return; }
+      setPassword({ current: "", new: "", confirm: "" });
+      setMessageType("success"); setMessage("Password changed successfully!");
+      return;
+    }
 
     if (password.current !== user.password) {
       setMessageType("error");
@@ -393,11 +439,11 @@ export default function EmployeeSettings() {
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6">
             <Lock className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Change Password</h2>
+            <h2 className="text-xl font-semibold">{isSupabaseConfigured() ? "Set or change password" : "Change Password"}</h2>
           </div>
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
-            <div className="relative">
+            {!isSupabaseConfigured() && <div className="relative">
               <label className="block text-sm font-medium mb-2">
                 Current Password
               </label>
@@ -422,7 +468,7 @@ export default function EmployeeSettings() {
                   )}
                 </button>
               </div>
-            </div>
+            </div>}
 
             <div>
               <label className="block text-sm font-medium mb-2">

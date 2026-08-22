@@ -3,10 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, getEmployeeProfile } from "@/lib/local-storage";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   Application,
   Interview,
   Job,
+  formatDeadlineDate,
   formatDeadlineCountdown,
   isJobExpired,
   recruitment,
@@ -16,84 +18,104 @@ export default function EmployeeJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [message, setMessage] = useState("");
   const [ratingFor, setRatingFor] = useState<Application | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [applying, setApplying] = useState(false);
 
-  const refresh = () => {
-    const current = getCurrentUser();
+  const refresh = async () => {
+    const { data: { user: authUser } } = await createClient().auth.getUser();
+    const current = isSupabaseConfigured() ? authUser : getCurrentUser();
     setUser(current);
 
+    const [availableJobs, allApplications, allInterviews, allDrafts, allRatings] = await Promise.all([
+      recruitment.jobs(),
+      recruitment.applications(),
+      recruitment.interviews(),
+      current?.id ? recruitment.applicationDrafts(current.id) : Promise.resolve([]),
+      recruitment.ratings(),
+    ]);
     setJobs(
-      recruitment
-        .jobs()
+      availableJobs
         .filter((job) => job.status === "published" && !isJobExpired(job))
         .sort((a, b) => b.created_at.localeCompare(a.created_at)),
     );
 
     setApplications(
-      recruitment
-        .applications()
+      allApplications
         .filter((application) => application.employee_id === current?.id),
     );
 
     setInterviews(
-      recruitment
-        .interviews()
+      allInterviews
         .filter((interview) => interview.employee_id === current?.id),
     );
+    setDrafts(allDrafts);
+    setRatings(allRatings);
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
     const timer = window.setInterval(() => setNow(Date.now()), 60000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const openApplication = (job: Job) => {
+  const openApplication = async (job: Job) => {
     setSelectedJob(job);
     if (user) {
-      recruitment.saveApplicationDraft(
+      const draft = await recruitment.getApplicationDraft(job.id, user.id);
+      void recruitment.saveApplicationDraft(
         job.id,
         user.id,
-        recruitment.getApplicationDraft(job.id, user.id)?.cover_note || "",
+        draft?.cover_note || "",
       );
     }
     setMessage("");
   };
 
-  const apply = (event: FormEvent<HTMLFormElement>) => {
+  const apply = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedJob || !user) return;
+    if (!selectedJob || !user || applying) return;
 
     try {
-      const profile = getEmployeeProfile(user.id);
+      setApplying(true);
+      setMessage("");
+      const profile = isSupabaseConfigured()
+        ? (await createClient().from("employee_profiles").select("*").eq("id", user.id).maybeSingle()).data
+        : getEmployeeProfile(user.id);
       const note = String(
         new FormData(event.currentTarget).get("cover_note") || "",
       );
-      recruitment.apply(selectedJob, user.id, profile, note);
-      recruitment.deleteApplicationDraft(selectedJob.id, user.id);
-      setMessage(`Application sent for ${selectedJob.title}.`);
+      await recruitment.apply(selectedJob, user.id, profile, note);
+      try {
+        await recruitment.deleteApplicationDraft(selectedJob.id, user.id);
+      } catch (draftError) {
+        console.warn("Application was sent, but draft cleanup failed.", draftError);
+      }
+      const appliedTitle = selectedJob.title;
       setSelectedJob(null);
-      refresh();
+      await refresh();
+      setMessage(`Applied successfully for ${appliedTitle}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to apply.");
+    } finally {
+      setApplying(false);
     }
   };
 
-  const submitRating = (event: FormEvent<HTMLFormElement>) => {
+  const submitRating = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!ratingFor || !user) return;
 
     const form = new FormData(event.currentTarget);
-    const job =
-      jobs.find((item) => item.id === ratingFor.job_id) ||
-      recruitment.jobs().find((item) => item.id === ratingFor.job_id);
+    const job = jobs.find((item) => item.id === ratingFor.job_id);
 
     try {
-      recruitment.rate({
+      await recruitment.rate({
         application_id: ratingFor.id,
         author_id: user.id,
         subject_id: job?.company_id || "",
@@ -139,9 +161,9 @@ export default function EmployeeJobsPage() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      recruitment.respondToInterview(interview.id, "accepted");
+                      void recruitment.respondToInterview(interview.id, "accepted");
                       setMessage("Interview accepted.");
-                      refresh();
+                      void refresh();
                     }}
                   >
                     Accept
@@ -150,9 +172,9 @@ export default function EmployeeJobsPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      recruitment.respondToInterview(interview.id, "declined");
+                      void recruitment.respondToInterview(interview.id, "declined");
                       setMessage("Interview declined.");
-                      refresh();
+                      void refresh();
                     }}
                   >
                     Decline
@@ -200,11 +222,7 @@ export default function EmployeeJobsPage() {
                     <p className="mt-2 text-xs text-muted-foreground">
                       Posted {new Date(job.created_at).toLocaleString()} |
                       Deadline:{" "}
-                      {job.application_deadline
-                        ? new Date(
-                            `${job.application_deadline}T23:59:59`,
-                          ).toLocaleDateString()
-                        : "Open"}
+                      {formatDeadlineDate(job.application_deadline)}
                       {job.application_deadline && (
                         <span className="ml-2 font-semibold text-red-600">
                           {formatDeadlineCountdown(
@@ -221,7 +239,7 @@ export default function EmployeeJobsPage() {
                   >
                     {applied
                       ? "Applied"
-                      : recruitment.getApplicationDraft(job.id, user?.id || "")
+                      : drafts.some((draft) => draft.job_id === job.id && draft.employee_id === user?.id)
                         ? "Continue"
                         : "Apply"}
                   </Button>
@@ -240,14 +258,10 @@ export default function EmployeeJobsPage() {
           </p>
         ) : (
           applications.map((application) => {
-            const job = recruitment
-              .jobs()
-              .find((item) => item.id === application.job_id);
+            const job = jobs.find((item) => item.id === application.job_id);
             const rated =
               user &&
-              recruitment
-                .ratings()
-                .some(
+              ratings.some(
                   (rating) =>
                     rating.application_id === application.id &&
                     rating.author_id === user.id,
@@ -293,12 +307,12 @@ export default function EmployeeJobsPage() {
             className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2"
             placeholder="Optional note to the employer"
             defaultValue={
-              recruitment.getApplicationDraft(selectedJob.id, user?.id || "")
+              drafts.find((draft) => draft.job_id === selectedJob.id && draft.employee_id === user?.id)
                 ?.cover_note || ""
             }
             onChange={(event) =>
               user &&
-              recruitment.saveApplicationDraft(
+              void recruitment.saveApplicationDraft(
                 selectedJob.id,
                 user.id,
                 event.target.value,
@@ -306,7 +320,9 @@ export default function EmployeeJobsPage() {
             }
           />
           <div className="flex gap-2">
-            <Button type="submit">Send application</Button>
+            <Button type="submit" disabled={applying}>
+              {applying ? "Sending..." : "Send application"}
+            </Button>
             <Button
               type="button"
               variant="outline"

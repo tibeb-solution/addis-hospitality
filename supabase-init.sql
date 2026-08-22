@@ -18,6 +18,51 @@ CREATE TABLE IF NOT EXISTS profiles (
   reviewed_by uuid REFERENCES profiles(id)
 );
 
+-- Production auth link. Supabase Auth owns credentials; profiles stores app data only.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE profiles DROP COLUMN IF EXISTS password;
+
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  selected_role text := COALESCE(NEW.raw_user_meta_data->>'role', 'employee');
+BEGIN
+  INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
+  VALUES (
+    NEW.id,
+    NEW.id,
+    NEW.email,
+    CASE WHEN selected_role IN ('employee', 'company', 'admin') THEN selected_role ELSE 'employee' END,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+    CASE WHEN selected_role = 'admin' THEN 'active' ELSE 'pending' END,
+    true
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    auth_user_id = EXCLUDED.auth_user_id;
+
+  IF selected_role = 'company' THEN
+    INSERT INTO public.company_profiles (id, company_name, business_type)
+    VALUES (NEW.id, NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'business_type')
+    ON CONFLICT (id) DO NOTHING;
+  ELSE
+    INSERT INTO public.employee_profiles (id)
+    VALUES (NEW.id)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+
 -- Employee-specific profile data
 CREATE TABLE IF NOT EXISTS employee_profiles (
   id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
@@ -34,6 +79,7 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
   availability text,
   willing_to_relocate boolean
 );
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS avatar_status text;
 
 -- Company-specific profile data
 CREATE TABLE IF NOT EXISTS company_profiles (
@@ -55,6 +101,10 @@ CREATE TABLE IF NOT EXISTS company_profiles (
   is_verified boolean DEFAULT false,
   business_type text
 );
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS review_note text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_at timestamptz;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_by uuid REFERENCES profiles(id);
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS logo_status text;
 
 -- Documents uploaded by users
 CREATE TABLE IF NOT EXISTS documents (
@@ -112,6 +162,15 @@ CREATE TABLE IF NOT EXISTS applications (
   match_score smallint CHECK (match_score BETWEEN 0 AND 100),
   cover_note text,
   created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (job_id, employee_id)
+);
+
+CREATE TABLE IF NOT EXISTS application_drafts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id uuid NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  employee_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  cover_note text,
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (job_id, employee_id)
 );
@@ -178,11 +237,150 @@ CREATE INDEX IF NOT EXISTS idx_applications_job_status ON applications (job_id, 
 CREATE INDEX IF NOT EXISTS idx_applications_employee ON applications (employee_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (user_id, read_at, created_at DESC);
 
--- Seed admin (change password/hashing as needed)
-INSERT INTO profiles (id, email, password, role, full_name, phone, status, email_verified)
-VALUES ('00000000-0000-0000-0000-000000000001','admin@addishospitality.et','AddisAdmin2026!','admin','Admin','+251911000000','active', true)
-ON CONFLICT (email) DO NOTHING;
+-- Admin setup is intentionally linked to Supabase Auth.
+-- First create the admin user in Dashboard > Authentication > Users.
+-- Then run this command, replacing the email with that Auth user's email:
+-- UPDATE public.profiles
+-- SET role = 'admin', status = 'active', email_verified = true
+-- WHERE auth_user_id = (
+--   SELECT id FROM auth.users
+--   WHERE lower(email) = lower('admin@addishospitality.et')
+-- );
 
--- Notes:
--- 1) Supabase storage buckets are managed via the UI; you can create a bucket named "documents" and "avatars".
--- 2) Adjust constraints, types, and policies for production (RLS policies, password hashing, etc.).
+-- RLS helper. The service-owned function avoids recursive profile policies.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id::text = auth.uid()::text AND role = 'admin'
+  );
+$$;
+
+-- Row-level security for browser clients.
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE avatars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE application_drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS profiles_select ON profiles;
+CREATE POLICY profiles_select ON profiles FOR SELECT TO authenticated
+  USING (id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS profiles_applicant_read ON profiles;
+CREATE POLICY profiles_applicant_read ON profiles FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1
+    FROM public.applications
+    JOIN public.jobs ON jobs.id = applications.job_id
+    WHERE applications.employee_id = profiles.id
+      AND jobs.company_id::text = auth.uid()::text
+  ));
+DROP POLICY IF EXISTS profiles_update ON profiles;
+CREATE POLICY profiles_update ON profiles FOR UPDATE TO authenticated
+  USING (id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
+
+DROP POLICY IF EXISTS employee_profiles_access ON employee_profiles;
+CREATE POLICY employee_profiles_access ON employee_profiles FOR ALL TO authenticated
+  USING (id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS employee_profiles_read ON employee_profiles;
+CREATE POLICY employee_profiles_read ON employee_profiles FOR SELECT TO authenticated
+  USING (true);
+DROP POLICY IF EXISTS company_profiles_access ON company_profiles;
+CREATE POLICY company_profiles_access ON company_profiles FOR ALL TO authenticated
+  USING (id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS company_profiles_read ON company_profiles;
+CREATE POLICY company_profiles_read ON company_profiles FOR SELECT TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS documents_access ON documents;
+CREATE POLICY documents_access ON documents FOR ALL TO authenticated
+  USING (owner_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (owner_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS avatars_access ON avatars;
+CREATE POLICY avatars_access ON avatars FOR ALL TO authenticated
+  USING (owner_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (owner_id::text = auth.uid()::text OR public.is_admin());
+
+DROP POLICY IF EXISTS jobs_read ON jobs;
+CREATE POLICY jobs_read ON jobs FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS jobs_write ON jobs;
+CREATE POLICY jobs_write ON jobs FOR ALL TO authenticated
+  USING (company_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (company_id::text = auth.uid()::text OR public.is_admin());
+
+DROP POLICY IF EXISTS applications_access ON applications;
+DROP POLICY IF EXISTS applications_select ON applications;
+CREATE POLICY applications_select ON applications FOR SELECT TO authenticated
+  USING (employee_id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.jobs WHERE jobs.id = applications.job_id AND jobs.company_id::text = auth.uid()::text
+  ));
+DROP POLICY IF EXISTS applications_insert ON applications;
+CREATE POLICY applications_insert ON applications FOR INSERT TO authenticated
+  WITH CHECK (employee_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS applications_update ON applications;
+CREATE POLICY applications_update ON applications FOR UPDATE TO authenticated
+  USING (employee_id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.jobs WHERE jobs.id = applications.job_id AND jobs.company_id::text = auth.uid()::text
+  ))
+  WITH CHECK (employee_id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.jobs WHERE jobs.id = applications.job_id AND jobs.company_id::text = auth.uid()::text
+  ));
+DROP POLICY IF EXISTS applications_delete ON applications;
+CREATE POLICY applications_delete ON applications FOR DELETE TO authenticated
+  USING (employee_id::text = auth.uid()::text OR public.is_admin());
+
+DROP POLICY IF EXISTS application_drafts_access ON application_drafts;
+CREATE POLICY application_drafts_access ON application_drafts FOR ALL TO authenticated
+  USING (employee_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (employee_id::text = auth.uid()::text OR public.is_admin());
+
+DROP POLICY IF EXISTS interviews_access ON interviews;
+CREATE POLICY interviews_access ON interviews FOR ALL TO authenticated
+  USING (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS notifications_access ON notifications;
+CREATE POLICY notifications_access ON notifications FOR ALL TO authenticated
+  USING (user_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (user_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS ratings_access ON ratings;
+CREATE POLICY ratings_access ON ratings FOR ALL TO authenticated
+  USING (author_id::text = auth.uid()::text OR subject_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (author_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS subscriptions_access ON subscriptions;
+CREATE POLICY subscriptions_access ON subscriptions FOR ALL TO authenticated
+  USING (company_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (company_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS payment_transactions_access ON payment_transactions;
+CREATE POLICY payment_transactions_access ON payment_transactions FOR ALL TO authenticated
+  USING (company_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (company_id::text = auth.uid()::text OR public.is_admin());
+
+-- Storage: avatars are public because the existing UI uses getPublicUrl;
+-- documents remain private and are accessed through signed URLs.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true), ('documents', 'documents', false)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+DROP POLICY IF EXISTS avatar_objects_access ON storage.objects;
+CREATE POLICY avatar_objects_access ON storage.objects FOR ALL TO authenticated
+  USING (bucket_id = 'avatars' AND (owner_id::text = auth.uid()::text OR public.is_admin()))
+  WITH CHECK (bucket_id = 'avatars' AND (owner_id::text = auth.uid()::text OR public.is_admin()));
+DROP POLICY IF EXISTS document_objects_access ON storage.objects;
+CREATE POLICY document_objects_access ON storage.objects FOR ALL TO authenticated
+  USING (bucket_id = 'documents' AND (owner_id::text = auth.uid()::text OR public.is_admin()))
+  WITH CHECK (bucket_id = 'documents' AND (owner_id::text = auth.uid()::text OR public.is_admin()));

@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { updateCompanyProfile, logAction } from "@/lib/local-storage";
 
 export default function AdminCompanyDetailPage() {
   const t = useTranslations();
@@ -23,14 +22,21 @@ export default function AdminCompanyDetailPage() {
   useEffect(() => {
     const loadCompany = async () => {
       const supabase = createClient();
-      const { data } = await supabase
-        .from("company_profiles")
-        .select("*")
-        .eq("id", params.id as string)
-        .single();
+      const companyId = String(params.id || "");
+      const [{ data, error: companyError }, { data: account, error: accountError }, { data: docs, error: documentsError }] = await Promise.all([
+        supabase.from("company_profiles").select("*").eq("id", companyId).maybeSingle(),
+        supabase.from("profiles").select("id, email, full_name, phone, status, created_at").eq("id", companyId).maybeSingle(),
+        supabase.from("documents").select("*").eq("owner_id", companyId),
+      ]);
+
+      if (companyError || accountError || documentsError) {
+        setError(companyError?.message || accountError?.message || documentsError?.message || "Unable to load company details.");
+        setLoading(false);
+        return;
+      }
 
       if (data) {
-        setCompany(data);
+        setCompany({ ...account, ...data });
         setReviewNote(data.review_note || "");
 
         if (data.logo_url) {
@@ -44,12 +50,6 @@ export default function AdminCompanyDetailPage() {
             // ignore
           }
         }
-
-        // Load documents
-        const { data: docs } = await supabase
-          .from("documents")
-          .select("*")
-          .eq("owner_id", params.id as string);
 
         setDocuments(docs || []);
       }
@@ -78,7 +78,18 @@ export default function AdminCompanyDetailPage() {
 
       if (updateError) throw updateError;
 
-      setCompany({ ...company, is_verified: verified });
+      const { error: accountError } = await supabase
+        .from("profiles")
+        .update({
+          status: verified ? "active" : "pending",
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: (await supabase.auth.getUser()).data.user?.id,
+        })
+        .eq("id", company.id);
+
+      if (accountError) throw accountError;
+
+      setCompany({ ...company, is_verified: verified, status: verified ? "active" : "pending" });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
@@ -127,9 +138,9 @@ export default function AdminCompanyDetailPage() {
                 className="px-3 py-1 rounded border text-sm"
                 onClick={async () => {
                   try {
-                    await updateCompanyProfile(params.id as string, {
+                    await createClient().from("company_profiles").update({
                       logo_status: "approved",
-                    });
+                    }).eq("id", params.id as string);
                     setLogoStatus("approved");
                     logAction(
                       (await createClient().auth.getUser()).data.user?.id ||
@@ -149,9 +160,9 @@ export default function AdminCompanyDetailPage() {
                 className="px-3 py-1 rounded border text-sm"
                 onClick={async () => {
                   try {
-                    await updateCompanyProfile(params.id as string, {
+                    await createClient().from("company_profiles").update({
                       logo_status: "rejected",
-                    });
+                    }).eq("id", params.id as string);
                     setLogoStatus("rejected");
                     logAction(
                       (await createClient().auth.getUser()).data.user?.id ||
@@ -171,10 +182,10 @@ export default function AdminCompanyDetailPage() {
                 className="px-3 py-1 rounded border text-sm"
                 onClick={async () => {
                   try {
-                    await updateCompanyProfile(params.id as string, {
+                    await createClient().from("company_profiles").update({
                       logo_url: null,
                       logo_status: null,
-                    });
+                    }).eq("id", params.id as string);
                     setLogoUrl(null);
                     setLogoStatus(null);
                     logAction(

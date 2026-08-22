@@ -12,6 +12,7 @@ import {
   updateCompanyProfile,
 } from "@/lib/local-storage";
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mail, Lock, Building, Eye, EyeOff } from "lucide-react";
 
 export default function CompanySettings() {
@@ -44,6 +45,32 @@ export default function CompanySettings() {
   );
 
   useEffect(() => {
+    if (isSupabaseConfigured()) {
+      const loadSupabaseProfile = async () => {
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) { router.push("/auth/login"); return; }
+        const { data: profile } = await supabase.from("company_profiles").select("*").eq("id", authUser.id).single();
+        const account = { ...authUser, ...profile, id: authUser.id, email: authUser.email };
+        setUser(account);
+        setLogoPath(profile?.logo_url || null);
+        setFormData({
+          company_name: profile?.company_name || authUser.user_metadata?.company_name || "",
+          email: authUser.email || "",
+          business_type: profile?.business_type || "",
+          trade_license_number: profile?.trade_license_number || "",
+          tin_number: profile?.tin_number || "",
+          contact_phone: profile?.contact_phone || "",
+          contact_person: profile?.contact_person || "",
+          region: profile?.region || "",
+          sub_city: profile?.sub_city || "",
+          address: profile?.address || "",
+        });
+        setLoading(false);
+      };
+      void loadSupabaseProfile();
+      return;
+    }
     const currentUser = getCurrentUser();
     if (!currentUser) {
       router.push("/auth/login");
@@ -89,7 +116,15 @@ export default function CompanySettings() {
       address: formData.address,
     };
 
-    updateCompanyProfile(user.id, updatedProfile);
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      const { error } = await supabase.from("company_profiles").upsert({ id: user.id, ...updatedProfile });
+      if (error) { setMessageType("error"); setMessage(error.message); return; }
+      const { error: accountError } = await supabase.from("profiles").update({ full_name: formData.company_name, phone: formData.contact_phone }).eq("id", user.id);
+      if (accountError) { setMessageType("error"); setMessage(accountError.message); return; }
+    } else {
+      updateCompanyProfile(user.id, updatedProfile);
+    }
     setCurrentUser({
       ...user,
       full_name: formData.company_name,
@@ -109,6 +144,16 @@ export default function CompanySettings() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (isSupabaseConfigured()) {
+      if (password.new !== password.confirm) { setMessageType("error"); setMessage("New passwords do not match"); return; }
+      if (password.new.length < 8) { setMessageType("error"); setMessage("Password must be at least 8 characters"); return; }
+      const { error } = await createClient().auth.updateUser({ password: password.new });
+      if (error) { setMessageType("error"); setMessage(error.message); return; }
+      setPassword({ current: "", new: "", confirm: "" });
+      setMessageType("success"); setMessage("Password changed successfully!");
+      return;
+    }
 
     if (password.current !== user.password) {
       setMessageType("error");
@@ -358,11 +403,11 @@ export default function CompanySettings() {
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6">
             <Lock className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Change Password</h2>
+            <h2 className="text-xl font-semibold">{isSupabaseConfigured() ? "Set or change password" : "Change Password"}</h2>
           </div>
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
-            <div className="relative">
+            {!isSupabaseConfigured() && <div className="relative">
               <label className="block text-sm font-medium mb-2">
                 Current Password
               </label>
@@ -387,7 +432,7 @@ export default function CompanySettings() {
                   )}
                 </button>
               </div>
-            </div>
+            </div>}
 
             <div>
               <label className="block text-sm font-medium mb-2">

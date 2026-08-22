@@ -12,6 +12,7 @@ import SideNav from "@/components/side-nav";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { getCurrentUser, clearCurrentUser } from "@/lib/local-storage";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function AdminLayout({
   children,
@@ -25,6 +26,30 @@ export default function AdminLayout({
 
   useEffect(() => {
     const checkAuth = () => {
+      if (isSupabaseConfigured()) {
+        const checkSupabaseAuth = async () => {
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          const authUser = session?.user;
+          if (!authUser) {
+            setLoading(false);
+            router.push("/auth/login");
+            return;
+          }
+          const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
+          const currentUser = { ...authUser, ...profile, id: authUser.id, email: authUser.email, role: profile?.role ?? authUser.user_metadata?.role, email_verified: true };
+          if (currentUser.role !== "admin") {
+            setLoading(false);
+            router.push("/auth/login");
+            return;
+          }
+          setUser(currentUser);
+          setLoading(false);
+        };
+        void checkSupabaseAuth();
+        return;
+      }
+
       const currentUser = getCurrentUser();
 
       if (!currentUser) {
@@ -52,7 +77,8 @@ export default function AdminLayout({
     checkAuth();
   }, [router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (isSupabaseConfigured()) await createClient().auth.signOut();
     clearCurrentUser();
     router.push("/auth/login");
   };

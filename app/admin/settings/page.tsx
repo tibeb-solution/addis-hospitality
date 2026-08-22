@@ -4,12 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import {
-  getCurrentUser,
-  setCurrentUser,
-  updateUserPasswordByEmail,
-} from "@/lib/local-storage";
-import { Mail, Lock, Shield, Eye, EyeOff } from "lucide-react";
+import { getCurrentUser, setCurrentUser } from "@/lib/local-storage";
+import { Shield } from "lucide-react";
 
 export default function AdminSettings() {
   const t = useTranslations();
@@ -20,16 +16,7 @@ export default function AdminSettings() {
     full_name: "",
     email: "",
   });
-  const [password, setPassword] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  });
-  const [showPasswords, setShowPasswords] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">(
-    "success",
-  );
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -53,47 +40,7 @@ export default function AdminSettings() {
     setCurrentUser(updated);
     setUser(updated);
 
-    setMessageType("success");
     setMessage("Admin settings updated successfully!");
-    setTimeout(() => setMessage(""), 3000);
-  };
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    if (password.current !== user.password) {
-      setMessageType("error");
-      setMessage("Current password is incorrect");
-      return;
-    }
-
-    if (password.new !== password.confirm) {
-      setMessageType("error");
-      setMessage("New passwords do not match");
-      return;
-    }
-
-    if (password.new.length < 6) {
-      setMessageType("error");
-      setMessage("Password must be at least 6 characters");
-      return;
-    }
-
-    const updated = updateUserPasswordByEmail(user.email, password.new);
-    if (!updated) {
-      setMessageType("error");
-      setMessage("Unable to update password");
-      return;
-    }
-
-    const updatedUser = { ...user, password: password.new };
-    setCurrentUser(updatedUser);
-    setUser(updatedUser);
-    setPassword({ current: "", new: "", confirm: "" });
-
-    setMessageType("success");
-    setMessage("Password changed successfully!");
     setTimeout(() => setMessage(""), 3000);
   };
 
@@ -111,13 +58,7 @@ export default function AdminSettings() {
       </div>
 
       {message && (
-        <div
-          className={`mb-6 p-4 rounded-lg ${
-            messageType === "success"
-              ? "bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400"
-              : "bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400"
-          }`}
-        >
+        <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-green-700 dark:text-green-400">
           {message}
         </div>
       )}
@@ -164,74 +105,6 @@ export default function AdminSettings() {
           </form>
         </div>
 
-        {/* Password Settings */}
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Lock className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Change Password</h2>
-          </div>
-
-          <form onSubmit={handlePasswordChange} className="space-y-4">
-            <div className="relative">
-              <label className="block text-sm font-medium mb-2">
-                Current Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPasswords ? "text" : "password"}
-                  value={password.current}
-                  onChange={(e) =>
-                    setPassword({ ...password, current: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords(!showPasswords)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPasswords ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                New Password
-              </label>
-              <input
-                type={showPasswords ? "text" : "password"}
-                value={password.new}
-                onChange={(e) =>
-                  setPassword({ ...password, new: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Confirm Password
-              </label>
-              <input
-                type={showPasswords ? "text" : "password"}
-                value={password.confirm}
-                onChange={(e) =>
-                  setPassword({ ...password, confirm: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <Button type="submit" className="w-full md:w-auto">
-              Change Password
-            </Button>
-          </form>
-        </div>
       </div>
     </div>
   );

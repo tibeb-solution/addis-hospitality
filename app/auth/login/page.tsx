@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { syncAuthenticatedUser } from "@/lib/auth";
 import { findUserByEmail, setCurrentUser } from "@/lib/local-storage";
 
 export default function LoginPage() {
@@ -33,6 +35,24 @@ export default function LoginPage() {
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
+
+      if (isSupabaseConfigured()) {
+        const supabase = createClient();
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (signInError || !data.user) {
+          setError(signInError?.message || t("auth.invalidCredentials"));
+          setLoading(false);
+          return;
+        }
+
+        const user = await syncAuthenticatedUser(data.user, supabase);
+        router.push(user.role === "admin" ? "/admin" : user.role === "company" ? "/company" : "/employee");
+        return;
+      }
+
       const user = findUserByEmail(normalizedEmail);
 
       if (!user) {
@@ -68,6 +88,23 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (oauthError) setError(oauthError.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errors.serverError"));
+    } finally {
       setLoading(false);
     }
   };
@@ -148,6 +185,12 @@ export default function LoginPage() {
           <Button type="submit" disabled={loading} className="w-full" size="lg">
             {loading ? t("common.loading") : t("auth.login")}
           </Button>
+
+          {isSupabaseConfigured() && (
+            <Button type="button" variant="outline" disabled={loading} onClick={handleGoogleLogin} className="w-full" size="lg">
+              Continue with Google
+            </Button>
+          )}
 
           <Link href="/auth/sign-up" className="block w-full">
             <Button

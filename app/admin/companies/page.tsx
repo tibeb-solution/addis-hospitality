@@ -18,25 +18,47 @@ export default function AdminCompaniesPage() {
     const loadCompanies = async () => {
       const supabase = createClient();
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("company_profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*");
 
-      // attach public urls for logos if present
-      const enriched = (data || []).map((comp: any) => {
+      if (error) {
+        console.error("Unable to load companies", error);
+        setLoading(false);
+        return;
+      }
+
+      const companyIds = (data || []).map((company: any) => company.id);
+      const { data: accounts } = companyIds.length
+        ? await supabase
+            .from("profiles")
+            .select("id, email, full_name, status, created_at")
+            .in("id", companyIds)
+        : { data: [] };
+      const accountsById = new Map(
+        (accounts || []).map((account: any) => [account.id, account]),
+      );
+
+      // Attach account metadata and public logo URLs without querying columns
+      // that do not exist on company_profiles.
+      const enriched = (data || [])
+        .map((comp: any) => {
+        const account = accountsById.get(comp.id) || {};
         if (comp.logo_url) {
           try {
             const { data: signed } = supabase.storage
               .from("avatars")
               .getPublicUrl(comp.logo_url);
-            return { ...comp, avatarUrl: signed.publicUrl || "" };
+            return { ...account, ...comp, avatarUrl: signed.publicUrl || "" };
           } catch {
-            return comp;
+            return { ...account, ...comp };
           }
         }
-        return comp;
-      });
+        return { ...account, ...comp };
+      })
+        .sort((a, b) =>
+          String(b.created_at || "").localeCompare(String(a.created_at || "")),
+        );
 
       setCompanies(enriched);
       setFiltered(enriched);

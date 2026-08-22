@@ -9,11 +9,12 @@ import { BrandLogo } from "@/components/brand-logo";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import SideNav from "@/components/side-nav";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { getCurrentUser, clearCurrentUser } from "@/lib/local-storage";
+import RequiredPasswordSetup from "@/components/required-password-setup";
 
 export default function EmployeeLayout({
   children,
@@ -24,9 +25,40 @@ export default function EmployeeLayout({
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [requiresPassword, setRequiresPassword] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
+      if (isSupabaseConfigured()) {
+        const checkSupabaseAuth = async () => {
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          const authUser = session?.user;
+          if (!authUser) {
+            setLoading(false);
+            router.push("/auth/login");
+            return;
+          }
+          const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
+          const currentUser = { ...authUser, ...profile, id: authUser.id, email: authUser.email, role: profile?.role ?? authUser.user_metadata?.role ?? "employee", email_verified: true };
+          if (currentUser.role !== "employee" && currentUser.role !== "admin") {
+            setLoading(false);
+            router.push("/auth/login");
+            return;
+          }
+          setUser(currentUser);
+          setRequiresPassword(
+            Boolean(
+              authUser.app_metadata?.providers?.includes("google") &&
+              !authUser.user_metadata?.password_set,
+            ),
+          );
+          setLoading(false);
+        };
+        void checkSupabaseAuth();
+        return;
+      }
+
       const currentUser = getCurrentUser();
 
       if (!currentUser) {
@@ -54,7 +86,8 @@ export default function EmployeeLayout({
     checkAuth();
   }, [router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (isSupabaseConfigured()) await createClient().auth.signOut();
     clearCurrentUser();
     router.push("/auth/login");
   };
@@ -182,6 +215,10 @@ export default function EmployeeLayout({
 
       {sidebarOpen && (
         <SideNav role="employee" mobile onClose={() => setSidebarOpen(false)} />
+      )}
+
+      {requiresPassword && (
+        <RequiredPasswordSetup onComplete={() => setRequiresPassword(false)} />
       )}
     </div>
   );

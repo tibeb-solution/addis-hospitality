@@ -25,6 +25,7 @@ export interface Job {
   employment_type: string;
   experience_required: number;
   skills: string[];
+
   languages: string[];
   salary_min?: number;
   salary_max?: number;
@@ -33,6 +34,8 @@ export interface Job {
   created_at: string;
   updated_at: string;
 }
+
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export interface Application {
   id: string;
@@ -112,9 +115,21 @@ function write<T>(key: string, value: T[]) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+async function remoteRows<T = any>(table: string, configure?: (query: any) => any): Promise<T[]> {
+  let query = createClient().from(table).select("*");
+  if (configure) query = configure(query);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
 export function deadlineTimestamp(deadline?: string) {
   if (!deadline) return undefined;
-  return new Date(`${deadline}T23:59:59`).getTime();
+  const datePart = deadline.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  const timestamp = datePart
+    ? new Date(`${datePart}T23:59:59`).getTime()
+    : new Date(deadline).getTime();
+  return Number.isNaN(timestamp) ? undefined : timestamp;
 }
 
 export function isJobExpired(job: Job, now = Date.now()) {
@@ -133,8 +148,22 @@ export function formatDeadlineCountdown(deadline?: string, now = Date.now()) {
   return `${days}d ${hours}h ${minutes}m left`;
 }
 
+export function formatDeadlineDate(deadline?: string) {
+  if (!deadline) return "Open";
+  const datePart = deadline.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  const date = datePart ? new Date(`${datePart}T12:00:00`) : new Date(deadline);
+  return Number.isNaN(date.getTime()) ? "Open" : date.toLocaleDateString();
+}
+
 export const recruitment = {
-  jobs: () => {
+  jobs: async (): Promise<Job[]> => {
+    if (isSupabaseConfigured()) {
+      const jobs = await remoteRows<any>("jobs", (query) => query.order("created_at", { ascending: false }));
+      const ids = [...new Set(jobs.map((job: any) => job.company_id))];
+      const profiles = ids.length ? await remoteRows<any>("company_profiles", (query) => query.in("id", ids)) : [];
+      const names = new Map(profiles.map((profile: any) => [profile.id, profile.company_name]));
+      return jobs.map((job: any) => ({ ...job, company_name: names.get(job.company_id) || "" })) as Job[];
+    }
     const jobs = read<Job>(keys.jobs);
     const now = Date.now();
     const expired = jobs.filter(
@@ -176,18 +205,24 @@ export const recruitment = {
     });
     return updatedJobs;
   },
-  applications: () => read<Application>(keys.applications),
-  applicationDrafts: () => read<ApplicationDraft>(keys.applicationDrafts),
-  interviews: () => read<Interview>(keys.interviews),
-  notifications: (userId: string) =>
+  applications: async (): Promise<Application[]> => isSupabaseConfigured() ? remoteRows<Application>("applications", (query) => query.order("created_at", { ascending: false })) : read<Application>(keys.applications),
+  applicationDrafts: async (employeeId?: string): Promise<ApplicationDraft[]> => isSupabaseConfigured() ? remoteRows<ApplicationDraft>("application_drafts", (query) => employeeId ? query.eq("employee_id", employeeId) : query) : read<ApplicationDraft>(keys.applicationDrafts),
+  interviews: async (): Promise<Interview[]> => isSupabaseConfigured() ? remoteRows<Interview>("interviews", (query) => query.order("starts_at", { ascending: true })) : read<Interview>(keys.interviews),
+  notifications: async (userId: string): Promise<Notification[]> => isSupabaseConfigured() ? remoteRows<Notification>("notifications", (query) => query.eq("user_id", userId).order("created_at", { ascending: false })) :
     read<Notification>(keys.notifications)
       .filter((item) => item.user_id === userId)
       .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-  ratings: () => read<Rating>(keys.ratings),
-  createJob(input: Omit<Job, "id" | "created_at" | "updated_at">) {
+  ratings: async (): Promise<Rating[]> => isSupabaseConfigured() ? remoteRows<Rating>("ratings", (query) => query.order("created_at", { ascending: false })) : read<Rating>(keys.ratings),
+  async createJob(input: Omit<Job, "id" | "created_at" | "updated_at">) {
+    if (isSupabaseConfigured()) {
+      const { company_name: _companyName, ...payload } = input;
+      const { data, error } = await createClient().from("jobs").insert(payload).select().single();
+      if (error) throw error;
+      return { ...data, company_name: input.company_name } as Job;
+    }
     const now = new Date().toISOString();
     const job = { ...input, id: id(), created_at: now, updated_at: now };
-    write(keys.jobs, [...this.jobs(), job]);
+    write(keys.jobs, [...await this.jobs(), job]);
     if (job.status === "pending_review") {
       this.notify(
         ADMIN_USER_ID,
@@ -198,8 +233,13 @@ export const recruitment = {
     }
     return job;
   },
-  saveApplicationDraft(jobId: string, employeeId: string, coverNote: string) {
-    const drafts = this.applicationDrafts();
+  async saveApplicationDraft(jobId: string, employeeId: string, coverNote: string) {
+    if (isSupabaseConfigured()) {
+      const { data, error } = await createClient().from("application_drafts").upsert({ job_id: jobId, employee_id: employeeId, cover_note: coverNote }, { onConflict: "job_id,employee_id" }).select().single();
+      if (error) throw error;
+      return data as ApplicationDraft;
+    }
+    const drafts = await this.applicationDrafts();
     const existing = drafts.find(
       (draft) => draft.job_id === jobId && draft.employee_id === employeeId,
     );
@@ -218,26 +258,37 @@ export const recruitment = {
     );
     return draft;
   },
-  getApplicationDraft(jobId: string, employeeId: string) {
-    return this.applicationDrafts().find(
+  async getApplicationDraft(jobId: string, employeeId: string) {
+    return (await this.applicationDrafts(employeeId)).find(
       (draft) => draft.job_id === jobId && draft.employee_id === employeeId,
     );
   },
-  deleteApplicationDraft(jobId: string, employeeId: string) {
+  async deleteApplicationDraft(jobId: string, employeeId: string) {
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient().from("application_drafts").delete().eq("job_id", jobId).eq("employee_id", employeeId);
+      if (error) throw error;
+      return;
+    }
     write(
       keys.applicationDrafts,
-      this.applicationDrafts().filter(
+      (await this.applicationDrafts()).filter(
         (draft) =>
           !(draft.job_id === jobId && draft.employee_id === employeeId),
       ),
     );
   },
-  updateJob(jobId: string, updates: Partial<Job>) {
-    const before = this.jobs().find((job) => job.id === jobId);
+  async updateJob(jobId: string, updates: Partial<Job>) {
+    if (isSupabaseConfigured()) {
+      const { company_name: _companyName, id: _id, created_at: _createdAt, updated_at: _updatedAt, ...payload } = updates as any;
+      const { error } = await createClient().from("jobs").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", jobId);
+      if (error) throw error;
+      return;
+    }
+    const before = (await this.jobs()).find((job) => job.id === jobId);
     const updatedAt = new Date().toISOString();
     write(
       keys.jobs,
-      this.jobs().map((job) =>
+      (await this.jobs()).map((job) =>
         job.id === jobId ? { ...job, ...updates, updated_at: updatedAt } : job,
       ),
     );
@@ -258,7 +309,13 @@ export const recruitment = {
       );
     }
   },
-  apply(job: Job, employeeId: string, profile: any, coverNote?: string) {
+  async apply(job: Job, employeeId: string, profile: any, coverNote?: string) {
+    if (isSupabaseConfigured()) {
+      const { data: { user } } = await createClient().auth.getUser();
+      if (!user || user.id !== employeeId) {
+        throw new Error("Please log in as the employee before applying.");
+      }
+    }
     if (job.status !== "published") {
       throw new Error("This job is not open for applications yet.");
     }
@@ -266,11 +323,27 @@ export const recruitment = {
       throw new Error("The application deadline for this job has passed.");
     }
     if (
-      this.applications().some(
+      (await this.applications()).some(
         (item) => item.job_id === job.id && item.employee_id === employeeId,
       )
     ) {
       throw new Error("You have already applied for this job.");
+    }
+    if (isSupabaseConfigured()) {
+      const { data, error } = await createClient().from("applications").insert({ job_id: job.id, employee_id: employeeId, status: "applied", match_score: this.matchScore(job, profile), cover_note: coverNote }).select().single();
+      if (error) {
+        if ((error as any).code === "23505") {
+          throw new Error("You have already applied for this job.");
+        }
+        if ((error as any).code === "23503") {
+          throw new Error("Your employee account is not fully connected to the database yet. Please sign out and sign in again, then try applying.");
+        }
+        if ((error as any).code === "42501") {
+          throw new Error("Applications are blocked by database permissions. Run the latest Supabase policies from supabase-init.sql, then try again.");
+        }
+        throw error;
+      }
+      return data as Application;
     }
     const now = new Date().toISOString();
     const application: Application = {
@@ -283,7 +356,7 @@ export const recruitment = {
       created_at: now,
       updated_at: now,
     };
-    write(keys.applications, [...this.applications(), application]);
+    write(keys.applications, [...await this.applications(), application]);
     this.notify(
       job.company_id,
       "New application",
@@ -298,20 +371,25 @@ export const recruitment = {
     );
     return application;
   },
-  updateApplication(applicationId: string, status: ApplicationStatus) {
-    const application = this.applications().find(
+  async updateApplication(applicationId: string, status: ApplicationStatus) {
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient().from("applications").update({ status, updated_at: new Date().toISOString() }).eq("id", applicationId);
+      if (error) throw error;
+      return;
+    }
+    const application = (await this.applications()).find(
       (item) => item.id === applicationId,
     );
     if (!application) return;
     write(
       keys.applications,
-      this.applications().map((item) =>
+      (await this.applications()).map((item) =>
         item.id === applicationId
           ? { ...item, status, updated_at: new Date().toISOString() }
           : item,
       ),
     );
-    const job = this.jobs().find((item) => item.id === application.job_id);
+    const job = (await this.jobs()).find((item) => item.id === application.job_id);
     this.notify(
       application.employee_id,
       "Application update",
@@ -325,19 +403,25 @@ export const recruitment = {
       "application",
     );
   },
-  scheduleInterview(input: Omit<Interview, "id" | "created_at" | "status">) {
+  async scheduleInterview(input: Omit<Interview, "id" | "created_at" | "status">) {
+    if (isSupabaseConfigured()) {
+      const { data, error } = await createClient().from("interviews").insert(input).select().single();
+      if (error) throw error;
+      await this.updateApplication(input.application_id, "interview");
+      return data as Interview;
+    }
     const interview = {
       ...input,
       id: id(),
       status: "proposed" as const,
       created_at: new Date().toISOString(),
     };
-    write(keys.interviews, [...this.interviews(), interview]);
-    this.updateApplication(input.application_id, "interview");
-    const application = this.applications().find(
+    write(keys.interviews, [...await this.interviews(), interview]);
+    await this.updateApplication(input.application_id, "interview");
+    const application = (await this.applications()).find(
       (item) => item.id === input.application_id,
     );
-    const job = this.jobs().find((item) => item.id === application?.job_id);
+    const job = (await this.jobs()).find((item) => item.id === application?.job_id);
     this.notify(
       input.employee_id,
       "Interview invitation",
@@ -352,10 +436,15 @@ export const recruitment = {
     );
     return interview;
   },
-  respondToInterview(interviewId: string, status: "accepted" | "declined") {
+  async respondToInterview(interviewId: string, status: "accepted" | "declined") {
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient().from("interviews").update({ status }).eq("id", interviewId);
+      if (error) throw error;
+      return;
+    }
     write(
       keys.interviews,
-      this.interviews().map((item) =>
+      (await this.interviews()).map((item) =>
         item.id === interviewId ? { ...item, status } : item,
       ),
     );
@@ -369,12 +458,20 @@ export const recruitment = {
       type,
       created_at: new Date().toISOString(),
     };
+    if (isSupabaseConfigured()) {
+      return createClient().from("notifications").insert({ user_id: userId, title, body, type });
+    }
     write(keys.notifications, [
       ...read<Notification>(keys.notifications),
       note,
     ]);
   },
-  markRead(notificationId: string) {
+  async markRead(notificationId: string) {
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient().from("notifications").update({ read_at: new Date().toISOString() }).eq("id", notificationId);
+      if (error) throw error;
+      return;
+    }
     write(
       keys.notifications,
       read<Notification>(keys.notifications).map((item) =>
@@ -384,9 +481,14 @@ export const recruitment = {
       ),
     );
   },
-  rate(input: Omit<Rating, "id" | "created_at">) {
+  async rate(input: Omit<Rating, "id" | "created_at">) {
+    if (isSupabaseConfigured()) {
+      const { data, error } = await createClient().from("ratings").insert(input).select().single();
+      if (error) throw error;
+      return data as Rating;
+    }
     if (
-      this.ratings().some(
+      (await this.ratings()).some(
         (rating) =>
           rating.application_id === input.application_id &&
           rating.author_id === input.author_id,
@@ -397,7 +499,7 @@ export const recruitment = {
       );
     }
     const rating = { ...input, id: id(), created_at: new Date().toISOString() };
-    write(keys.ratings, [...this.ratings(), rating]);
+    write(keys.ratings, [...await this.ratings(), rating]);
     return rating;
   },
   matchScore(job: Job, profile: any) {
