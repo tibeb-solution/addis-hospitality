@@ -446,17 +446,16 @@ export const recruitment = {
       throw new Error("You have already applied for this job.");
     }
     if (isSupabaseConfigured()) {
-      const { data, error } = await createClient()
+      const payload = {
+        job_id: job.id,
+        employee_id: employeeId,
+        status: "applied" as const,
+        match_score: this.matchScore(job, profile),
+        cover_note: coverNote,
+      };
+      const { error } = await createClient()
         .from("applications")
-        .insert({
-          job_id: job.id,
-          employee_id: employeeId,
-          status: "applied",
-          match_score: this.matchScore(job, profile),
-          cover_note: coverNote,
-        })
-        .select()
-        .single();
+        .insert(payload);
       if (error) {
         if ((error as any).code === "23505") {
           throw new Error("You have already applied for this job.");
@@ -473,7 +472,12 @@ export const recruitment = {
         }
         throw error;
       }
-      return data as Application;
+      return {
+        ...payload,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Application;
     }
     const now = new Date().toISOString();
     const application: Application = {
