@@ -80,6 +80,16 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
   willing_to_relocate boolean
 );
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS avatar_status text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS gender text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS date_of_birth date;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS alternative_phone text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_city text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_sub_city text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_woreda text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_area text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS emergency_contact_name text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS emergency_contact_relationship text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS emergency_contact_phone text;
 
 -- Company-specific profile data
 CREATE TABLE IF NOT EXISTS company_profiles (

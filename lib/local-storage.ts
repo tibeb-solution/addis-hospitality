@@ -16,6 +16,16 @@ export interface EmployeeProfile extends LocalUser {
   avatar_path?: string;
   avatar_url?: string | null;
   avatar_status?: "pending" | "approved" | "rejected" | null;
+  gender?: string;
+  date_of_birth?: string;
+  alternative_phone?: string;
+  residence_city?: string;
+  residence_sub_city?: string;
+  residence_woreda?: string;
+  residence_area?: string;
+  emergency_contact_name?: string;
+  emergency_contact_relationship?: string;
+  emergency_contact_phone?: string;
   desired_position?: string;
   years_experience?: number;
   preferred_cities?: string;

@@ -7,6 +7,23 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import AvatarCropper from "@/components/avatar-cropper";
 
+function getAge(dateOfBirth: string): number | null {
+  if (!dateOfBirth) return null;
+
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+
+  if (!birthdayPassed) age -= 1;
+  return age >= 0 ? age : null;
+}
+
 export default function EmployeeProfilePage() {
   const t = useTranslations();
   const router = useRouter();
@@ -18,6 +35,7 @@ export default function EmployeeProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [tab, setTab] = useState("basic");
+  const [dateOfBirth, setDateOfBirth] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -51,6 +69,7 @@ export default function EmployeeProfilePage() {
         setProfile(created || { id: user.id });
       } else {
         setProfile(data);
+        setDateOfBirth(data.date_of_birth || "");
         if (data.avatar_url) {
           const { data: signedUrl } = await supabase.storage
             .from("avatars")
@@ -134,6 +153,16 @@ export default function EmployeeProfilePage() {
         id: user.id,
         bio: formData.get("bio"),
         phone: formData.get("phone"),
+        gender: formData.get("gender"),
+        date_of_birth: formData.get("date_of_birth") || null,
+        alternative_phone: formData.get("alternative_phone"),
+        residence_city: formData.get("residence_city"),
+        residence_sub_city: formData.get("residence_sub_city"),
+        residence_woreda: formData.get("residence_woreda"),
+        residence_area: formData.get("residence_area"),
+        emergency_contact_name: formData.get("emergency_contact_name"),
+        emergency_contact_relationship: formData.get("emergency_contact_relationship"),
+        emergency_contact_phone: formData.get("emergency_contact_phone"),
         desired_position: formData.get("desired_position"),
         years_experience: formData.get("years_experience"),
         highest_education: formData.get("highest_education"),
@@ -220,6 +249,45 @@ export default function EmployeeProfilePage() {
               />
             </div>
             <div className="space-y-2">
+              <label className="text-sm font-medium">{t("employee.gender")}</label>
+              <select
+                name="gender"
+                defaultValue={profile?.gender || ""}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
+                <option value="">{t("employee.gender")}</option>
+                {["male", "female", "other", "prefer_not_to_say"].map((value) => (
+                  <option key={value} value={value}>
+                    {t(`taxonomy.gender_${value}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("employee.dateOfBirth")}</label>
+              <div className="flex items-center gap-3">
+                <input
+                  name="date_of_birth"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(event) => setDateOfBirth(event.target.value)}
+                  className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                />
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {t("employee.age")}: {getAge(dateOfBirth) ?? "-"}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("employee.alternativePhone")}</label>
+              <input
+                name="alternative_phone"
+                type="tel"
+                defaultValue={profile?.alternative_phone || ""}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">
                 {t("employee.desiredPosition")}
               </label>
@@ -240,6 +308,46 @@ export default function EmployeeProfilePage() {
               rows={4}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground"
             />
+          </div>
+          <div className="border-t border-border pt-4 space-y-4">
+            <h4 className="font-medium">{t("employee.currentResidence")}</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                ["residence_city", t("employee.city")],
+                ["residence_sub_city", t("employee.subCity")],
+                ["residence_woreda", t("employee.woreda")],
+                ["residence_area", t("employee.area")],
+              ].map(([name, label]) => (
+                <div key={name} className="space-y-2">
+                  <label className="text-sm font-medium">{label}</label>
+                  <input
+                    name={name}
+                    defaultValue={profile?.[name] || ""}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="border-t border-border pt-4 space-y-4">
+            <h4 className="font-medium">{t("employee.emergencyContact")}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                ["emergency_contact_name", t("employee.contactName")],
+                ["emergency_contact_relationship", t("employee.relationship")],
+                ["emergency_contact_phone", t("employee.contactPhone")],
+              ].map(([name, label]) => (
+                <div key={name} className="space-y-2">
+                  <label className="text-sm font-medium">{label}</label>
+                  <input
+                    name={name}
+                    type={name === "emergency_contact_phone" ? "tel" : "text"}
+                    defaultValue={profile?.[name] || ""}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -15,6 +15,20 @@ import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
+function getAge(dateOfBirth: string): number | null {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  if (
+    today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() < birthDate.getDate())
+  ) age -= 1;
+  return age >= 0 ? age : null;
+}
+
 export default function EmployeeSettings() {
   const t = useTranslations();
   const router = useRouter();
@@ -25,6 +39,16 @@ export default function EmployeeSettings() {
     full_name: "",
     email: "",
     phone: "",
+    gender: "",
+    date_of_birth: "",
+    alternative_phone: "",
+    residence_city: "",
+    residence_sub_city: "",
+    residence_woreda: "",
+    residence_area: "",
+    emergency_contact_name: "",
+    emergency_contact_relationship: "",
+    emergency_contact_phone: "",
     desired_position: "",
     years_experience: "",
     highest_education: "",
@@ -59,6 +83,16 @@ export default function EmployeeSettings() {
           full_name: profile?.full_name || authUser.user_metadata?.full_name || "",
           email: authUser.email || "",
           phone: profile?.phone || "",
+          gender: profile?.gender || "",
+          date_of_birth: profile?.date_of_birth || "",
+          alternative_phone: profile?.alternative_phone || "",
+          residence_city: profile?.residence_city || "",
+          residence_sub_city: profile?.residence_sub_city || "",
+          residence_woreda: profile?.residence_woreda || "",
+          residence_area: profile?.residence_area || "",
+          emergency_contact_name: profile?.emergency_contact_name || "",
+          emergency_contact_relationship: profile?.emergency_contact_relationship || "",
+          emergency_contact_phone: profile?.emergency_contact_phone || "",
           desired_position: profile?.desired_position || "",
           years_experience: profile?.years_experience?.toString() || "",
           highest_education: profile?.highest_education || "",
@@ -85,6 +119,16 @@ export default function EmployeeSettings() {
       full_name: employeeProfile?.full_name || currentUser.full_name || "",
       email: currentUser.email || "",
       phone: employeeProfile?.phone || currentUser.phone || "",
+      gender: (employeeProfile as any)?.gender || "",
+      date_of_birth: (employeeProfile as any)?.date_of_birth || "",
+      alternative_phone: (employeeProfile as any)?.alternative_phone || "",
+      residence_city: (employeeProfile as any)?.residence_city || "",
+      residence_sub_city: (employeeProfile as any)?.residence_sub_city || "",
+      residence_woreda: (employeeProfile as any)?.residence_woreda || "",
+      residence_area: (employeeProfile as any)?.residence_area || "",
+      emergency_contact_name: (employeeProfile as any)?.emergency_contact_name || "",
+      emergency_contact_relationship: (employeeProfile as any)?.emergency_contact_relationship || "",
+      emergency_contact_phone: (employeeProfile as any)?.emergency_contact_phone || "",
       desired_position: employeeProfile?.desired_position || "",
       years_experience: employeeProfile?.years_experience?.toString() || "",
       highest_education: (employeeProfile as any)?.highest_education || "",
@@ -122,6 +166,16 @@ export default function EmployeeSettings() {
         : undefined,
       full_name: formData.full_name,
       phone: formData.phone,
+      gender: formData.gender,
+      date_of_birth: formData.date_of_birth || undefined,
+      alternative_phone: formData.alternative_phone,
+      residence_city: formData.residence_city,
+      residence_sub_city: formData.residence_sub_city,
+      residence_woreda: formData.residence_woreda,
+      residence_area: formData.residence_area,
+      emergency_contact_name: formData.emergency_contact_name,
+      emergency_contact_relationship: formData.emergency_contact_relationship,
+      emergency_contact_phone: formData.emergency_contact_phone,
     };
 
     if (isSupabaseConfigured()) {
@@ -278,6 +332,88 @@ export default function EmployeeSettings() {
                 }
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Gender</label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Date of Birth</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  className="min-w-0 flex-1 px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  Age: {getAge(formData.date_of_birth) ?? "-"}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Alternative Phone Number</label>
+              <input
+                type="tel"
+                value={formData.alternative_phone}
+                onChange={(e) => setFormData({ ...formData, alternative_phone: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div className="border-t border-border pt-4 md:col-span-2">
+              <h3 className="font-semibold mb-4">Current Residence</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {([
+                  ["residence_city", "City"],
+                  ["residence_sub_city", "Sub-city"],
+                  ["residence_woreda", "Woreda"],
+                  ["residence_area", "Area"],
+                ] as const).map(([key, label]) => (
+                  <div key={key}>
+                    <label className="block text-sm font-medium mb-2">{label}</label>
+                    <input
+                      value={formData[key]}
+                      onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4 md:col-span-2">
+              <h3 className="font-semibold mb-4">Emergency Contact</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {([
+                  ["emergency_contact_name", "Name"],
+                  ["emergency_contact_relationship", "Relationship"],
+                  ["emergency_contact_phone", "Phone"],
+                ] as const).map(([key, label]) => (
+                  <div key={key}>
+                    <label className="block text-sm font-medium mb-2">{label}</label>
+                    <input
+                      type={key === "emergency_contact_phone" ? "tel" : "text"}
+                      value={formData[key]}
+                      onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>
