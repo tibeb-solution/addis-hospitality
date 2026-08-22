@@ -633,6 +633,28 @@ export function clearPasswordResetCode(email: string): void {
   localStorage.setItem(key, JSON.stringify(all));
 }
 
+// Local demo fallback only. Production authentication must use Supabase Auth.
+// This preserves the existing demo administrator requested by the project owner.
+export function initializeDefaultAdmin(): void {
+  const users = getUsers();
+  if (users.some((user) => user.email === "admin@addishospitality.et")) return;
+
+  users.push({
+    id: "admin-001",
+    email: "admin@addishospitality.et",
+    password: "AddisAdmin2026!",
+    role: "admin",
+    full_name: "Admin",
+    phone: "+251911000000",
+    status: "active",
+    email_verified: true,
+    created_at: new Date().toISOString(),
+  });
+  saveUsers(users);
+}
+
+if (typeof window !== "undefined") initializeDefaultAdmin();
+
 // Jobs
 export function getJobs(companyId?: string): Job[] {
   try {
