@@ -97,6 +97,24 @@ export default function AdminCompanyDetailPage() {
     }
   };
 
+  const handleDocumentStatus = async (documentId: string, status: "approved" | "rejected") => {
+    setUpdating(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase
+        .from("documents")
+        .update({ status, reviewed_at: new Date().toISOString(), review_note: reviewNote })
+        .eq("id", documentId);
+      if (updateError) throw updateError;
+      setDocuments((items) => items.map((item) => item.id === documentId ? { ...item, status, reviewed_at: new Date().toISOString(), review_note: reviewNote } : item));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errors.serverError"));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return <div>{t("common.loading")}</div>;
   }
@@ -338,17 +356,40 @@ export default function AdminCompanyDetailPage() {
                     {new Date(doc.uploaded_at).toLocaleDateString()}
                   </p>
                 </div>
-                <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${
-                    doc.status === "approved"
-                      ? "bg-green-500/20 text-green-700"
-                      : doc.status === "rejected"
-                        ? "bg-red-500/20 text-red-700"
-                        : "bg-yellow-500/20 text-yellow-700"
-                  }`}
-                >
-                  {t(`taxonomy.doc_status_${doc.status}`)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="text-sm text-primary underline"
+                    onClick={async () => {
+                      const { data, error } = await createClient().storage.from("documents").createSignedUrl(doc.file_path, 3600);
+                      if (error) return;
+                      if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    View
+                  </button>
+                  {doc.status !== "approved" && (
+                    <button type="button" disabled={updating} className="text-sm text-green-700 underline" onClick={() => void handleDocumentStatus(doc.id, "approved")}>
+                      Verify
+                    </button>
+                  )}
+                  {doc.status !== "rejected" && (
+                    <button type="button" disabled={updating} className="text-sm text-red-700 underline" onClick={() => void handleDocumentStatus(doc.id, "rejected")}>
+                      Reject
+                    </button>
+                  )}
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-medium ${
+                      doc.status === "approved"
+                        ? "bg-green-500/20 text-green-700"
+                        : doc.status === "rejected"
+                          ? "bg-red-500/20 text-red-700"
+                          : "bg-yellow-500/20 text-yellow-700"
+                    }`}
+                  >
+                    {t(`taxonomy.doc_status_${doc.status}`)}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

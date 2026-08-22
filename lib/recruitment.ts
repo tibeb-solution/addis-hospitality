@@ -24,6 +24,7 @@ export interface Job {
   location: string;
   employment_type: string;
   experience_required: number;
+  education_required?: string;
   skills: string[];
 
   languages: string[];
@@ -162,7 +163,27 @@ export const recruitment = {
       const ids = [...new Set(jobs.map((job: any) => job.company_id))];
       const profiles = ids.length ? await remoteRows<any>("company_profiles", (query) => query.in("id", ids)) : [];
       const names = new Map(profiles.map((profile: any) => [profile.id, profile.company_name]));
-      return jobs.map((job: any) => ({ ...job, company_name: names.get(job.company_id) || "" })) as Job[];
+      const now = Date.now();
+      const expired = jobs.filter((job: any) => job.status === "published" && isJobExpired(job, now));
+      if (expired.length) {
+        const supabase = createClient();
+        const employees = await remoteRows<{ id: string }>("profiles", (query) => query.eq("role", "employee"));
+        for (const job of expired) {
+          await supabase.from("jobs").update({ status: "expired", updated_at: new Date(now).toISOString() }).eq("id", job.id).eq("status", "published");
+          const body = `${job.title} at ${names.get(job.company_id) || "the company"} is no longer accepting applications.`;
+          const recipients = [job.company_id, ...employees.map((employee) => employee.id)];
+          const existing = await remoteRows<Notification>("notifications", (query) => query.eq("type", "job_expired").eq("body", body));
+          const notified = new Set(existing.map((notification) => notification.user_id));
+          for (const userId of recipients) {
+            if (!notified.has(userId)) await recruitment.notify(userId, "Job posting expired", body, "job_expired");
+          }
+        }
+      }
+      return jobs.map((job: any) => ({
+        ...job,
+        status: expired.some((item: any) => item.id === job.id) ? "expired" : job.status,
+        company_name: names.get(job.company_id) || "",
+      })) as Job[];
     }
     const jobs = read<Job>(keys.jobs);
     const now = Date.now();

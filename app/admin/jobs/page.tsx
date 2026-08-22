@@ -150,6 +150,7 @@ export default function AdminJobsPage() {
 
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                       <span>Experience: {job.experience_required}+ years</span>
+                      <span>Education: {job.education_required || "Not specified"}</span>
                       <span>Skills: {job.skills.join(", ") || "Not specified"}</span>
                       <span>
                         Languages: {job.languages.join(", ") || "Not specified"}

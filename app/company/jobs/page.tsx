@@ -67,6 +67,7 @@ export default function CompanyJobsPage() {
       location: String(data.get("location") || ""),
       employment_type: String(data.get("employment_type") || "full_time"),
       experience_required: Number(data.get("experience_required") || 0),
+      education_required: String(data.get("education_required") || "") || undefined,
       skills: String(data.get("skills") || "")
         .split(",")
         .map((value) => value.trim())
@@ -139,6 +140,16 @@ export default function CompanyJobsPage() {
           placeholder="Required years of experience"
           className={fieldClass}
         />
+        <select name="education_required" defaultValue="" className={fieldClass}>
+          <option value="">Education level required (optional)</option>
+          <option value="primary">Primary</option>
+          <option value="secondary">Secondary</option>
+          <option value="tvet">TVET</option>
+          <option value="diploma">Diploma</option>
+          <option value="bachelor">Bachelor's</option>
+          <option value="master">Master's</option>
+          <option value="doctorate">Doctorate</option>
+        </select>
         <input
           name="skills"
           placeholder="Skills, separated by commas"
@@ -204,6 +215,7 @@ export default function CompanyJobsPage() {
                     Posted {new Date(job.created_at).toLocaleString()} |
                     Deadline:{" "}
                     {formatDeadlineDate(job.application_deadline)}
+                    {job.education_required && ` | Education: ${job.education_required}`}
                     {job.application_deadline && (
                       <span className="ml-2 font-semibold text-red-600">
                         {formatDeadlineCountdown(job.application_deadline, now)}

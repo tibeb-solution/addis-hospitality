@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   location text NOT NULL,
   employment_type text NOT NULL,
   experience_required integer NOT NULL DEFAULT 0 CHECK (experience_required >= 0),
+  education_required text,
   skills text[] NOT NULL DEFAULT '{}',
   languages text[] NOT NULL DEFAULT '{}',
   salary_min integer CHECK (salary_min IS NULL OR salary_min >= 0),
@@ -153,6 +154,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS education_required text;
 
 CREATE TABLE IF NOT EXISTS applications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

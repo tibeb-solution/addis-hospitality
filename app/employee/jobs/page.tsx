@@ -217,7 +217,8 @@ export default function EmployeeJobsPage() {
                     </p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       Skills: {job.skills.join(", ") || "Not specified"} |
-                      Match: {score}%
+                      Match: {score}% |
+                      Education: {job.education_required || "Not specified"}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
                       Posted {new Date(job.created_at).toLocaleString()} |
