@@ -19,7 +19,9 @@ export async function syncAuthenticatedUser(
     .single();
 
   const metadata = authUser.user_metadata ?? {};
-  const role = (profile?.role ?? metadata.role ?? preferredRole ?? "employee") as LocalUser["role"];
+  // Roles are assigned server-side in the profile table. Never trust user metadata
+  // or a client-provided preferred role for authorization.
+  const role = (profile?.role ?? "employee") as LocalUser["role"];
   const fullName =
     profile?.full_name ??
     metadata.full_name ??

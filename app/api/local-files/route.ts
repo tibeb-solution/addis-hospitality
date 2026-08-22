@@ -1,6 +1,7 @@
 import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -18,15 +19,24 @@ function absoluteStoredPath(storedPath: string) {
   return target;
 }
 
+async function getAuthenticatedUser() {
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return error || !user ? null : user;
+}
+
 export async function POST(request: Request) {
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const data = await request.formData();
   const file = data.get("file");
-  const ownerId = String(data.get("ownerId") || "");
-  if (!(file instanceof File) || !safePart(ownerId) || !allowedTypes.has(file.type) || file.size > maxBytes) {
+  const ownerId = safePart(user.id);
+  if (!(file instanceof File) || !allowedTypes.has(file.type) || file.size === 0 || file.size > maxBytes) {
     return NextResponse.json({ error: "Invalid upload" }, { status: 400 });
   }
   const extension = path.extname(file.name).toLowerCase().replace(/[^.a-z0-9]/g, "") || ".bin";
-  const storedPath = `${safePart(ownerId)}/${Date.now()}-${crypto.randomUUID()}${extension}`;
+  const storedPath = `${ownerId}/${Date.now()}-${crypto.randomUUID()}${extension}`;
   const target = absoluteStoredPath(storedPath);
   await mkdir(path.dirname(target), { recursive: true });
   await writeFile(target, Buffer.from(await file.arrayBuffer()));
@@ -34,9 +44,16 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { path: storedPath } = await request.json();
-    await rm(absoluteStoredPath(String(storedPath || "")), { force: true });
+    const requestedPath = String(storedPath || "");
+    if (!requestedPath.startsWith(`${safePart(user.id)}/`)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await rm(absoluteStoredPath(requestedPath), { force: true });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Invalid file path" }, { status: 400 });
