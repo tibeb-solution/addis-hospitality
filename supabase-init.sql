@@ -22,47 +22,6 @@ CREATE TABLE IF NOT EXISTS profiles (
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE profiles DROP COLUMN IF EXISTS password;
 
-CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = ''
-AS $$
-DECLARE
-  selected_role text := 'employee';
-BEGIN
-  INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
-  VALUES (
-    NEW.id,
-    NEW.id,
-    NEW.email,
-    CASE WHEN selected_role IN ('employee', 'company', 'admin') THEN selected_role ELSE 'employee' END,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-    CASE WHEN selected_role = 'admin' THEN 'active' ELSE 'pending' END,
-    true
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    auth_user_id = EXCLUDED.auth_user_id;
-
-  IF selected_role = 'company' THEN
-    INSERT INTO public.company_profiles (id, company_name, business_type)
-    VALUES (NEW.id, NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'business_type')
-    ON CONFLICT (id) DO NOTHING;
-  ELSE
-    INSERT INTO public.employee_profiles (id)
-    VALUES (NEW.id)
-    ON CONFLICT (id) DO NOTHING;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
-
 -- Employee-specific profile data
 CREATE TABLE IF NOT EXISTS employee_profiles (
   id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
@@ -119,6 +78,52 @@ ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS review_note text;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_at timestamptz;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_by uuid REFERENCES profiles(id);
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS logo_status text;
+
+-- Create the auth trigger only after both profile detail tables exist.
+-- This order is required when running the entire file in Supabase SQL Editor.
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  selected_role text := COALESCE(NEW.raw_user_meta_data->>'role', 'employee');
+BEGIN
+  INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
+  VALUES (
+    NEW.id,
+    NEW.id,
+    NEW.email,
+    CASE WHEN selected_role IN ('employee', 'company', 'admin') THEN selected_role ELSE 'employee' END,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+    CASE WHEN selected_role = 'admin' THEN 'active' ELSE 'pending' END,
+    COALESCE(NEW.email_confirmed_at IS NOT NULL, false)
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    auth_user_id = EXCLUDED.auth_user_id;
+
+  IF selected_role = 'company' THEN
+    INSERT INTO public.company_profiles (id, company_name, business_type)
+    VALUES (NEW.id, NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'business_type')
+    ON CONFLICT (id) DO NOTHING;
+  ELSE
+    INSERT INTO public.employee_profiles (id)
+    VALUES (NEW.id)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_auth_user();
 
 -- Documents uploaded by users
 CREATE TABLE IF NOT EXISTS documents (
