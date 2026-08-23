@@ -118,7 +118,8 @@ export default function CompanySettings() {
 
     if (isSupabaseConfigured()) {
       const supabase = createClient();
-      const { error } = await supabase.from("company_profiles").upsert({ id: user.id, ...updatedProfile });
+      const { id: _profileId, ...profilePayload } = updatedProfile;
+      const { error } = await supabase.from("company_profiles").upsert({ ...profilePayload, id: user.id });
       if (error) { setMessageType("error"); setMessage(error.message); return; }
       const { error: accountError } = await supabase.from("profiles").update({ full_name: formData.company_name, phone: formData.contact_phone }).eq("id", user.id);
       if (accountError) { setMessageType("error"); setMessage(accountError.message); return; }

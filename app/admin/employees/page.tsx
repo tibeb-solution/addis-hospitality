@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { EMPLOYEE_POSITIONS, getPositionChoice } from "@/lib/employee-positions";
 
 export default function AdminEmployeesPage() {
   const t = useTranslations();
@@ -16,6 +17,7 @@ export default function AdminEmployeesPage() {
   const [locationFilter, setLocationFilter] = useState("");
   const [professionFilter, setProfessionFilter] = useState("");
   const [experienceFilter, setExperienceFilter] = useState("");
+  const [positionFilter, setPositionFilter] = useState("");
 
   useEffect(() => {
     const loadEmployees = async () => {
@@ -37,7 +39,7 @@ export default function AdminEmployeesPage() {
       const { data: employeeProfiles } = employeeIds.length
         ? await supabase.from("employee_profiles").select("*").in("id", employeeIds)
         : { data: [] };
-      const profilesById = new Map(
+      const profilesById = new Map<string, any>(
         (employeeProfiles || []).map((profile: any) => [profile.id, profile]),
       );
 
@@ -92,6 +94,10 @@ export default function AdminEmployeesPage() {
       );
     }
 
+    if (positionFilter) {
+      results = results.filter((emp) => getPositionChoice(emp.desired_position) === positionFilter);
+    }
+
     if (experienceFilter) {
       results = results.filter((emp) => {
         const years = Number(emp.years_experience);
@@ -110,6 +116,7 @@ export default function AdminEmployeesPage() {
     locationFilter,
     professionFilter,
     experienceFilter,
+    positionFilter,
     employees,
   ]);
 
@@ -172,6 +179,20 @@ export default function AdminEmployeesPage() {
             />
           </div>
           <div className="space-y-2">
+            <label className="text-xs sm:text-sm font-medium">Desired position</label>
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-input rounded-md bg-background text-foreground"
+            >
+              <option value="">Any position</option>
+              {EMPLOYEE_POSITIONS.map((position) => (
+                <option key={position} value={position}>{position}</option>
+              ))}
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div className="space-y-2">
             <label className="text-xs sm:text-sm font-medium">
               Experience years
             </label>
@@ -210,6 +231,7 @@ export default function AdminEmployeesPage() {
                   <th className="px-6 py-3 text-left text-sm font-medium">
                     {t("auth.fullName")}
                   </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">Desired position</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">
                     {t("admin.registrationDate")}
                   </th>
@@ -246,6 +268,7 @@ export default function AdminEmployeesPage() {
                     <td className="px-6 py-4 text-sm">
                       {emp.full_name || "—"}
                     </td>
+                    <td className="px-6 py-4 text-sm">{emp.desired_position || "—"}</td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap">
                       {emp.created_at
                         ? new Date(emp.created_at).toLocaleDateString()

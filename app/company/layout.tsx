@@ -44,11 +44,23 @@ export default function CompanyLayout({
             router.push("/auth/login");
             return;
           }
-          const { data: profile } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
-          const currentUser = { ...authUser, ...profile, id: authUser.id, email: authUser.email, role: profile?.role ?? authUser.user_metadata?.role ?? "employee", email_verified: true };
+          // The callback creates the profile immediately before redirecting here. On
+          // a fresh OAuth signup, allow a short read-after-write window instead of
+          // treating the still-replicating profile as an invalid session.
+          let profile: any = null;
+          for (let attempt = 0; attempt < 3 && !profile; attempt += 1) {
+            const { data } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", authUser.id)
+              .maybeSingle();
+            profile = data;
+            if (!profile && attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+          const currentUser = { ...authUser, ...profile, id: authUser.id, email: authUser.email, role: profile?.role ?? "employee", email_verified: true };
           if (currentUser.role !== "company" && currentUser.role !== "admin") {
             setLoading(false);
-            router.push("/auth/login");
+            router.push("/auth/login?error=company_profile_pending");
             return;
           }
           setUser(currentUser);

@@ -151,13 +151,9 @@ export default function LandingPage() {
         </div>
 
         <div
-          className={`${mobileMenuOpen ? "block" : "hidden"} md:hidden border-t border-border bg-card/95 px-4 pb-4`}
+          className={`${mobileMenuOpen ? "block" : "hidden"} md:hidden border-t border-border bg-card/95 px-3 pb-3 shadow-lg`}
         >
-          <div className="pt-3 pb-2 flex items-center gap-2">
-            <ThemeSwitcher />
-            <LocaleSwitcher />
-          </div>
-          <nav aria-label="Mobile main navigation" className="mt-3 space-y-2">
+          <nav aria-label="Mobile main navigation" className="pt-2 space-y-1">
             {[
               ["nav.home", "#home"],
               ["nav.about", "/about"],
@@ -168,7 +164,7 @@ export default function LandingPage() {
               <Link
                 key={href}
                 href={href}
-                className="block rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                className="block rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t(label)}

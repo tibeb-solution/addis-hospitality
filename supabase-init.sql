@@ -25,10 +25,10 @@ ALTER TABLE profiles DROP COLUMN IF EXISTS password;
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS trigger
 LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = public
+SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
-  selected_role text := COALESCE(NEW.raw_user_meta_data->>'role', 'employee');
+  selected_role text := 'employee';
 BEGIN
   INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
   VALUES (
@@ -66,7 +66,21 @@ CREATE TRIGGER on_auth_user_created
 -- Employee-specific profile data
 CREATE TABLE IF NOT EXISTS employee_profiles (
   id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  full_name text,
+  phone text,
   avatar_url text,
+  avatar_status text DEFAULT 'pending',
+  gender text,
+  date_of_birth date,
+  age integer CONSTRAINT employee_profiles_age_nonnegative CHECK (age IS NULL OR age >= 0),
+  alternative_phone text,
+  residence_city text,
+  residence_sub_city text,
+  residence_woreda text,
+  residence_area text,
+  emergency_contact_name text,
+  emergency_contact_relationship text,
+  emergency_contact_phone text,
   desired_position text,
   years_experience integer,
   preferred_cities text,
@@ -79,9 +93,11 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
   availability text,
   willing_to_relocate boolean
 );
-ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS avatar_status text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS full_name text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS phone text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS gender text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS date_of_birth date;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS age integer;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS alternative_phone text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_city text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_sub_city text;
@@ -90,6 +106,55 @@ ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS residence_area text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS emergency_contact_name text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS emergency_contact_relationship text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS emergency_contact_phone text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS avatar_status text DEFAULT 'pending';
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'employee_profiles_age_nonnegative'
+      AND conrelid = 'public.employee_profiles'::regclass
+  ) THEN
+    ALTER TABLE public.employee_profiles
+      ADD CONSTRAINT employee_profiles_age_nonnegative
+      CHECK (age IS NULL OR age >= 0) NOT VALID;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.calculate_age(date_of_birth date)
+RETURNS integer
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT CASE
+    WHEN date_of_birth IS NULL THEN NULL
+    ELSE GREATEST(
+      date_part('year', age(current_date, date_of_birth))::integer,
+      0
+    )
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.set_employee_profile_age()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.age := public.calculate_age(NEW.date_of_birth);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS set_employee_profile_age_before_save ON employee_profiles;
+CREATE TRIGGER set_employee_profile_age_before_save
+  BEFORE INSERT OR UPDATE OF date_of_birth ON employee_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.set_employee_profile_age();
+
+UPDATE employee_profiles
+SET age = public.calculate_age(date_of_birth)
+WHERE date_of_birth IS NOT NULL;
 
 -- Company-specific profile data
 CREATE TABLE IF NOT EXISTS company_profiles (
@@ -264,13 +329,16 @@ CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id::text = auth.uid()::text AND role = 'admin'
+    WHERE auth_user_id = auth.uid() AND role = 'admin' AND status = 'active'
   );
 $$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
 
 -- Row-level security for browser clients.
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -310,14 +378,21 @@ CREATE POLICY employee_profiles_access ON employee_profiles FOR ALL TO authentic
   WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS employee_profiles_read ON employee_profiles;
 CREATE POLICY employee_profiles_read ON employee_profiles FOR SELECT TO authenticated
-  USING (true);
+  USING (id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.applications a
+    JOIN public.jobs j ON j.id = a.job_id
+    WHERE a.employee_id = employee_profiles.id AND j.company_id::text = auth.uid()::text
+  ));
 DROP POLICY IF EXISTS company_profiles_access ON company_profiles;
 CREATE POLICY company_profiles_access ON company_profiles FOR ALL TO authenticated
   USING (id::text = auth.uid()::text OR public.is_admin())
   WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS company_profiles_read ON company_profiles;
 CREATE POLICY company_profiles_read ON company_profiles FOR SELECT TO authenticated
-  USING (true);
+  USING (id::text = auth.uid()::text OR public.is_admin() OR EXISTS (
+    SELECT 1 FROM public.jobs j
+    WHERE j.company_id = company_profiles.id AND j.status = 'published'
+  ));
 
 DROP POLICY IF EXISTS documents_access ON documents;
 CREATE POLICY documents_access ON documents FOR ALL TO authenticated
