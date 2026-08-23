@@ -388,6 +388,52 @@ export default function AdminCompanyDetailPage() {
         </div>
       </div>
 
+      {/* Complete company profile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <h3 className="font-semibold">Contact and location</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            {[
+              ["Account email", company.email],
+              ["Account phone", company.phone],
+              ["Contact person", company.contact_person],
+              ["Contact position", company.contact_position],
+              ["Contact phone", company.contact_phone],
+              ["Contact email", company.contact_email],
+              ["Region", company.region],
+              ["Sub-city", company.sub_city],
+              ["Address", company.address],
+              ["Website", company.website],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="font-medium break-words">{value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <h3 className="font-semibold">Business details</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            {[
+              ["Year established", company.year_established],
+              ["Employee count", company.employee_count],
+              ["Trade license number", company.trade_license_number],
+              ["TIN number", company.tin_number],
+              ["Logo status", company.logo_status],
+              ["Registered", company.created_at ? new Date(company.created_at).toLocaleString() : null],
+              ["Reviewed", company.reviewed_at ? new Date(company.reviewed_at).toLocaleString() : null],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="font-medium break-words">{value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+          {company.description && <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{company.description}</p>}
+        </div>
+      </div>
+
       {/* Documents */}
       {documents.length > 0 && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">

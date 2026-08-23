@@ -48,6 +48,9 @@ export default function AdminEmployeeDetailPage() {
             .eq("id", params.id as string)
             .single();
 
+          if (profile) {
+            setEmployee((current: any) => ({ ...current, ...profile }));
+          }
           if (profile?.avatar_url) {
             const { data: signed } = supabase.storage
               .from("avatars")
@@ -290,6 +293,54 @@ export default function AdminEmployeeDetailPage() {
               </dd>
             </div>
           </dl>
+        </div>
+
+        {/* Personal and professional details */}
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <h3 className="font-semibold">Personal details</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            {[
+              ["Gender", employee.gender],
+              ["Date of birth", employee.date_of_birth],
+              ["Age", employee.age],
+              ["Alternative phone", employee.alternative_phone],
+              ["Residence city", employee.residence_city],
+              ["Sub-city", employee.residence_sub_city],
+              ["Woreda", employee.residence_woreda],
+              ["Area", employee.residence_area],
+              ["Emergency contact", employee.emergency_contact_name],
+              ["Relationship", employee.emergency_contact_relationship],
+              ["Emergency phone", employee.emergency_contact_phone],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="font-medium break-words">{value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <h3 className="font-semibold">Professional details</h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            {[
+              ["Desired position", employee.desired_position],
+              ["Years of experience", employee.years_experience],
+              ["Preferred cities", employee.preferred_cities],
+              ["Expected salary", employee.expected_salary_min || employee.expected_salary_max ? `${employee.expected_salary_min || "—"} – ${employee.expected_salary_max || "—"} ETB` : null],
+              ["Highest education", employee.highest_education],
+              ["Employment type", employee.employment_type],
+              ["Availability", employee.availability],
+              ["Willing to relocate", employee.willing_to_relocate === true ? "Yes" : employee.willing_to_relocate === false ? "No" : null],
+              ["Skills", Array.isArray(employee.skills) ? employee.skills.join(", ") : employee.skills],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="font-medium break-words">{value || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+          {employee.bio && <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{employee.bio}</p>}
         </div>
 
         {/* Moderation Controls */}
