@@ -288,7 +288,12 @@ export default function AdminCompanyDetailPage() {
                 {t("auth.businessType")}
               </dt>
               <dd className="font-medium">
-                {t(`taxonomy.business_${company.business_type}`) || "—"}
+                {company.business_type
+                  ? (() => {
+                      const key = `taxonomy.business_${company.business_type}` as const;
+                      return t.has(key) ? t(key) : company.business_type;
+                    })()
+                  : "—"}
               </dd>
             </div>
             <div>
