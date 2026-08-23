@@ -16,7 +16,8 @@ import {
   LogOut,
   CalendarDays,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { clearCurrentUser } from "@/lib/local-storage";
 
 export default function SideNav({
@@ -31,6 +32,11 @@ export default function SideNav({
   const t = useTranslations();
   const pathname = usePathname() || "/";
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const items: { href: string; label: string; icon: any }[] =
     role === "admin"
@@ -88,10 +94,10 @@ export default function SideNav({
           ];
 
   const base = mobile
-    ? "fixed inset-0 z-50"
+    ? "fixed inset-0 z-[9999] flex"
     : "hidden md:flex md:sticky md:top-0 md:h-screen";
   const panel = mobile
-    ? "w-72 h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in flex flex-col"
+    ? "w-72 max-w-[85vw] h-full max-h-screen overflow-y-auto bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in flex flex-col"
     : "flex-col w-72 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";
 
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -99,6 +105,10 @@ export default function SideNav({
 
   useEffect(() => {
     if (!mobile) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     // focus the close button for keyboard users
     const timer = setTimeout(() => {
       closeRef.current?.focus();
@@ -110,28 +120,30 @@ export default function SideNav({
 
     window.addEventListener("keydown", onKey);
     return () => {
+      document.body.style.overflow = originalOverflow;
       clearTimeout(timer);
       window.removeEventListener("keydown", onKey);
     };
   }, [mobile, onClose]);
 
-  return (
-    <div className={`${base} ${mobile ? "" : ""}`}>
+  const navContent = (
+    <div className={base}>
       {mobile && (
         <div
-          className="absolute inset-0 bg-black/40 sidebar-overlay-fade"
+          className="fixed inset-0 bg-black/60 sidebar-overlay-fade z-[9998]"
           onClick={onClose}
           aria-hidden
         />
       )}
       <aside
-        className={`${panel} ${mobile ? "relative" : ""}`}
+        className={`${panel} ${mobile ? "relative z-[9999]" : ""}`}
         aria-hidden={!mobile ? undefined : false}
       >
         {mobile && (
           <button
             ref={closeRef}
             onClick={onClose}
+            aria-label="Close sidebar"
             className="absolute right-3 top-3 p-2 rounded-md border border-border bg-card text-foreground"
           >
             <X className="h-4 w-4" />
@@ -147,6 +159,9 @@ export default function SideNav({
                   ? "/admin"
                   : "/company"
             }
+            onClick={() => {
+              if (mobile) onClose?.();
+            }}
             className="hover:opacity-90 transition-opacity"
           >
             <BrandLogo />
@@ -173,6 +188,9 @@ export default function SideNav({
                   <Link
                     href={item.href}
                     ref={firstLinkRef}
+                    onClick={() => {
+                      if (mobile) onClose?.();
+                    }}
                     aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-3 w-full rounded-md px-3 py-2 transition ${active ? "bg-sidebar-accent/30 text-sidebar-primary-foreground font-semibold" : "text-sidebar-foreground hover:bg-sidebar-accent/10"}`}
                   >
@@ -195,6 +213,9 @@ export default function SideNav({
                   ? "/admin/settings"
                   : "/company/settings"
             }
+            onClick={() => {
+              if (mobile) onClose?.();
+            }}
             className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-sidebar-foreground hover:bg-sidebar-accent/10"
           >
             <Settings className="h-4 w-4" />
@@ -202,6 +223,7 @@ export default function SideNav({
           </Link>
           <button
             onClick={() => {
+              if (mobile) onClose?.();
               clearCurrentUser();
               router.push("/auth/login");
             }}
@@ -214,4 +236,11 @@ export default function SideNav({
       </aside>
     </div>
   );
+
+  if (mobile) {
+    if (!mounted) return null;
+    return createPortal(navContent, document.body);
+  }
+
+  return navContent;
 }
