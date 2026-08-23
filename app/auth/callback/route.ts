@@ -16,11 +16,15 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Authentication failed")}`);
+      return NextResponse.redirect(
+        `${origin}/auth/error?message=${encodeURIComponent("Authentication failed")}`,
+      );
     }
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(`${origin}/auth/login`);
 
   const { data: existingProfile } = await supabase
@@ -31,15 +35,18 @@ export async function GET(request: NextRequest) {
 
   // The selected role is only used to initialize a brand-new account. It can
   // never overwrite an existing role, especially an admin role.
-  const isPendingCompanyProfile = requestedRole === "company" &&
+  const isPendingCompanyProfile =
+    requestedRole === "company" &&
     existingProfile?.role === "employee" &&
     existingProfile.status === "pending";
   const isNewProfile = !existingProfile || isPendingCompanyProfile;
-  const role = isNewProfile && (requestedRole === "employee" || requestedRole === "company")
-    ? requestedRole
-    : existingProfile?.role === "company" || existingProfile?.role === "admin"
-      ? existingProfile.role
-      : "employee";
+  const role =
+    isNewProfile &&
+    (requestedRole === "employee" || requestedRole === "company")
+      ? requestedRole
+      : existingProfile?.role === "company" || existingProfile?.role === "admin"
+        ? existingProfile.role
+        : "employee";
 
   if (isNewProfile) {
     const profilePayload = {
@@ -47,27 +54,47 @@ export async function GET(request: NextRequest) {
       auth_user_id: user.id,
       email: user.email ?? "",
       role,
-      full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+      full_name:
+        user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
       status: "active",
       email_verified: true,
     };
     const { error } = existingProfile
       ? await supabase.from("profiles").update(profilePayload).eq("id", user.id)
       : await supabase.from("profiles").insert(profilePayload);
-    if (error) return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Unable to create profile")}`);
+    if (error)
+      return NextResponse.redirect(
+        `${origin}/auth/error?message=${encodeURIComponent("Unable to create profile")}`,
+      );
 
     if (role === "company") {
-      const { error: companyProfileError } = await supabase.from("company_profiles").upsert({
-        id: user.id,
-        company_name: user.user_metadata?.name ?? "",
-      });
-      if (companyProfileError) return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Unable to create company profile")}`);
+      const { error: companyProfileError } = await supabase
+        .from("company_profiles")
+        .upsert({
+          id: user.id,
+          company_name: user.user_metadata?.name ?? "",
+        });
+      if (companyProfileError)
+        return NextResponse.redirect(
+          `${origin}/auth/error?message=${encodeURIComponent("Unable to create company profile")}`,
+        );
     } else {
-      const { error: employeeProfileError } = await supabase.from("employee_profiles").upsert({ id: user.id });
-      if (employeeProfileError) return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Unable to create employee profile")}`);
+      const { error: employeeProfileError } = await supabase
+        .from("employee_profiles")
+        .upsert({ id: user.id });
+      if (employeeProfileError)
+        return NextResponse.redirect(
+          `${origin}/auth/error?message=${encodeURIComponent("Unable to create employee profile")}`,
+        );
     }
   }
 
-  const destination = requestedNext ?? (role === "admin" ? "/admin" : role === "company" ? "/company" : "/employee");
+  const destination =
+    requestedNext ??
+    (role === "admin"
+      ? "/admin"
+      : role === "company"
+        ? "/company"
+        : "/employee");
   return NextResponse.redirect(`${origin}${destination}`);
 }

@@ -16,13 +16,17 @@ export default function SignUpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedRole = searchParams.get("role");
-  const [role, setRole] = useState<Role>(requestedRole === "company" ? "company" : "employee");
+  const [role, setRole] = useState<Role>(
+    requestedRole === "company" ? "company" : "employee",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleGoogleSignUp = async () => {
     if (!isSupabaseConfigured()) {
-      setError("Supabase is not configured. Add the public Supabase variables to .env.local.");
+      setError(
+        "Supabase is not configured. Add the public Supabase variables to .env.local.",
+      );
       return;
     }
 
@@ -56,18 +60,25 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       <div className="w-full max-w-md space-y-8">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-primary hover:underline">
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm font-medium text-primary hover:underline"
+        >
           ← {t("common.back")} {t("common.logo")}
         </Link>
 
         <div className="space-y-2 text-center">
           <BrandLogo variant="auth" />
-          <p className="text-muted-foreground">Create your account with Google</p>
+          <p className="text-muted-foreground">
+            Create your account with Google
+          </p>
         </div>
 
         <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
           <div className="space-y-3">
-            <label className="text-sm font-medium">{t("auth.selectRole")}</label>
+            <label className="text-sm font-medium">
+              {t("auth.selectRole")}
+            </label>
             <div className="flex gap-3">
               {(["employee", "company"] as const).map((candidateRole) => (
                 <button
@@ -77,26 +88,44 @@ export default function SignUpPage() {
                   onClick={() => setRole(candidateRole)}
                   className={`flex-1 rounded-lg px-4 py-3 font-medium transition-all ${role === candidateRole ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-accent"}`}
                 >
-                  {candidateRole === "employee" ? t("auth.signUpAsEmployee") : t("auth.signUpAsCompany")}
+                  {candidateRole === "employee"
+                    ? t("auth.signUpAsEmployee")
+                    : t("auth.signUpAsCompany")}
                 </button>
               ))}
             </div>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Continue with Google to create a verified account. No email, password, or other signup form is required.
+            Continue with Google to create a verified account. No email,
+            password, or other signup form is required.
           </p>
 
-          {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+          {error && (
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
 
-          <Button type="button" disabled={loading} onClick={handleGoogleSignUp} className="w-full" size="lg">
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={handleGoogleSignUp}
+            className="w-full"
+            size="lg"
+          >
             {loading ? t("common.loading") : "Continue with Google"}
           </Button>
         </div>
 
         <div className="text-center text-sm">
-          {t("auth.alreadyHaveAccount")} {" "}
-          <Link href="/auth/login" className="font-medium text-primary hover:underline">{t("auth.login")}</Link>
+          {t("auth.alreadyHaveAccount")}{" "}
+          <Link
+            href="/auth/login"
+            className="font-medium text-primary hover:underline"
+          >
+            {t("auth.login")}
+          </Link>
         </div>
       </div>
     </div>
