@@ -77,7 +77,11 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
   highest_education text,
   employment_type text,
   availability text,
-  willing_to_relocate boolean
+  willing_to_relocate boolean,
+  -- Age is calculated from date_of_birth in the application and is not stored separately.
+  date_of_birth date,
+  avatar_status text,
+  gender text
 );
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS avatar_status text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS gender text;
