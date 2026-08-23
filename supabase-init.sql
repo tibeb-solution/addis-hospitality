@@ -30,13 +30,17 @@ AS $$
 DECLARE
   selected_role text := 'employee';
 BEGIN
+  IF NEW.raw_user_meta_data->>'role' IS NOT NULL AND NEW.raw_user_meta_data->>'role' IN ('employee', 'company', 'admin') THEN
+    selected_role := NEW.raw_user_meta_data->>'role';
+  END IF;
+
   INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
   VALUES (
     NEW.id,
     NEW.id,
     NEW.email,
-    CASE WHEN selected_role IN ('employee', 'company', 'admin') THEN selected_role ELSE 'employee' END,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+    selected_role,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'name', ''),
     COALESCE(NEW.raw_user_meta_data->>'phone', ''),
     CASE WHEN selected_role = 'admin' THEN 'active' ELSE 'pending' END,
     true
@@ -46,13 +50,24 @@ BEGIN
     auth_user_id = EXCLUDED.auth_user_id;
 
   IF selected_role = 'company' THEN
-    INSERT INTO public.company_profiles (id, company_name, business_type)
-    VALUES (NEW.id, NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'business_type')
-    ON CONFLICT (id) DO NOTHING;
+    INSERT INTO public.company_profiles (id, company_name, email, business_type)
+    VALUES (
+      NEW.id,
+      COALESCE(NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'name', ''),
+      NEW.email,
+      NEW.raw_user_meta_data->>'business_type'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email;
   ELSE
-    INSERT INTO public.employee_profiles (id)
-    VALUES (NEW.id)
-    ON CONFLICT (id) DO NOTHING;
+    INSERT INTO public.employee_profiles (id, full_name, email)
+    VALUES (
+      NEW.id,
+      COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+      NEW.email
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email;
   END IF;
   RETURN NEW;
 END;
@@ -67,6 +82,7 @@ CREATE TRIGGER on_auth_user_created
 CREATE TABLE IF NOT EXISTS employee_profiles (
   id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
   full_name text,
+  email text,
   phone text,
   avatar_url text,
   avatar_status text DEFAULT 'pending',
@@ -94,6 +110,7 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
   willing_to_relocate boolean
 );
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS full_name text;
+ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS email text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS phone text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS gender text;
 ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS date_of_birth date;
@@ -160,6 +177,7 @@ WHERE date_of_birth IS NOT NULL;
 CREATE TABLE IF NOT EXISTS company_profiles (
   id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
   company_name text,
+  email text,
   logo_url text,
   trade_license_number text,
   tin_number text,
@@ -176,10 +194,22 @@ CREATE TABLE IF NOT EXISTS company_profiles (
   is_verified boolean DEFAULT false,
   business_type text
 );
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS email text;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS review_note text;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_at timestamptz;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_by uuid REFERENCES profiles(id);
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS logo_status text;
+
+-- Backfill emails from profiles table if missing
+UPDATE public.company_profiles cp
+SET email = p.email
+FROM public.profiles p
+WHERE cp.id = p.id AND (cp.email IS NULL OR cp.email = '');
+
+UPDATE public.employee_profiles ep
+SET email = p.email
+FROM public.profiles p
+WHERE ep.id = p.id AND (ep.email IS NULL OR ep.email = '');
 
 -- Documents uploaded by users
 CREATE TABLE IF NOT EXISTS documents (

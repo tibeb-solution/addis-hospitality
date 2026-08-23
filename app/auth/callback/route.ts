@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
         .upsert({
           id: user.id,
           company_name: user.user_metadata?.name ?? "",
+          email: user.email ?? "",
         });
       if (companyProfileError)
         return NextResponse.redirect(
@@ -81,7 +82,12 @@ export async function GET(request: NextRequest) {
     } else {
       const { error: employeeProfileError } = await supabase
         .from("employee_profiles")
-        .upsert({ id: user.id });
+        .upsert({
+          id: user.id,
+          full_name:
+            user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+          email: user.email ?? "",
+        });
       if (employeeProfileError)
         return NextResponse.redirect(
           `${origin}/auth/error?message=${encodeURIComponent("Unable to create employee profile")}`,
