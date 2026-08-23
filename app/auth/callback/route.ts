@@ -25,13 +25,16 @@ export async function GET(request: NextRequest) {
 
   const { data: existingProfile } = await supabase
     .from("profiles")
-    .select("id, role")
+    .select("id, role, status")
     .eq("id", user.id)
     .maybeSingle();
 
   // The selected role is only used to initialize a brand-new account. It can
   // never overwrite an existing role, especially an admin role.
-  const isNewProfile = !existingProfile;
+  const isPendingCompanyProfile = requestedRole === "company" &&
+    existingProfile?.role === "employee" &&
+    existingProfile.status === "pending";
+  const isNewProfile = !existingProfile || isPendingCompanyProfile;
   const role = isNewProfile && (requestedRole === "employee" || requestedRole === "company")
     ? requestedRole
     : existingProfile?.role === "company" || existingProfile?.role === "admin"
@@ -39,7 +42,7 @@ export async function GET(request: NextRequest) {
       : "employee";
 
   if (isNewProfile) {
-    const { error } = await supabase.from("profiles").upsert({
+    const profilePayload = {
       id: user.id,
       auth_user_id: user.id,
       email: user.email ?? "",
@@ -47,16 +50,21 @@ export async function GET(request: NextRequest) {
       full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
       status: "active",
       email_verified: true,
-    });
+    };
+    const { error } = existingProfile
+      ? await supabase.from("profiles").update(profilePayload).eq("id", user.id)
+      : await supabase.from("profiles").insert(profilePayload);
     if (error) return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Unable to create profile")}`);
 
     if (role === "company") {
-      await supabase.from("company_profiles").upsert({
+      const { error: companyProfileError } = await supabase.from("company_profiles").upsert({
         id: user.id,
         company_name: user.user_metadata?.name ?? "",
       });
+      if (companyProfileError) return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Unable to create company profile")}`);
     } else {
-      await supabase.from("employee_profiles").upsert({ id: user.id });
+      const { error: employeeProfileError } = await supabase.from("employee_profiles").upsert({ id: user.id });
+      if (employeeProfileError) return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent("Unable to create employee profile")}`);
     }
   }
 

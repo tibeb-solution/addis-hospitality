@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
@@ -13,7 +14,9 @@ type Role = "employee" | "company";
 export default function SignUpPage() {
   const t = useTranslations();
   const router = useRouter();
-  const [role, setRole] = useState<Role>("employee");
+  const searchParams = useSearchParams();
+  const requestedRole = searchParams.get("role");
+  const [role, setRole] = useState<Role>(requestedRole === "company" ? "company" : "employee");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
