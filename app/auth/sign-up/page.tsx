@@ -27,13 +27,16 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       const next = role === "company" ? "/company" : "/employee";
+      const callbackUrl = new URL(
+        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+          `${window.location.origin}/auth/callback`,
+      );
+      callbackUrl.searchParams.set("role", role);
+      callbackUrl.searchParams.set("next", next);
       const { error: oauthError } = await createClient().auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback`
-          }?role=${role}&next=${encodeURIComponent(next)}`,
+          redirectTo: callbackUrl.toString(),
           queryParams: { prompt: "select_account" },
         },
       });
