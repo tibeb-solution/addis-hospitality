@@ -155,7 +155,6 @@ export default function AdminSettings() {
             </Button>
           </form>
         </div>
-
       </div>
     </div>
   );
