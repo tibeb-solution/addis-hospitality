@@ -32,6 +32,7 @@ export default function EmployeeProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [tab, setTab] = useState("basic");
@@ -144,47 +145,63 @@ export default function EmployeeProfilePage() {
 
     setSaving(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const supabase = createClient();
       const formData = new FormData(e.currentTarget);
+      const getText = (name: string) => String(formData.get(name) || "");
+      const getNumber = (name: string) => {
+        const value = getText(name);
+        return value ? Number(value) : null;
+      };
 
       const updates: any = {
         id: user.id,
-        bio: formData.get("bio"),
-        phone: formData.get("phone"),
-        gender: formData.get("gender"),
-        date_of_birth: formData.get("date_of_birth") || null,
-        alternative_phone: formData.get("alternative_phone"),
-        residence_city: formData.get("residence_city"),
-        residence_sub_city: formData.get("residence_sub_city"),
-        residence_woreda: formData.get("residence_woreda"),
-        residence_area: formData.get("residence_area"),
-        emergency_contact_name: formData.get("emergency_contact_name"),
-        emergency_contact_relationship: formData.get(
+        bio: getText("bio"),
+        phone: getText("phone"),
+        gender: getText("gender"),
+        date_of_birth: getText("date_of_birth") || null,
+        alternative_phone: getText("alternative_phone"),
+        residence_city: getText("residence_city"),
+        residence_sub_city: getText("residence_sub_city"),
+        residence_woreda: getText("residence_woreda"),
+        residence_area: getText("residence_area"),
+        emergency_contact_name: getText("emergency_contact_name"),
+        emergency_contact_relationship: getText(
           "emergency_contact_relationship",
         ),
-        emergency_contact_phone: formData.get("emergency_contact_phone"),
-        desired_position: formData.get("desired_position"),
-        years_experience: formData.get("years_experience"),
-        highest_education: formData.get("highest_education"),
-        employment_type: formData.get("employment_type"),
-        availability: formData.get("availability"),
+        emergency_contact_phone: getText("emergency_contact_phone"),
+        desired_position: getText("desired_position"),
+        years_experience: getNumber("years_experience"),
+        highest_education: getText("highest_education"),
+        employment_type: getText("employment_type"),
+        availability: getText("availability"),
         willing_to_relocate: formData.get("willing_to_relocate") === "true",
-        preferred_cities: formData.get("preferred_cities"),
-        expected_salary_min: formData.get("expected_salary_min"),
-        expected_salary_max: formData.get("expected_salary_max"),
+        preferred_cities: getText("preferred_cities"),
+        expected_salary_min: getNumber("expected_salary_min"),
+        expected_salary_max: getNumber("expected_salary_max"),
       };
 
-      const { error: updateError } = await supabase
+      const { data: savedProfile, error: updateError } = await supabase
         .from("employee_profiles")
-        .update(updates)
-        .eq("id", user.id);
+        .upsert(updates)
+        .select("*")
+        .single();
 
       if (updateError) throw updateError;
 
-      setProfile({ ...profile, ...updates });
+      const { error: accountError } = await supabase
+        .from("profiles")
+        .update({ phone: updates.phone })
+        .eq("id", user.id);
+
+      if (accountError) throw accountError;
+
+      setProfile(savedProfile || { ...profile, ...updates });
+      setSuccess("Profile saved successfully.");
     } catch (err) {
+      setSuccess(null);
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
       setSaving(false);
@@ -512,6 +529,11 @@ export default function EmployeeProfilePage() {
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
             {error}
+          </div>
+        )}
+        {success && (
+          <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-700 dark:text-green-400 text-sm">
+            {success}
           </div>
         )}
 

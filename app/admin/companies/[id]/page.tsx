@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { logAction } from "@/lib/local-storage";
 
 export default function AdminCompanyDetailPage() {
   const t = useTranslations();

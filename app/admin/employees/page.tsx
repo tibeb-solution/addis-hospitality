@@ -37,7 +37,7 @@ export default function AdminEmployeesPage() {
       const { data: employeeProfiles } = employeeIds.length
         ? await supabase.from("employee_profiles").select("*").in("id", employeeIds)
         : { data: [] };
-      const profilesById = new Map(
+      const profilesById = new Map<string, any>(
         (employeeProfiles || []).map((profile: any) => [profile.id, profile]),
       );
 

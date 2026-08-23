@@ -56,7 +56,7 @@ export default function AdminCompaniesPage() {
         }
         return { ...account, ...comp };
       })
-        .sort((a, b) =>
+        .sort((a: any, b: any) =>
           String(b.created_at || "").localeCompare(String(a.created_at || "")),
         );
 

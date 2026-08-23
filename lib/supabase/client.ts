@@ -81,9 +81,11 @@ function createQuery(table: string) {
   let single = false;
   let selectedColumns: string | null = null;
   let isInsert = false;
+  let isUpsert = false;
   let isUpdate = false;
   let isDelete = false;
   let insertRows: any = null;
+  let upsertRows: any = null;
   let updatePayload: any = null;
 
   const execute = async () => {
@@ -102,6 +104,38 @@ function createQuery(table: string) {
       const finalRows = [...rows, ...createdRows];
       writeTable(table, finalRows);
       const data = single ? (createdRows[0] ?? null) : createdRows;
+      return { data };
+    }
+
+    if (isUpsert) {
+      const upsertArray = Array.isArray(upsertRows) ? upsertRows : [upsertRows];
+      const upsertedRows: any[] = [];
+      const nextRows = [...rows];
+
+      upsertArray.forEach((row: any) => {
+        const id = row.id ?? Math.random().toString(36).substring(2, 11);
+        const existingIndex = nextRows.findIndex((item: any) => item.id === id);
+        const nextRow = {
+          ...(existingIndex >= 0 ? nextRows[existingIndex] : {}),
+          ...row,
+          id,
+          created_at:
+            existingIndex >= 0
+              ? nextRows[existingIndex].created_at
+              : (row.created_at ?? new Date().toISOString()),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (existingIndex >= 0) {
+          nextRows[existingIndex] = nextRow;
+        } else {
+          nextRows.push(nextRow);
+        }
+        upsertedRows.push(nextRow);
+      });
+
+      writeTable(table, nextRows);
+      const data = single ? (upsertedRows[0] ?? null) : upsertedRows;
       return { data };
     }
 
@@ -176,6 +210,11 @@ function createQuery(table: string) {
     insert(rows: any) {
       isInsert = true;
       insertRows = rows;
+      return query;
+    },
+    upsert(rows: any) {
+      isUpsert = true;
+      upsertRows = rows;
       return query;
     },
     update(payload: any) {
