@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import AvatarCropper from "@/components/avatar-cropper";
+import { EMPLOYEE_POSITIONS, OTHER_POSITION, getPositionChoice } from "@/lib/employee-positions";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -37,6 +38,7 @@ export default function EmployeeProfilePage() {
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [tab, setTab] = useState("basic");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [positionChoice, setPositionChoice] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -71,6 +73,7 @@ export default function EmployeeProfilePage() {
       } else {
         setProfile(data);
         setDateOfBirth(data.date_of_birth || "");
+        setPositionChoice(getPositionChoice(data.desired_position));
         if (data.avatar_url) {
           const { data: signedUrl } = await supabase.storage
             .from("avatars")
@@ -172,7 +175,10 @@ export default function EmployeeProfilePage() {
           "emergency_contact_relationship",
         ),
         emergency_contact_phone: getText("emergency_contact_phone"),
-        desired_position: getText("desired_position"),
+        desired_position:
+          getText("desired_position") === OTHER_POSITION
+            ? getText("desired_position_other")
+            : getText("desired_position"),
         years_experience: getNumber("years_experience"),
         highest_education: getText("highest_education"),
         employment_type: getText("employment_type"),
@@ -318,12 +324,25 @@ export default function EmployeeProfilePage() {
               <label className="text-sm font-medium">
                 {t("employee.desiredPosition")}
               </label>
-              <input
+              <select
                 name="desired_position"
-                defaultValue={profile?.desired_position}
-                placeholder={t("employee.desiredPosition")}
-                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+                value={positionChoice}
+                onChange={(event) => setPositionChoice(event.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
+                <option value="">Select a position</option>
+                {EMPLOYEE_POSITIONS.map((position) => <option key={position} value={position}>{position}</option>)}
+                <option value={OTHER_POSITION}>{OTHER_POSITION}</option>
+              </select>
+              {positionChoice === OTHER_POSITION && (
+                <input
+                  name="desired_position_other"
+                  defaultValue={profile?.desired_position && !EMPLOYEE_POSITIONS.includes(profile.desired_position) ? profile.desired_position : ""}
+                  placeholder="Write your desired position"
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground"
+                />
+              )}
             </div>
           </div>
           <div className="space-y-2">
