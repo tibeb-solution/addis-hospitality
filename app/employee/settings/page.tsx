@@ -14,6 +14,7 @@ import {
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { EMPLOYEE_POSITIONS, OTHER_POSITION, getPositionChoice } from "@/lib/employee-positions";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -65,6 +66,8 @@ export default function EmployeeSettings() {
     confirm: "",
   });
   const [showPasswords, setShowPasswords] = useState(false);
+  const [positionChoice, setPositionChoice] = useState("");
+  const [positionOther, setPositionOther] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">(
     "success",
@@ -94,6 +97,8 @@ export default function EmployeeSettings() {
         };
         setUser(account);
         setAvatarPath(profile?.avatar_url || null);
+        setPositionChoice(getPositionChoice(profile?.desired_position));
+        setPositionOther(getPositionChoice(profile?.desired_position) === OTHER_POSITION ? profile?.desired_position || "" : "");
         setFormData({
           full_name:
             profile?.full_name || authUser.user_metadata?.full_name || "",
@@ -170,7 +175,7 @@ export default function EmployeeSettings() {
     if (!user) return;
 
     const profileUpdates = {
-      desired_position: formData.desired_position,
+      desired_position: positionChoice === OTHER_POSITION ? positionOther : positionChoice,
       years_experience: formData.years_experience
         ? Number(formData.years_experience)
         : undefined,
@@ -493,14 +498,27 @@ export default function EmployeeSettings() {
               <label className="block text-sm font-medium mb-2">
                 Desired Position
               </label>
-              <input
-                type="text"
-                value={formData.desired_position}
-                onChange={(e) =>
-                  setFormData({ ...formData, desired_position: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+  <select
+  value={positionChoice}
+  onChange={(e) => {
+    setPositionChoice(e.target.value);
+    setFormData({ ...formData, desired_position: e.target.value });
+  }}
+  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+  >
+  <option value="">Select a position</option>
+  {EMPLOYEE_POSITIONS.map((position) => <option key={position} value={position}>{position}</option>)}
+  <option value={OTHER_POSITION}>{OTHER_POSITION}</option>
+  </select>
+  {positionChoice === OTHER_POSITION && (
+    <input
+      type="text"
+      value={positionOther}
+      onChange={(e) => setPositionOther(e.target.value)}
+      placeholder="Write your desired position"
+      className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+    />
+  )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
