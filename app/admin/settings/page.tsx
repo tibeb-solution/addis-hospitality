@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, setCurrentUser } from "@/lib/local-storage";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
 
 export default function AdminSettings() {
@@ -19,24 +20,74 @@ export default function AdminSettings() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      router.push("/auth/login");
-      return;
-    }
-    setUser(currentUser);
-    setFormData({
-      full_name: currentUser.full_name || "",
-      email: currentUser.email || "",
-    });
-    setLoading(false);
+    const loadUser = async () => {
+      if (isSupabaseConfigured()) {
+        const supabase = createClient();
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        if (!authUser) {
+          router.push("/auth/login");
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+        if (profile?.role !== "admin") {
+          router.push("/auth/login");
+          return;
+        }
+
+        const currentUser = {
+          ...authUser,
+          ...profile,
+          id: authUser.id,
+          email: authUser.email || "",
+        };
+        setUser(currentUser);
+        setFormData({
+          full_name: profile.full_name || "",
+          email: authUser.email || "",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const currentUser = getCurrentUser();
+      if (!currentUser || currentUser.role !== "admin") {
+        router.push("/auth/login");
+        return;
+      }
+      setUser(currentUser);
+      setFormData({
+        full_name: currentUser.full_name || "",
+        email: currentUser.email || "",
+      });
+      setLoading(false);
+    };
+
+    void loadUser();
   }, [router]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    const updated = { ...user, ...formData };
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient()
+        .from("profiles")
+        .update({ full_name: formData.full_name })
+        .eq("id", user.id);
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+    }
+
+    const updated = { ...user, full_name: formData.full_name };
     setCurrentUser(updated);
     setUser(updated);
 
