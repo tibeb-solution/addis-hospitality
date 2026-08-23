@@ -8,12 +8,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
-  Camera,
-  Mail,
-  MapPin,
-  Phone,
   UserRound,
-  Video,
   X,
   Layers3,
   ArrowRight,
@@ -30,68 +25,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top info bar */}
-      <div className="bg-slate-950 text-slate-100 shadow-sm shadow-slate-950/10 overflow-x-auto">
-        <div className="mx-auto flex flex-wrap items-center justify-between gap-1 px-2 py-1 text-[9px] sm:gap-2 sm:px-4 sm:py-1.5 sm:text-[10px] md:gap-2 md:px-5 md:py-2 md:text-xs">
-          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-            <a
-              href="mailto:addis.hospitalitysolutions@gmail.com"
-              className="group flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 py-1 sm:px-3 sm:py-1.5 transition hover:bg-slate-900 whitespace-nowrap"
-            >
-              <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
-                <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
-              </span>
-              <span className="truncate font-medium hidden sm:inline max-w-[140px] sm:max-w-[160px]">
-                addis.hospitalitysolutions@gmail.com
-              </span>
-              <span className="truncate font-medium sm:hidden max-w-[80px]">
-                Email
-              </span>
-            </a>
-            <a
-              href="tel:+251941248888"
-              className="group flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 py-1 sm:px-3 sm:py-1.5 transition hover:bg-slate-900 whitespace-nowrap"
-            >
-              <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
-                <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
-              </span>
-              <span className="font-medium text-[8px] sm:text-[10px]">
-                +251 941 248 88
-              </span>
-            </a>
-            <div className="hidden sm:flex group items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2 sm:px-3 py-1 sm:py-1.5">
-              <span className="inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-primary text-white flex-shrink-0">
-                <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
-              </span>
-              <span className="font-medium">Addis Ababa</span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 justify-start sm:justify-end flex-shrink-0">
-            <Link
-              href="/instagram"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
-            >
-              <Camera className="h-4 w-4" />{" "}
-              <span className="hidden sm:inline">Instagram</span>
-            </Link>
-            <Link
-              href="/tiktok"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
-            >
-              <Video className="h-4 w-4" />{" "}
-              <span className="hidden sm:inline">TikTok</span>
-            </Link>
-            <Link
-              href="/youtube"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-[10px] font-medium text-white transition hover:bg-slate-900"
-            >
-              <Video className="h-4 w-4" />{" "}
-              <span className="hidden sm:inline">YouTube</span>
-            </Link>
-          </div>
-        </div>
-      </div>
 
       {/* Header */}
       <header className="relative border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">

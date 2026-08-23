@@ -111,7 +111,6 @@ export default function CompanyLayout({
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // close mobile sidebar on navigation
@@ -132,7 +131,6 @@ export default function CompanyLayout({
           const { data: signed } = supabase.storage
             .from("avatars")
             .getPublicUrl(data.logo_url);
-          setLogoUrl(signed.publicUrl || "");
           setAvatarUrl(signed.publicUrl || "");
         }
       } catch (e) {
@@ -168,16 +166,6 @@ export default function CompanyLayout({
             </div>
 
             <div className="flex items-center gap-2 ml-auto relative">
-              {logoUrl && (
-                <div className="w-10 h-10 rounded overflow-hidden mr-2">
-                  <img
-                    src={logoUrl}
-                    alt="company logo"
-                    className="object-cover w-10 h-10"
-                  />
-                </div>
-              )}
-
               <button
                 onClick={() => toggleTheme()}
                 title={

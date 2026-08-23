@@ -187,7 +187,7 @@ export function Footer() {
         <div className="mt-8 border-t border-emerald-300/15 pt-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <a
-              href="mailto:info@addishospitality.com"
+              href="mailto:addis.hospitalitysolutions@gmail.com"
               className="group flex items-center gap-3 rounded-md border border-emerald-300/15 bg-emerald-950/30 p-3 transition hover:border-emerald-300/60 hover:bg-emerald-800/30"
             >
               <div className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-400/15 text-emerald-200 group-hover:bg-emerald-300/25">
@@ -196,7 +196,7 @@ export function Footer() {
               <div>
                 <p className="text-[11px] text-emerald-50/55">Email</p>
                 <p className="text-sm font-medium text-white">
-                  info@addishospitality.com
+                  addis.hospitalitysolutions@gmail.com
                 </p>
               </div>
             </a>

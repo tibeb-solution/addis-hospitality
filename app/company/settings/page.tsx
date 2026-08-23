@@ -99,12 +99,7 @@ export default function CompanySettings() {
     e.preventDefault();
     if (!user) return;
 
-    const profile = getCompanyProfile(user.id) || {
-      id: user.id,
-      email: user.email,
-    };
-    const updatedProfile = {
-      ...profile,
+    const companyUpdates = {
       company_name: formData.company_name,
       business_type: formData.business_type,
       trade_license_number: formData.trade_license_number,
@@ -118,13 +113,28 @@ export default function CompanySettings() {
 
     if (isSupabaseConfigured()) {
       const supabase = createClient();
-      const { id: _profileId, ...profilePayload } = updatedProfile;
-      const { error } = await supabase.from("company_profiles").upsert({ ...profilePayload, id: user.id });
-      if (error) { setMessageType("error"); setMessage(error.message); return; }
-      const { error: accountError } = await supabase.from("profiles").update({ full_name: formData.company_name, phone: formData.contact_phone }).eq("id", user.id);
-      if (accountError) { setMessageType("error"); setMessage(accountError.message); return; }
+      const { error } = await supabase
+        .from("company_profiles")
+        .upsert({ id: user.id, ...companyUpdates });
+      if (error) {
+        setMessageType("error");
+        setMessage(error.message);
+        return;
+      }
+      const { error: accountError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: formData.company_name,
+          phone: formData.contact_phone,
+        })
+        .eq("id", user.id);
+      if (accountError) {
+        setMessageType("error");
+        setMessage(accountError.message);
+        return;
+      }
     } else {
-      updateCompanyProfile(user.id, updatedProfile);
+      updateCompanyProfile(user.id, companyUpdates);
     }
     setCurrentUser({
       ...user,
