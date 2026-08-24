@@ -10,7 +10,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   UserRound,
   X,
-  Layers3,
+  Menu,
   ArrowRight,
   BriefcaseBusiness,
   CalendarDays,
@@ -29,10 +29,10 @@ export default function LandingPage() {
       {/* Header */}
       <header className="relative border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="relative flex items-center justify-center">
+          <div className="flex items-center justify-between gap-2">
             <Link
               href="/"
-              className="absolute left-4 hover:opacity-90 transition-opacity"
+              className="shrink-0 hover:opacity-90 transition-opacity"
             >
               <BrandLogo />
             </Link>
@@ -57,7 +57,7 @@ export default function LandingPage() {
               ))}
             </nav>
 
-            <div className="absolute right-4 flex items-center gap-2">
+            <div className="ml-auto flex min-w-0 items-center justify-end gap-1 sm:gap-2">
               <ThemeSwitcher />
               <LocaleSwitcher />
               <Link
@@ -76,7 +76,7 @@ export default function LandingPage() {
                 {mobileMenuOpen ? (
                   <X className="h-5 w-5" />
                 ) : (
-                  <Layers3 className="h-5 w-5" />
+                  <Menu className="h-5 w-5" />
                 )}
               </button>
             </div>
