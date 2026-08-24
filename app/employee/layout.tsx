@@ -158,12 +158,14 @@ export default function EmployeeLayout({
       <SideNav role="employee" />
 
       <div className="flex-1 min-w-0">
-        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
           <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 min-h-[56px]">
             <div className="md:hidden">
               <button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card"
+                aria-label="Open sidebar menu"
+                className="inline-flex items-center justify-center rounded-md p-2 border border-border bg-card text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 <Menu className="h-5 w-5" />
               </button>
