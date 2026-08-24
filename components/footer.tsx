@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/brand-logo";
 import {
@@ -14,7 +15,19 @@ import {
 } from "lucide-react";
 
 export function Footer() {
+  const pathname = usePathname();
   const t = useTranslations();
+
+  if (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/employee" ||
+    pathname.startsWith("/employee/") ||
+    pathname === "/company" ||
+    pathname.startsWith("/company/")
+  ) {
+    return null;
+  }
 
   const currentYear = new Date().getFullYear();
 
