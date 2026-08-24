@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import {
   Globe,
@@ -15,6 +16,13 @@ import {
 
 export function Footer() {
   const t = useTranslations();
+  const pathname = usePathname() || "";
+  const isDashboard =
+    pathname.startsWith("/employee") ||
+    pathname.startsWith("/company") ||
+    pathname.startsWith("/admin");
+
+  if (isDashboard) return null;
 
   const currentYear = new Date().getFullYear();
 

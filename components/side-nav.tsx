@@ -16,8 +16,7 @@ import {
   LogOut,
   CalendarDays,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef } from "react";
 import { clearCurrentUser } from "@/lib/local-storage";
 
 export default function SideNav({
@@ -32,11 +31,6 @@ export default function SideNav({
   const t = useTranslations();
   const pathname = usePathname() || "/";
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const items: { href: string; label: string; icon: any }[] =
     role === "admin"
@@ -94,11 +88,11 @@ export default function SideNav({
           ];
 
   const base = mobile
-    ? "fixed inset-0 z-[9999] flex"
+    ? "fixed inset-0 z-50 flex"
     : "hidden md:flex md:sticky md:top-0 md:h-screen";
   const panel = mobile
-    ? "w-72 max-w-[85vw] h-full max-h-screen overflow-y-auto bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6 sidebar-slide-in flex flex-col"
-    : "flex-col w-72 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-6 gap-6";
+    ? "w-72 max-w-[85vw] h-full max-h-screen overflow-y-auto bg-card text-foreground border-r border-border p-6 gap-6 sidebar-slide-in flex flex-col relative z-50 shadow-2xl"
+    : "flex-col w-72 shrink-0 bg-card text-foreground border-r border-border p-6 gap-6";
 
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const firstLinkRef = useRef<HTMLAnchorElement | null>(null);
@@ -126,17 +120,17 @@ export default function SideNav({
     };
   }, [mobile, onClose]);
 
-  const navContent = (
+  return (
     <div className={base}>
       {mobile && (
         <div
-          className="fixed inset-0 bg-black/60 sidebar-overlay-fade z-[9998]"
+          className="fixed inset-0 bg-black/60 sidebar-overlay-fade z-40"
           onClick={onClose}
           aria-hidden
         />
       )}
       <aside
-        className={`${panel} ${mobile ? "relative z-[9999]" : ""}`}
+        className={panel}
         aria-hidden={!mobile ? undefined : false}
       >
         {mobile && (
@@ -167,7 +161,7 @@ export default function SideNav({
             <BrandLogo />
           </Link>
           <div className="hidden sm:block">
-            <h3 className="font-semibold text-lg text-sidebar-primary-foreground">
+            <h3 className="font-semibold text-lg text-foreground">
               {role === "admin" ? t("admin.title") : t("nav.dashboard")}
             </h3>
           </div>
@@ -192,7 +186,7 @@ export default function SideNav({
                       if (mobile) onClose?.();
                     }}
                     aria-current={active ? "page" : undefined}
-                    className={`flex items-center gap-3 w-full rounded-md px-3 py-2 transition ${active ? "bg-sidebar-accent/30 text-sidebar-primary-foreground font-semibold" : "text-sidebar-foreground hover:bg-sidebar-accent/10"}`}
+                    className={`flex items-center gap-3 w-full rounded-md px-3 py-2 transition ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"}`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -204,7 +198,7 @@ export default function SideNav({
         </nav>
 
         {/* Settings and Logout Buttons - Fixed at bottom */}
-        <div className="space-y-2 border-t border-sidebar-border pt-4 mt-auto">
+        <div className="space-y-2 border-t border-border pt-4 mt-auto">
           <Link
             href={
               role === "employee"
@@ -216,7 +210,7 @@ export default function SideNav({
             onClick={() => {
               if (mobile) onClose?.();
             }}
-            className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-sidebar-foreground hover:bg-sidebar-accent/10"
+            className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-muted-foreground hover:bg-accent/10 hover:text-foreground"
           >
             <Settings className="h-4 w-4" />
             <span>{t("nav.settings")}</span>
@@ -227,7 +221,7 @@ export default function SideNav({
               clearCurrentUser();
               router.push("/auth/login");
             }}
-            className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-sidebar-foreground hover:bg-red-500/10 hover:text-red-500"
+            className="flex items-center gap-3 w-full rounded-md px-3 py-2 transition text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
           >
             <LogOut className="h-4 w-4" />
             <span>{t("common.logout")}</span>
@@ -236,11 +230,4 @@ export default function SideNav({
       </aside>
     </div>
   );
-
-  if (mobile) {
-    if (!mounted) return null;
-    return createPortal(navContent, document.body);
-  }
-
-  return navContent;
 }
