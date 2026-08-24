@@ -22,8 +22,12 @@ export interface Job {
   title: string;
   description: string;
   location: string;
+  website_url?: string | null;
   employment_type: string;
   experience_required: number;
+  min_age?: number;
+  max_age?: number;
+  gender_preference?: string;
   education_required?: string;
   skills: string[];
 
@@ -45,6 +49,10 @@ export interface Application {
   status: ApplicationStatus;
   match_score: number;
   cover_note?: string;
+  applicant_gender?: string | null;
+  applicant_date_of_birth?: string | null;
+  applicant_age?: number | null;
+  sent_to_company_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +122,21 @@ function read<T>(key: string): T[] {
 
 function write<T>(key: string, value: T[]) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function calculateAge(dateOfBirth?: string | null) {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!birthdayPassed) age -= 1;
+  return age >= 0 ? age : null;
 }
 
 async function remoteRows<T = any>(
@@ -438,6 +461,18 @@ export const recruitment = {
     if (job.application_deadline && isJobExpired(job)) {
       throw new Error("The application deadline for this job has passed.");
     }
+    const missingProfileFields = [
+      ["gender", profile?.gender],
+      ["date of birth", profile?.date_of_birth],
+      ["emergency contact name", profile?.emergency_contact_name],
+      ["emergency contact relationship", profile?.emergency_contact_relationship],
+      ["emergency contact phone", profile?.emergency_contact_phone],
+    ].filter(([, value]) => !String(value || "").trim());
+    if (missingProfileFields.length) {
+      throw new Error(
+        `Complete your ${missingProfileFields.map(([field]) => field).join(", ")} in your profile before applying.`,
+      );
+    }
     if (
       (await this.applications()).some(
         (item) => item.job_id === job.id && item.employee_id === employeeId,
@@ -446,12 +481,19 @@ export const recruitment = {
       throw new Error("You have already applied for this job.");
     }
     if (isSupabaseConfigured()) {
+      const applicantAge =
+        typeof profile?.age === "number"
+          ? profile.age
+          : calculateAge(profile?.date_of_birth);
       const payload = {
         job_id: job.id,
         employee_id: employeeId,
         status: "applied" as const,
         match_score: this.matchScore(job, profile),
         cover_note: coverNote,
+        applicant_gender: profile?.gender || null,
+        applicant_date_of_birth: profile?.date_of_birth || null,
+        applicant_age: applicantAge,
       };
       const { error } = await createClient()
         .from("applications")
@@ -480,6 +522,10 @@ export const recruitment = {
       } as Application;
     }
     const now = new Date().toISOString();
+    const applicantAge =
+      typeof profile?.age === "number"
+        ? profile.age
+        : calculateAge(profile?.date_of_birth);
     const application: Application = {
       id: id(),
       job_id: job.id,
@@ -487,16 +533,14 @@ export const recruitment = {
       status: "applied",
       match_score: this.matchScore(job, profile),
       cover_note: coverNote,
+      applicant_gender: profile?.gender || null,
+      applicant_date_of_birth: profile?.date_of_birth || null,
+      applicant_age: applicantAge,
+      sent_to_company_at: null,
       created_at: now,
       updated_at: now,
     };
     write(keys.applications, [...(await this.applications()), application]);
-    this.notify(
-      job.company_id,
-      "New application",
-      `A candidate applied for ${job.title}.`,
-      "application",
-    );
     this.notify(
       ADMIN_USER_ID,
       "New application",
@@ -504,6 +548,75 @@ export const recruitment = {
       "application",
     );
     return application;
+  },
+  async sendApplicationsToCompany(applicationIds: string[], companyId: string) {
+    if (!applicationIds.length) throw new Error("Select at least one applicant.");
+    const sentAt = new Date().toISOString();
+    if (isSupabaseConfigured()) {
+      const { data: updatedApplications, error } = await createClient()
+        .from("applications")
+        .update({ sent_to_company_at: sentAt, updated_at: sentAt })
+        .in("id", applicationIds);
+      if (error) throw error;
+      if (!updatedApplications || updatedApplications.length !== applicationIds.length) {
+        throw new Error(
+          "The applicants were not forwarded. Run the latest applications RLS policies from supabase-init.sql and confirm the current user is an active admin.",
+        );
+      }
+    } else {
+      write(
+        keys.applications,
+        (await this.applications()).map((application) =>
+          applicationIds.includes(application.id)
+            ? { ...application, sent_to_company_at: sentAt, updated_at: sentAt }
+            : application,
+        ),
+      );
+    }
+    await this.notify(
+      companyId,
+      "Applicants ready for review",
+      `${applicationIds.length} applicant${applicationIds.length === 1 ? " is" : "s are"} ready for your review.`,
+      "applicants_sent",
+    );
+  },
+  async sendEmployeesToCompany(job: Job, employeeIds: string[], profiles: Record<string, any>) {
+    if (!employeeIds.length) throw new Error("Select at least one employee.");
+    const existing = (await this.applications()).filter(
+      (application) => application.job_id === job.id && employeeIds.includes(application.employee_id),
+    );
+    const existingEmployeeIds = new Set(existing.map((application) => application.employee_id));
+    const missingIds = employeeIds.filter((employeeId) => !existingEmployeeIds.has(employeeId));
+    if (isSupabaseConfigured() && missingIds.length) {
+      const payload = missingIds.map((employeeId) => {
+        const profile = profiles[employeeId] || {};
+        const applicantAge = typeof profile.age === "number" ? profile.age : calculateAge(profile.date_of_birth);
+        return {
+          job_id: job.id,
+          employee_id: employeeId,
+          status: "applied" as const,
+          match_score: this.matchScore(job, profile),
+          applicant_gender: profile.gender || null,
+          applicant_date_of_birth: profile.date_of_birth || null,
+          applicant_age: applicantAge,
+        };
+      });
+      const { error } = await createClient().from("applications").insert(payload);
+      if (error) throw error;
+    } else if (!isSupabaseConfigured() && missingIds.length) {
+      const now = new Date().toISOString();
+      const added = missingIds.map((employeeId) => {
+        const profile = profiles[employeeId] || {};
+        const applicantAge = typeof profile.age === "number" ? profile.age : calculateAge(profile.date_of_birth);
+        return { id: id(), job_id: job.id, employee_id: employeeId, status: "applied" as const, match_score: this.matchScore(job, profile), applicant_gender: profile.gender || null, applicant_date_of_birth: profile.date_of_birth || null, applicant_age: applicantAge, sent_to_company_at: null, created_at: now, updated_at: now };
+      });
+      write(keys.applications, [...(await this.applications()), ...added]);
+    }
+    const latest = await this.applications();
+    const applicationIds = latest
+      .filter((application) => application.job_id === job.id && employeeIds.includes(application.employee_id))
+      .map((application) => application.id);
+    await this.sendApplicationsToCompany(applicationIds, job.company_id);
   },
   async updateApplication(applicationId: string, status: ApplicationStatus) {
     if (isSupabaseConfigured()) {
@@ -602,7 +715,23 @@ export const recruitment = {
       ),
     );
   },
-  notify(userId: string, title: string, body: string, type: string) {
+  async cancelInterview(interviewId: string) {
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient()
+        .from("interviews")
+        .update({ status: "cancelled" })
+        .eq("id", interviewId);
+      if (error) throw error;
+      return;
+    }
+    write(
+      keys.interviews,
+      (await this.interviews()).map((item) =>
+        item.id === interviewId ? { ...item, status: "cancelled" as const } : item,
+      ),
+    );
+  },
+  async notify(userId: string, title: string, body: string, type: string) {
     const note: Notification = {
       id: id(),
       user_id: userId,
@@ -612,9 +741,11 @@ export const recruitment = {
       created_at: new Date().toISOString(),
     };
     if (isSupabaseConfigured()) {
-      return createClient()
+      const { error } = await createClient()
         .from("notifications")
         .insert({ user_id: userId, title, body, type });
+      if (error) throw error;
+      return;
     }
     write(keys.notifications, [
       ...read<Notification>(keys.notifications),

@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   });
   const [pendingAccounts, setPendingAccounts] = useState<any[]>([]);
   const [pendingJobs, setPendingJobs] = useState<any[]>([]);
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [hiringNotifications, setHiringNotifications] = useState<any[]>([]);
   const [scheduledInterviews, setScheduledInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +68,12 @@ export default function AdminDashboard() {
         );
 
         setPendingJobs(jobs.filter((job) => job.status === "pending_review").slice(0, 5));
+        setApplicationCounts(
+          applications.reduce<Record<string, number>>((counts, application) => {
+            counts[application.job_id] = (counts[application.job_id] || 0) + 1;
+            return counts;
+          }, {}),
+        );
         setHiringNotifications(notifications.filter((notification) => ["application", "interview"].includes(notification.type)).slice(0, 8));
         setScheduledInterviews(
           interviews
@@ -233,15 +240,15 @@ export default function AdminDashboard() {
                   key={job.id}
                   className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">{job.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {job.company_name}
+                      {job.company_name} | Age {job.min_age ?? 18}-{job.max_age ?? 65} | {job.application_deadline ? new Date(job.application_deadline).toLocaleDateString() : "No expiry"} | {applicationCounts[job.id] || 0} applicants
                     </p>
                   </div>
-                  <span className="rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium capitalize text-yellow-700">
-                    {job.status.replace("_", " ")}
-                  </span>
+                  <Link href={`/admin/jobs/${job.id}`} className="shrink-0 text-sm text-primary hover:underline">
+                    View details
+                  </Link>
                 </div>
               ))}
             </div>

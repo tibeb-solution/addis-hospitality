@@ -15,6 +15,8 @@ import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mail, Lock, Building, Eye, EyeOff } from "lucide-react";
 
+const BUSINESS_TYPES = ["restaurant", "cafe"];
+
 export default function CompanySettings() {
   const t = useTranslations();
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function CompanySettings() {
     business_type: "",
     trade_license_number: "",
     tin_number: "",
+    website: "",
     contact_person: "",
     contact_phone: "",
     region: "",
@@ -60,6 +63,7 @@ export default function CompanySettings() {
           business_type: profile?.business_type || "",
           trade_license_number: profile?.trade_license_number || "",
           tin_number: profile?.tin_number || "",
+          website: profile?.website || "",
           contact_phone: profile?.contact_phone || "",
           contact_person: profile?.contact_person || "",
           region: profile?.region || "",
@@ -86,6 +90,7 @@ export default function CompanySettings() {
       business_type: profile?.business_type || "",
       trade_license_number: profile?.trade_license_number || "",
       tin_number: profile?.tin_number || "",
+      website: profile?.website || "",
       contact_phone: profile?.contact_phone || currentUser.phone || "",
       contact_person: profile?.contact_person || currentUser.full_name || "",
       region: profile?.region || "",
@@ -104,6 +109,7 @@ export default function CompanySettings() {
       business_type: formData.business_type,
       trade_license_number: formData.trade_license_number,
       tin_number: formData.tin_number,
+      website: formData.website,
       contact_phone: formData.contact_phone,
       contact_person: formData.contact_person,
       region: formData.region,
@@ -258,6 +264,7 @@ export default function CompanySettings() {
               <input
                 type="text"
                 value={formData.company_name}
+                placeholder="e.g. Addis Hospitality Cafe"
                 onChange={(e) =>
                   setFormData({ ...formData, company_name: e.target.value })
                 }
@@ -285,18 +292,18 @@ export default function CompanySettings() {
                 </label>
                 <select
                   value={formData.business_type}
+                  required
                   onChange={(e) =>
                     setFormData({ ...formData, business_type: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Select</option>
-                  <option value="hotel">Hotel</option>
-                  <option value="resort">Resort</option>
-                  <option value="restaurant">Restaurant</option>
-                  <option value="cafe">Cafe</option>
-                  <option value="travel">Travel Agency</option>
-                  <option value="other">Other</option>
+                  {BUSINESS_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type === "cafe" ? "Cafe" : "Restaurant"}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -307,6 +314,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={formData.trade_license_number}
+                  placeholder="e.g. TL-123456"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -325,9 +333,21 @@ export default function CompanySettings() {
               <input
                 type="text"
                 value={formData.tin_number}
+                placeholder="e.g. 0012345678"
                 onChange={(e) =>
                   setFormData({ ...formData, tin_number: e.target.value })
                 }
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Company Website</label>
+              <input
+                type="url"
+                value={formData.website}
+                placeholder="e.g. https://yourcompany.com (optional)"
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -340,6 +360,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={formData.contact_person}
+                  placeholder="e.g. Hana Bekele"
                   onChange={(e) =>
                     setFormData({ ...formData, contact_person: e.target.value })
                   }
@@ -354,6 +375,7 @@ export default function CompanySettings() {
                 <input
                   type="tel"
                   value={formData.contact_phone}
+                  placeholder="e.g. +251 911 234 567"
                   onChange={(e) =>
                     setFormData({ ...formData, contact_phone: e.target.value })
                   }
@@ -368,6 +390,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={formData.region}
+                  placeholder="e.g. Addis Ababa"
                   onChange={(e) =>
                     setFormData({ ...formData, region: e.target.value })
                   }
@@ -382,6 +405,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={formData.sub_city}
+                  placeholder="e.g. Bole"
                   onChange={(e) =>
                     setFormData({ ...formData, sub_city: e.target.value })
                   }
@@ -396,6 +420,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={formData.address}
+                  placeholder="e.g. Bole Medhanealem"
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
                   }

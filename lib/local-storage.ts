@@ -18,6 +18,7 @@ export interface EmployeeProfile extends LocalUser {
   avatar_status?: "pending" | "approved" | "rejected" | null;
   gender?: string;
   date_of_birth?: string;
+  age?: number;
   alternative_phone?: string;
   residence_city?: string;
   residence_sub_city?: string;
@@ -26,6 +27,7 @@ export interface EmployeeProfile extends LocalUser {
   emergency_contact_name?: string;
   emergency_contact_relationship?: string;
   emergency_contact_phone?: string;
+  languages?: string[];
   desired_position?: string;
   years_experience?: number;
   preferred_cities?: string;

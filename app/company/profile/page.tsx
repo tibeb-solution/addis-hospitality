@@ -8,16 +8,8 @@ import { Button } from "@/components/ui/button";
 import AvatarCropper from "@/components/avatar-cropper";
 
 const BUSINESS_TYPES = [
-  "hotel",
-  "resort",
-  "lodge",
   "restaurant",
   "cafe",
-  "bar",
-  "catering",
-  "event_venue",
-  "tour_operator",
-  "other",
 ];
 
 export default function CompanyProfilePage() {
@@ -246,6 +238,7 @@ export default function CompanyProfilePage() {
               <select
                 name="business_type"
                 defaultValue={profile?.business_type}
+                required
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
                 <option value="">{t("auth.selectBusinessType")}</option>

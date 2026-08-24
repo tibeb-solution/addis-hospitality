@@ -231,6 +231,8 @@ export default function AdminEmployeesPage() {
                   <th className="px-6 py-3 text-left text-sm font-medium">
                     {t("auth.fullName")}
                   </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">Gender</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium">Age</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">Desired position</th>
                   <th className="px-6 py-3 text-left text-sm font-medium">
                     {t("admin.registrationDate")}
@@ -268,6 +270,10 @@ export default function AdminEmployeesPage() {
                     <td className="px-6 py-4 text-sm">
                       {emp.full_name || "—"}
                     </td>
+                    <td className="px-6 py-4 text-sm capitalize">
+                      {emp.gender ? String(emp.gender).replaceAll("_", " ") : "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm">{emp.age ?? "—"}</td>
                     <td className="px-6 py-4 text-sm">{emp.desired_position || "—"}</td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap">
                       {emp.created_at

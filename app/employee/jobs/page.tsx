@@ -26,6 +26,8 @@ export default function EmployeeJobsPage() {
   const [ratingFor, setRatingFor] = useState<Application | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [applying, setApplying] = useState(false);
+  const [jobFilter, setJobFilter] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
 
   const refresh = async () => {
     const {
@@ -33,6 +35,11 @@ export default function EmployeeJobsPage() {
     } = await createClient().auth.getUser();
     const current = isSupabaseConfigured() ? authUser : getCurrentUser();
     setUser(current);
+    const currentProfile = current
+      ? isSupabaseConfigured()
+        ? (await createClient().from("employee_profiles").select("*").eq("id", current.id).maybeSingle()).data
+        : getEmployeeProfile(current.id)
+      : null;
 
     const [
       availableJobs,
@@ -52,6 +59,12 @@ export default function EmployeeJobsPage() {
     setJobs(
       availableJobs
         .filter((job) => job.status === "published" && !isJobExpired(job))
+        .filter((job) => {
+          const age = currentProfile?.age;
+          const genderMatches = !job.gender_preference || job.gender_preference === currentProfile?.gender;
+          const ageMatches = age === undefined || (age >= (job.min_age ?? 18) && age <= (job.max_age ?? 65));
+          return ageMatches && genderMatches;
+        })
         .sort((a, b) => b.created_at.localeCompare(a.created_at)),
     );
 
@@ -105,6 +118,10 @@ export default function EmployeeJobsPage() {
               .maybeSingle()
           ).data
         : getEmployeeProfile(user.id);
+      if (!profile?.gender || !profile?.date_of_birth || !profile?.emergency_contact_name || !profile?.emergency_contact_relationship || !profile?.emergency_contact_phone) {
+        setMessage("Update your gender, date of birth, and complete emergency contact information in your profile before applying.");
+        return;
+      }
       const note = String(
         new FormData(event.currentTarget).get("cover_note") || "",
       );
@@ -214,12 +231,21 @@ export default function EmployeeJobsPage() {
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Available jobs</h2>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <input value={jobFilter} onChange={(event) => setJobFilter(event.target.value)} placeholder="Filter jobs by position or company" className="rounded-md border border-input bg-background px-3 py-2 text-sm sm:col-span-2" />
+          <select value={genderFilter} onChange={(event) => setGenderFilter(event.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="">All compatible jobs</option>
+            <option value="male">Male preference</option>
+            <option value="female">Female preference</option>
+            <option value="other">Other preference</option>
+          </select>
+        </div>
         {jobs.length === 0 ? (
           <p className="rounded-lg border border-dashed p-6 text-muted-foreground">
             No active jobs match the current date.
           </p>
         ) : (
-          jobs.map((job) => {
+          jobs.filter((job) => `${job.title} ${job.company_name}`.toLowerCase().includes(jobFilter.toLowerCase()) && (!genderFilter || job.gender_preference === genderFilter)).map((job) => {
             const applied = applications.some(
               (application) => application.job_id === job.id,
             );
@@ -246,6 +272,9 @@ export default function EmployeeJobsPage() {
                       Skills: {job.skills.join(", ") || "Not specified"} |
                       Match: {score}% | Education:{" "}
                       {job.education_required || "Not specified"}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Age: {job.min_age ?? "18"}-{job.max_age ?? "65"} | Gender: {job.gender_preference || "No preference"}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
                       Posted {new Date(job.created_at).toLocaleString()} |
@@ -333,6 +362,9 @@ export default function EmployeeJobsPage() {
           className="space-y-3 rounded-lg border border-primary bg-card p-5"
         >
           <h2 className="font-semibold">Apply for {selectedJob.title}</h2>
+          <p className="text-sm text-muted-foreground">
+            Application details: gender, age, desired position, and emergency contact information will be sent to admin for review.
+          </p>
           <textarea
             name="cover_note"
             className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2"

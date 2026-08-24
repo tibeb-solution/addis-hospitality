@@ -15,9 +15,11 @@ import {
   Settings,
   LogOut,
   CalendarDays,
+  Bell,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { clearCurrentUser } from "@/lib/local-storage";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function SideNav({
   role = "company",
@@ -31,6 +33,38 @@ export default function SideNav({
   const t = useTranslations();
   const pathname = usePathname() || "/";
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingJobCount, setPendingJobCount] = useState(0);
+
+  useEffect(() => {
+    if (role !== "company" || !isSupabaseConfigured()) return;
+    const loadUnread = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null);
+      setUnreadCount(count || 0);
+    };
+    void loadUnread();
+    const timer = window.setInterval(() => void loadUnread(), 10000);
+    return () => window.clearInterval(timer);
+  }, [role]);
+
+  useEffect(() => {
+    if (role !== "admin") return;
+    const loadPendingJobs = async () => {
+      const { count } = await createClient()
+        .from("jobs")
+        .select("id", { count: "exact" })
+        .eq("status", "pending_review");
+      setPendingJobCount(count || 0);
+    };
+    void loadPendingJobs();
+  }, [role]);
 
   const items: { href: string; label: string; icon: any }[] =
     role === "admin"
@@ -79,6 +113,11 @@ export default function SideNav({
               href: "/company/applications",
               label: "Applications",
               icon: FileText,
+            },
+            {
+              href: "/company/notifications",
+              label: "Notifications",
+              icon: Bell,
             },
             {
               href: "/company/documents",
@@ -174,6 +213,16 @@ export default function SideNav({
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>
+                  {item.href === "/company/notifications" && unreadCount > 0 && (
+                    <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                      {unreadCount}
+                    </span>
+                  )}
+                  {item.href === "/admin/jobs" && pendingJobCount > 0 && (
+                    <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs text-white">
+                      {pendingJobCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

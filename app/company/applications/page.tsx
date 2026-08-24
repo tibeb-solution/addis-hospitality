@@ -2,9 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/lib/local-storage";
+import { getCurrentUser, getEmployeeProfile } from "@/lib/local-storage";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Application, Job, recruitment } from "@/lib/recruitment";
+
+function formatGender(value?: string | null) {
+  return value ? value.replaceAll("_", " ") : "Not provided";
+}
+
+function calculateAge(dateOfBirth?: string | null) {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!birthdayPassed) age -= 1;
+  return age >= 0 ? age : null;
+}
+
+function getCurrentAge(profile: any, application: Application) {
+  return (
+    profile?.age ??
+    calculateAge(profile?.date_of_birth) ??
+    application.applicant_age ??
+    calculateAge(application.applicant_date_of_birth)
+  );
+}
 
 export default function CompanyApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -16,6 +44,9 @@ export default function CompanyApplicationsPage() {
   const [place, setPlace] = useState("");
   const [message, setMessage] = useState("");
   const [employees, setEmployees] = useState<Record<string, any>>({});
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [interviews, setInterviews] = useState<any[]>([]);
+  const [detailFor, setDetailFor] = useState<string | null>(null);
 
   const refresh = async () => {
     const supabase = createClient();
@@ -28,22 +59,55 @@ export default function CompanyApplicationsPage() {
       setApplications([]);
       return;
     }
+    setNotifications((await recruitment.notifications(current.id)).filter((item) => !item.read_at));
 
     const ownJobs = (await recruitment.jobs())
       .filter((job) => job.company_id === current.id)
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
     setJobs(ownJobs);
+    setInterviews((await recruitment.interviews()).filter((interview) => interview.company_id === current.id));
     const companyApplications = (await recruitment.applications())
       .filter((application) =>
         ownJobs.some((job) => job.id === application.job_id),
       )
+      .filter((application) => Boolean(application.sent_to_company_at))
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
     const employeeIds = [...new Set(companyApplications.map((application) => application.employee_id))];
-    const { data: employeeProfiles } = employeeIds.length && isSupabaseConfigured()
-      ? await supabase.from("profiles").select("id, full_name, email, phone").in("id", employeeIds)
-      : { data: [] };
-    setEmployees(Object.fromEntries((employeeProfiles || []).map((employee: any) => [employee.id, employee])));
+    if (isSupabaseConfigured()) {
+      const [{ data: accounts }, { data: employeeProfiles }] = employeeIds.length
+        ? await Promise.all([
+            supabase
+              .from("profiles")
+              .select("id, full_name, email, phone")
+              .in("id", employeeIds),
+            supabase
+              .from("employee_profiles")
+              .select("*")
+              .in("id", employeeIds),
+          ])
+        : [{ data: [] }, { data: [] }];
+      const profilesById = new Map(
+        (employeeProfiles || []).map((employee: any) => [employee.id, employee]),
+      );
+      setEmployees(
+        Object.fromEntries(
+          (accounts || []).map((employee: any) => [
+            employee.id,
+            { ...employee, ...(profilesById.get(employee.id) || {}) },
+          ]),
+        ),
+      );
+    } else {
+      setEmployees(
+        Object.fromEntries(
+          employeeIds
+            .map((employeeId) => getEmployeeProfile(employeeId))
+            .filter(Boolean)
+            .map((employee: any) => [employee.id, employee]),
+        ),
+      );
+    }
     setApplications(companyApplications);
   };
 
@@ -89,6 +153,11 @@ export default function CompanyApplicationsPage() {
         </p>
         {message && <p className="mt-2 text-sm text-primary">{message}</p>}
       </div>
+      {notifications.length > 0 && (
+        <div className="rounded-lg border border-primary bg-primary/5 p-4 text-sm">
+          {notifications.map((notification) => <p key={notification.id}>{notification.title}: {notification.body}</p>)}
+        </div>
+      )}
 
       {applications.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-muted-foreground">
@@ -127,11 +196,67 @@ export default function CompanyApplicationsPage() {
                     </span>
                   </p>
 
+                  <dl className="grid grid-cols-1 gap-2 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide">Gender</dt>
+                      <dd className="capitalize text-foreground">
+                        {formatGender(employee?.gender ?? application.applicant_gender)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide">Age</dt>
+                      <dd className="text-foreground">
+                        {getCurrentAge(employee, application) ?? "Not provided"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide">Phone</dt>
+                      <dd className="text-foreground">
+                        {employee?.phone || "Not provided"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide">Position</dt>
+                      <dd className="text-foreground">
+                        {employee?.desired_position || "Not provided"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setDetailFor(detailFor === application.id ? null : application.id)}
+                  >
+                    {detailFor === application.id ? "Hide details" : "View employee details"}
+                  </Button>
+                  {detailFor === application.id && (
+                    <dl className="mt-3 grid grid-cols-1 gap-2 rounded-md border border-border bg-muted/30 p-3 text-sm sm:grid-cols-2">
+                      <div><dt className="text-muted-foreground">Email</dt><dd>{employee?.email || "Not provided"}</dd></div>
+                      <div><dt className="text-muted-foreground">Emergency contact</dt><dd>{employee?.emergency_contact_name || "Not provided"} ({employee?.emergency_contact_relationship || "Not provided"})</dd></div>
+                      <div><dt className="text-muted-foreground">Emergency phone</dt><dd>{employee?.emergency_contact_phone || "Not provided"}</dd></div>
+                      <div><dt className="text-muted-foreground">Languages</dt><dd>{employee?.languages?.join(", ") || "Not provided"}</dd></div>
+                      <div><dt className="text-muted-foreground">Experience</dt><dd>{employee?.years_experience ?? "Not provided"} years</dd></div>
+                      <div><dt className="text-muted-foreground">Education</dt><dd>{employee?.highest_education || "Not provided"}</dd></div>
+                      <div><dt className="text-muted-foreground">Residence</dt><dd>{[employee?.residence_city, employee?.residence_sub_city, employee?.residence_area].filter(Boolean).join(", ") || "Not provided"}</dd></div>
+                      <div><dt className="text-muted-foreground">Bio</dt><dd>{employee?.bio || "Not provided"}</dd></div>
+                    </dl>
+                  )}
+
                   {application.cover_note && (
                     <p className="max-w-2xl text-sm text-foreground/80">
                       {application.cover_note}
                     </p>
                   )}
+                  {interviews.filter((interview) => interview.application_id === application.id && interview.status !== "cancelled").map((interview) => (
+                    <div key={interview.id} className="text-sm text-muted-foreground">
+                      Interview: {interview.status} | {new Date(interview.starts_at).toLocaleString()}
+                      {interview.status === "proposed" && (
+                        <Button size="sm" variant="outline" className="ml-2" onClick={() => void recruitment.cancelInterview(interview.id).then(() => { setMessage("Interview cancelled."); void refresh(); })}>
+                          Cancel interview
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 <div className="flex flex-wrap gap-2">

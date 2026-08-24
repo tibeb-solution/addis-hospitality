@@ -14,7 +14,10 @@ import {
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
-import { EMPLOYEE_POSITIONS, OTHER_POSITION, getPositionChoice } from "@/lib/employee-positions";
+import { WORK_SECTORS, getPositionsForSector } from "@/lib/employee-positions";
+import PositionSearchSelect from "@/components/position-search-select";
+import LanguageMultiSelect from "@/components/language-multi-select";
+import { LANGUAGES } from "@/lib/languages";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -43,6 +46,8 @@ export default function EmployeeSettings() {
     phone: "",
     gender: "",
     date_of_birth: "",
+    work_sector: "",
+    languages: [] as string[],
     alternative_phone: "",
     residence_city: "",
     residence_sub_city: "",
@@ -97,8 +102,7 @@ export default function EmployeeSettings() {
         };
         setUser(account);
         setAvatarPath(profile?.avatar_url || null);
-        setPositionChoice(getPositionChoice(profile?.desired_position));
-        setPositionOther(getPositionChoice(profile?.desired_position) === OTHER_POSITION ? profile?.desired_position || "" : "");
+        setPositionChoice(profile?.desired_position || "");
         setFormData({
           full_name:
             profile?.full_name || authUser.user_metadata?.full_name || "",
@@ -106,6 +110,8 @@ export default function EmployeeSettings() {
           phone: profile?.phone || "",
           gender: profile?.gender || "",
           date_of_birth: profile?.date_of_birth || "",
+          work_sector: profile?.work_sector || "",
+          languages: profile?.languages || [],
           alternative_phone: profile?.alternative_phone || "",
           residence_city: profile?.residence_city || "",
           residence_sub_city: profile?.residence_sub_city || "",
@@ -143,6 +149,8 @@ export default function EmployeeSettings() {
       phone: employeeProfile?.phone || currentUser.phone || "",
       gender: (employeeProfile as any)?.gender || "",
       date_of_birth: (employeeProfile as any)?.date_of_birth || "",
+      work_sector: (employeeProfile as any)?.work_sector || "",
+      languages: (employeeProfile as any)?.languages || [],
       alternative_phone: (employeeProfile as any)?.alternative_phone || "",
       residence_city: (employeeProfile as any)?.residence_city || "",
       residence_sub_city: (employeeProfile as any)?.residence_sub_city || "",
@@ -175,7 +183,9 @@ export default function EmployeeSettings() {
     if (!user) return;
 
     const profileUpdates = {
-      desired_position: positionChoice === OTHER_POSITION ? positionOther : positionChoice,
+      work_sector: formData.work_sector,
+      languages: formData.languages,
+      desired_position: positionChoice,
       years_experience: formData.years_experience
         ? Number(formData.years_experience)
         : undefined,
@@ -355,6 +365,7 @@ export default function EmployeeSettings() {
               <input
                 type="text"
                 value={formData.full_name}
+                placeholder="e.g. Hana Bekele"
                 onChange={(e) =>
                   setFormData({ ...formData, full_name: e.target.value })
                 }
@@ -367,6 +378,7 @@ export default function EmployeeSettings() {
               <input
                 type="email"
                 value={formData.email}
+                placeholder="you@example.com"
                 disabled
                 className="w-full px-3 py-2 border border-border rounded-lg bg-muted opacity-60 cursor-not-allowed"
               />
@@ -380,6 +392,7 @@ export default function EmployeeSettings() {
               <input
                 type="tel"
                 value={formData.phone}
+                placeholder="e.g. +251 911 234 567"
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
                 }
@@ -391,6 +404,7 @@ export default function EmployeeSettings() {
               <label className="block text-sm font-medium mb-2">Gender</label>
               <select
                 value={formData.gender}
+                required
                 onChange={(e) =>
                   setFormData({ ...formData, gender: e.target.value })
                 }
@@ -412,6 +426,9 @@ export default function EmployeeSettings() {
                 <input
                   type="date"
                   value={formData.date_of_birth}
+                  required
+                  max={new Date().toISOString().split("T")[0]}
+                  max={new Date().toISOString().split("T")[0]}
                   onChange={(e) =>
                     setFormData({ ...formData, date_of_birth: e.target.value })
                   }
@@ -430,6 +447,7 @@ export default function EmployeeSettings() {
               <input
                 type="tel"
                 value={formData.alternative_phone}
+                placeholder="e.g. +251 922 345 678"
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -457,6 +475,7 @@ export default function EmployeeSettings() {
                     </label>
                     <input
                       value={formData[key]}
+                      placeholder={key === "residence_city" ? "e.g. Addis Ababa" : key === "residence_sub_city" ? "e.g. Bole" : key === "residence_woreda" ? "e.g. Woreda 03" : "e.g. Kazanchis"}
                       onChange={(e) =>
                         setFormData({ ...formData, [key]: e.target.value })
                       }
@@ -483,7 +502,9 @@ export default function EmployeeSettings() {
                     </label>
                     <input
                       type={key === "emergency_contact_phone" ? "tel" : "text"}
+                      required
                       value={formData[key]}
+                      placeholder={key === "emergency_contact_name" ? "e.g. Abel Bekele" : key === "emergency_contact_relationship" ? "e.g. Brother" : "e.g. +251 911 234 567"}
                       onChange={(e) =>
                         setFormData({ ...formData, [key]: e.target.value })
                       }
@@ -498,27 +519,23 @@ export default function EmployeeSettings() {
               <label className="block text-sm font-medium mb-2">
                 Desired Position
               </label>
-  <select
-  value={positionChoice}
-  onChange={(e) => {
-    setPositionChoice(e.target.value);
-    setFormData({ ...formData, desired_position: e.target.value });
-  }}
-  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
-  >
-  <option value="">Select a position</option>
-  {EMPLOYEE_POSITIONS.map((position) => <option key={position} value={position}>{position}</option>)}
-  <option value={OTHER_POSITION}>{OTHER_POSITION}</option>
-  </select>
-  {positionChoice === OTHER_POSITION && (
-    <input
-      type="text"
-      value={positionOther}
-      onChange={(e) => setPositionOther(e.target.value)}
-      placeholder="Write your desired position"
-      className="w-full px-3 py-2 border border-border rounded-lg bg-background"
-    />
-  )}
+              <select
+                value={formData.work_sector}
+                required
+                onChange={(e) => { setFormData({ ...formData, work_sector: e.target.value, desired_position: "" }); setPositionChoice(""); }}
+                className="mb-2 w-full px-3 py-2 border border-border rounded-lg bg-background"
+              >
+                <option value="">Choose cafe or restaurant</option>
+                {WORK_SECTORS.map((sector) => <option key={sector} value={sector}>{sector === "cafe" ? "Cafe" : "Restaurant"}</option>)}
+              </select>
+              <PositionSearchSelect
+                name="desired_position"
+                value={positionChoice}
+                positions={getPositionsForSector(formData.work_sector)}
+                required
+                placeholder="Search listed positions"
+                onChange={(value) => { setPositionChoice(value); setFormData({ ...formData, desired_position: value }); }}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -530,6 +547,7 @@ export default function EmployeeSettings() {
                   type="number"
                   min="0"
                   value={formData.years_experience}
+                  placeholder="e.g. 3"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -590,9 +608,17 @@ export default function EmployeeSettings() {
                 <label className="block text-sm font-medium mb-2">
                   Preferred Cities
                 </label>
+                <label className="mb-2 block text-sm font-medium">Languages</label>
+                <LanguageMultiSelect
+                  name="languages"
+                  value={formData.languages}
+                  languages={LANGUAGES}
+                  onChange={(languages) => setFormData({ ...formData, languages })}
+                />
                 <input
                   type="text"
                   value={formData.preferred_cities}
+                  placeholder="e.g. Addis Ababa, Dire Dawa"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -613,6 +639,7 @@ export default function EmployeeSettings() {
                   type="number"
                   min="0"
                   value={formData.expected_salary_min}
+                  placeholder="e.g. 8000"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -631,6 +658,7 @@ export default function EmployeeSettings() {
                   type="number"
                   min="0"
                   value={formData.expected_salary_max}
+                  placeholder="e.g. 15000"
                   onChange={(e) =>
                     setFormData({
                       ...formData,

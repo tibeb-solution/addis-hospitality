@@ -21,6 +21,7 @@ export default function EmployeeDocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState('')
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function EmployeeDocumentsPage() {
 
     setUploading(true)
     setError(null)
+    setSuccess(null)
 
     try {
       const supabase = createClient()
@@ -97,6 +99,7 @@ export default function EmployeeDocumentsPage() {
 
       setDocuments([doc, ...documents])
       setSelectedType('')
+      setSuccess('File submitted successfully and is awaiting admin review.')
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.serverError'))
     } finally {
@@ -169,6 +172,11 @@ export default function EmployeeDocumentsPage() {
         {error && (
           <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
             {error}
+          </div>
+        )}
+        {success && (
+          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-700 text-sm">
+            {success}
           </div>
         )}
       </div>

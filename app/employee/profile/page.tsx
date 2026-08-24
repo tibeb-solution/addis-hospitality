@@ -6,7 +6,10 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import AvatarCropper from "@/components/avatar-cropper";
-import { EMPLOYEE_POSITIONS, OTHER_POSITION, getPositionChoice } from "@/lib/employee-positions";
+import { WORK_SECTORS, getPositionsForSector } from "@/lib/employee-positions";
+import PositionSearchSelect from "@/components/position-search-select";
+import LanguageMultiSelect from "@/components/language-multi-select";
+import { LANGUAGES } from "@/lib/languages";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -39,6 +42,7 @@ export default function EmployeeProfilePage() {
   const [tab, setTab] = useState("basic");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [positionChoice, setPositionChoice] = useState("");
+  const [workSector, setWorkSector] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -61,19 +65,18 @@ export default function EmployeeProfilePage() {
         .eq("id", user.id)
         .single();
 
-      // Create if doesn't exist
       if (!data) {
         const { data: created } = await supabase
           .from("employee_profiles")
           .insert([{ id: user.id }])
           .select()
           .single();
-
         setProfile(created || { id: user.id });
       } else {
         setProfile(data);
         setDateOfBirth(data.date_of_birth || "");
-        setPositionChoice(getPositionChoice(data.desired_position));
+        setWorkSector(data.work_sector || "");
+        setPositionChoice(data.desired_position || "");
         if (data.avatar_url) {
           const { data: signedUrl } = await supabase.storage
             .from("avatars")
@@ -158,6 +161,7 @@ export default function EmployeeProfilePage() {
         const value = getText(name);
         return value ? Number(value) : null;
       };
+      const languages = formData.getAll("languages").map(String);
 
       const updates: any = {
         id: user.id,
@@ -165,6 +169,8 @@ export default function EmployeeProfilePage() {
         phone: getText("phone"),
         gender: getText("gender"),
         date_of_birth: getText("date_of_birth") || null,
+        work_sector: getText("work_sector"),
+        languages,
         alternative_phone: getText("alternative_phone"),
         residence_city: getText("residence_city"),
         residence_sub_city: getText("residence_sub_city"),
@@ -175,10 +181,7 @@ export default function EmployeeProfilePage() {
           "emergency_contact_relationship",
         ),
         emergency_contact_phone: getText("emergency_contact_phone"),
-        desired_position:
-          getText("desired_position") === OTHER_POSITION
-            ? getText("desired_position_other")
-            : getText("desired_position"),
+        desired_position: getText("desired_position"),
         years_experience: getNumber("years_experience"),
         highest_education: getText("highest_education"),
         employment_type: getText("employment_type"),
@@ -279,6 +282,7 @@ export default function EmployeeProfilePage() {
               </label>
               <select
                 name="gender"
+                required
                 defaultValue={profile?.gender || ""}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
@@ -300,7 +304,9 @@ export default function EmployeeProfilePage() {
                 <input
                   name="date_of_birth"
                   type="date"
+                  required
                   value={dateOfBirth}
+                  max={new Date().toISOString().split("T")[0]}
                   onChange={(event) => setDateOfBirth(event.target.value)}
                   className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground"
                 />
@@ -317,32 +323,36 @@ export default function EmployeeProfilePage() {
                 name="alternative_phone"
                 type="tel"
                 defaultValue={profile?.alternative_phone || ""}
+                placeholder="e.g. +251 922 345 678"
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {t("employee.desiredPosition")}
-              </label>
+              <label className="text-sm font-medium">Workplace type</label>
               <select
-                name="desired_position"
-                value={positionChoice}
-                onChange={(event) => setPositionChoice(event.target.value)}
+                name="work_sector"
+                value={workSector}
+                required
+                onChange={(event) => {
+                  setWorkSector(event.target.value);
+                  setPositionChoice("");
+                }}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
-                <option value="">Select a position</option>
-                {EMPLOYEE_POSITIONS.map((position) => <option key={position} value={position}>{position}</option>)}
-                <option value={OTHER_POSITION}>{OTHER_POSITION}</option>
+                <option value="">Choose cafe or restaurant</option>
+                {WORK_SECTORS.map((sector) => (
+                  <option key={sector} value={sector}>{sector === "cafe" ? "Cafe" : "Restaurant"}</option>
+                ))}
               </select>
-              {positionChoice === OTHER_POSITION && (
-                <input
-                  name="desired_position_other"
-                  defaultValue={profile?.desired_position && !EMPLOYEE_POSITIONS.includes(profile.desired_position) ? profile.desired_position : ""}
-                  placeholder="Write your desired position"
-                  required
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground"
-                />
-              )}
+              <label className="text-sm font-medium">{t("employee.desiredPosition")}</label>
+              <PositionSearchSelect
+                name="desired_position"
+                value={positionChoice}
+                positions={getPositionsForSector(workSector)}
+                required
+                placeholder="Search listed positions"
+                onChange={setPositionChoice}
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -369,6 +379,7 @@ export default function EmployeeProfilePage() {
                   <input
                     name={name}
                     defaultValue={profile?.[name] || ""}
+                    required
                     className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -389,6 +400,7 @@ export default function EmployeeProfilePage() {
                     name={name}
                     type={name === "emergency_contact_phone" ? "tel" : "text"}
                     defaultValue={profile?.[name] || ""}
+                    placeholder={name === "emergency_contact_name" ? "e.g. Abel Bekele" : name === "emergency_contact_relationship" ? "e.g. Brother" : "e.g. +251 911 234 567"}
                     className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -489,6 +501,13 @@ export default function EmployeeProfilePage() {
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium">Languages</label>
+            <LanguageMultiSelect
+              name="languages"
+              value={profile?.languages || []}
+              languages={LANGUAGES}
+              onChange={(value) => setProfile({ ...profile, languages: value })}
+            />
             <label className="text-sm font-medium">
               {t("employee.preferredCities")}
             </label>

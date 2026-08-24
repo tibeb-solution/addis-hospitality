@@ -25,10 +25,13 @@ export default function AdminJobsPage() {
   const [filter, setFilter] = useState<Job["status"] | "all">("pending_review");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [applications, setApplications] = useState<any[]>([]);
+  const [selectedApplicants, setSelectedApplicants] = useState<Record<string, string[]>>({});
+  const [applicantFilter, setApplicantFilter] = useState("");
 
   const refresh = async () => {
     try {
-      const [loadedJobs, applications] = await Promise.all([
+      const [loadedJobs, loadedApplications] = await Promise.all([
         recruitment.jobs(),
         recruitment.applications(),
       ]);
@@ -36,11 +39,12 @@ export default function AdminJobsPage() {
         loadedJobs.sort((a, b) => b.created_at.localeCompare(a.created_at)),
       );
       setApplicationCounts(
-        applications.reduce<Record<string, number>>((counts, application) => {
+        loadedApplications.reduce<Record<string, number>>((counts, application) => {
           counts[application.job_id] = (counts[application.job_id] || 0) + 1;
           return counts;
         }, {}),
       );
+      setApplications(loadedApplications);
       setError("");
     } catch (loadError) {
       setError(
@@ -85,6 +89,18 @@ export default function AdminJobsPage() {
     await refresh();
   };
 
+  const sendApplicants = async (job: Job) => {
+    const ids = selectedApplicants[job.id] || [];
+    try {
+      await recruitment.sendApplicationsToCompany(ids, job.company_id);
+      setMessage(`${ids.length} applicant${ids.length === 1 ? "" : "s"} sent to ${job.company_name}.`);
+      setSelectedApplicants((current) => ({ ...current, [job.id]: [] }));
+      await refresh();
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "Unable to send applicants.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -120,6 +136,8 @@ export default function AdminJobsPage() {
       ) : (
         <section className="space-y-4">
           {visibleJobs.map((job) => {
+            const jobApplications = applications.filter((application) => application.job_id === job.id && !application.sent_to_company_at && `${application.applicant_gender || ""} ${application.applicant_age ?? ""}`.toLowerCase().includes(applicantFilter.toLowerCase()));
+            const selected = selectedApplicants[job.id] || [];
             return (
               <article
                 key={job.id}
@@ -136,6 +154,9 @@ export default function AdminJobsPage() {
                           {formatStatus(job.status)}
                         </span>
                       </div>
+                      <a href={`/admin/jobs/${job.id}`} className="mt-2 inline-block text-sm text-primary hover:underline">
+                        View job details and applicants
+                      </a>
                       <p className="text-sm text-muted-foreground">
                         {job.company_name} | {job.location} |{" "}
                         {job.employment_type.replace("_", " ")}
@@ -160,7 +181,35 @@ export default function AdminJobsPage() {
                       <span>
                         Applications: {applicationCounts[job.id] || 0}
                       </span>
+                      <span>
+                        Age: {job.min_age ?? 18}-{job.max_age ?? 65} | Gender: {job.gender_preference || "No preference"}
+                      </span>
                     </div>
+                    {jobApplications.length > 0 && (
+                      <div className="space-y-2 rounded-md border border-primary/30 p-3">
+                        <p className="text-sm font-medium">Applicants awaiting admin selection</p>
+                        <input
+                          value={applicantFilter}
+                          onChange={(event) => setApplicantFilter(event.target.value)}
+                          placeholder="Filter by gender or age"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                        {jobApplications.map((application) => (
+                          <label key={application.id} className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(application.id)}
+                              onChange={(event) => setSelectedApplicants((current) => ({
+                                ...current,
+                                [job.id]: event.target.checked ? [...selected, application.id] : selected.filter((id) => id !== application.id),
+                              }))}
+                            />
+                            Applicant {application.employee_id.slice(0, 8)} | {application.applicant_gender || "Gender pending"} | age {application.applicant_age ?? "pending"}
+                          </label>
+                        ))}
+                        <Button size="sm" onClick={() => void sendApplicants(job)} disabled={!selected.length}>Send selected to company</Button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
