@@ -153,7 +153,7 @@ export default function CompanyLayout({
     <div className="flex min-h-screen bg-background">
       <SideNav role="company" />
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col">
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
           <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4 min-h-[56px]">
             <div className="md:hidden">
@@ -226,7 +226,7 @@ export default function CompanyLayout({
           </div>
         </header>
 
-        <div className="px-4 py-8 min-h-[calc(100vh-64px)]">
+        <div className="px-4 py-8 flex-1">
           <main className="max-w-6xl mx-auto">{children}</main>
         </div>
       </div>

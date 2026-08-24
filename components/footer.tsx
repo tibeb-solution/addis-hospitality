@@ -70,7 +70,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative overflow-hidden border-t border-emerald-500/20 bg-emerald-950 text-slate-100 shadow-[0_-18px_48px_rgba(16,185,129,0.12)]">
+    <footer className="relative z-0 overflow-hidden border-t border-emerald-500/20 bg-emerald-950 text-slate-100 shadow-[0_-18px_48px_rgba(16,185,129,0.12)]">
       <div
         className="footer-gradient-motion absolute inset-0"
         aria-hidden="true"

@@ -217,17 +217,21 @@ export default function SideNav({
 
   if (mobile) {
     return (
-      <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
+      <div
+        className="fixed inset-0 z-[100] overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+      >
         {/* Backdrop overlay */}
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs sidebar-overlay-fade z-40"
+          className="fixed inset-0 z-[101] bg-black/60 backdrop-blur-xs sidebar-overlay-fade"
           onClick={onClose}
           aria-hidden="true"
         />
 
         {/* Drawer Panel */}
         <aside
-          className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] h-full h-[100dvh] overflow-y-auto bg-card text-foreground border-r border-border p-6 gap-6 sidebar-slide-in flex flex-col shadow-2xl"
+          className="fixed inset-y-0 left-0 z-[102] w-72 max-w-[85vw] h-full h-[100dvh] overflow-y-auto bg-card text-foreground border-r border-border p-6 gap-6 sidebar-slide-in flex flex-col shadow-2xl"
           aria-label="Navigation sidebar"
         >
           {navContent}
