@@ -13,8 +13,10 @@ import {
 } from "@/lib/local-storage";
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, CreditCard, ShieldCheck, Copy, Check, ExternalLink } from "lucide-react";
 import { WORK_SECTORS, getPositionsForSector } from "@/lib/employee-positions";
+import { formatEmployeeId } from "@/lib/employee-id";
+import Link from "next/link";
 import PositionSearchSelect from "@/components/position-search-select";
 import LanguageMultiSelect from "@/components/language-multi-select";
 import { LANGUAGES } from "@/lib/languages";
@@ -73,6 +75,7 @@ export default function EmployeeSettings() {
   const [showPasswords, setShowPasswords] = useState(false);
   const [positionChoice, setPositionChoice] = useState("");
   const [positionOther, setPositionOther] = useState("");
+  const [copiedId, setCopiedId] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">(
     "success",
@@ -335,7 +338,60 @@ export default function EmployeeSettings() {
       )}
 
       {user && (
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-card border border-border rounded-xl p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-foreground">Employee Member ID</h2>
+                  {user.status === "active" || user.is_verified ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400">
+                      <ShieldCheck className="h-3 w-3" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+                      Pending Verification
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-base font-bold font-mono text-primary bg-primary/5 px-2.5 py-0.5 rounded-md border border-primary/20">
+                    {formatEmployeeId(user.id_number, user.email || user.id)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idToCopy = formatEmployeeId(user.id_number, user.email || user.id);
+                      navigator.clipboard.writeText(idToCopy);
+                      setCopiedId(true);
+                      setTimeout(() => setCopiedId(false), 2000);
+                    }}
+                    className="p-1.5 rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    title="Copy ID Number"
+                  >
+                    {copiedId ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <Link href="/employee/id-card">
+              <Button variant="default" size="sm" className="gap-2 bg-[#004838] hover:bg-[#00382b] text-white">
+                <CreditCard className="h-4 w-4" />
+                View &amp; Download ID Card
+                <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {user && (
+        <div className="bg-card border border-border rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Profile photo</h2>
           <ProfilePhotoEditor
             userId={user.id}
@@ -358,6 +414,21 @@ export default function EmployeeSettings() {
           </div>
 
           <form onSubmit={handleProfileUpdate} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Employee ID Number
+              </label>
+              <input
+                type="text"
+                value={formatEmployeeId(user?.id_number, user?.email || user?.id)}
+                disabled
+                className="w-full px-3 py-2 border border-border rounded-lg bg-muted opacity-80 font-mono font-bold text-primary cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Assigned unique identifier for Addis Hospitality Solutions
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 Full Name

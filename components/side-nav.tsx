@@ -16,6 +16,7 @@ import {
   LogOut,
   CalendarDays,
   Bell,
+  CreditCard,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { clearCurrentUser } from "@/lib/local-storage";
@@ -89,6 +90,11 @@ export default function SideNav({
               href: "/employee",
               label: t("nav.dashboard"),
               icon: Home,
+            },
+            {
+              href: "/employee/id-card",
+              label: "ID Card",
+              icon: CreditCard,
             },
             { href: "/employee/jobs", label: "Jobs", icon: Briefcase },
             {

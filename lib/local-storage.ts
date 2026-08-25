@@ -1,4 +1,4 @@
-"use client";
+import { generateEmployeeIdNumber, formatEmployeeId } from "@/lib/employee-id";
 
 export interface LocalUser {
   id: string;
@@ -9,10 +9,12 @@ export interface LocalUser {
   phone: string;
   status: "active" | "pending" | "suspended" | "rejected";
   email_verified?: boolean;
+  id_number?: string;
   created_at: string;
 }
 
 export interface EmployeeProfile extends LocalUser {
+  id_number?: string;
   avatar_path?: string;
   avatar_url?: string | null;
   avatar_status?: "pending" | "approved" | "rejected" | null;
@@ -142,6 +144,7 @@ export function createUser(
   const users = getUsers();
   const registeredAt = new Date().toISOString();
   const normalizedEmail = normalizeEmail(email);
+  const idNumber = role === "employee" ? generateEmployeeIdNumber(email) : undefined;
   const newUser: LocalUser = {
     id: Math.random().toString(36).substr(2, 9),
     email: normalizedEmail,
@@ -151,6 +154,7 @@ export function createUser(
     phone: data.phone || "",
     status: "pending",
     email_verified: false,
+    id_number: idNumber,
     created_at: registeredAt,
   };
   users.push(newUser);
@@ -159,7 +163,7 @@ export function createUser(
   // Create the role profile at registration so it is immediately visible to admins.
   if (role === "employee") {
     const profiles = getEmployeeProfiles();
-    profiles.push({ ...newUser, created_at: registeredAt } as EmployeeProfile);
+    profiles.push({ ...newUser, id_number: idNumber, created_at: registeredAt } as EmployeeProfile);
     saveEmployeeProfiles(profiles);
   } else {
     const profiles = getCompanyProfiles();
@@ -320,7 +324,19 @@ export function clearCurrentUser(): void {
 export function getEmployeeProfiles(): EmployeeProfile[] {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.EMPLOYEE_PROFILES);
-    return data ? JSON.parse(data) : [];
+    const profiles: EmployeeProfile[] = data ? JSON.parse(data) : [];
+    let updated = false;
+    const normalized = profiles.map((p) => {
+      if (!p.id_number) {
+        p.id_number = generateEmployeeIdNumber(p.email || p.id);
+        updated = true;
+      }
+      return p;
+    });
+    if (updated) {
+      saveEmployeeProfiles(normalized);
+    }
+    return normalized;
   } catch {
     return [];
   }
@@ -336,7 +352,12 @@ export function saveEmployeeProfiles(profiles: EmployeeProfile[]): void {
 export function getEmployeeProfile(
   userId: string,
 ): EmployeeProfile | undefined {
-  return getEmployeeProfiles().find((p) => p.id === userId);
+  const profile = getEmployeeProfiles().find((p) => p.id === userId);
+  if (profile && !profile.id_number) {
+    profile.id_number = generateEmployeeIdNumber(profile.email || profile.id);
+    updateEmployeeProfile(userId, { id_number: profile.id_number });
+  }
+  return profile;
 }
 
 export function updateEmployeeProfile(
@@ -350,7 +371,8 @@ export function updateEmployeeProfile(
   } else {
     const user = getUsers().find((candidate) => candidate.id === userId);
     if (!user) return;
-    profiles.push({ ...user, ...updates } as EmployeeProfile);
+    const idNum = updates.id_number || user.id_number || generateEmployeeIdNumber(user.email || user.id);
+    profiles.push({ ...user, ...updates, id_number: idNum } as EmployeeProfile);
   }
   saveEmployeeProfiles(profiles);
 }

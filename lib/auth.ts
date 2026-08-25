@@ -3,6 +3,8 @@
 import type { User } from "@supabase/supabase-js";
 import { LocalUser, setCurrentUser } from "@/lib/local-storage";
 
+import { formatEmployeeId } from "@/lib/employee-id";
+
 type SupabaseClientLike = {
   from: (table: string) => any;
 };
@@ -29,6 +31,8 @@ export async function syncAuthenticatedUser(
     authUser.email?.split("@")[0] ??
     "";
 
+  const idNumber = formatEmployeeId(profile?.id_number, authUser.email || authUser.id);
+
   if (!profile) {
     await supabase.from("profiles").upsert({
       id: authUser.id,
@@ -51,6 +55,7 @@ export async function syncAuthenticatedUser(
     phone: profile?.phone ?? metadata.phone ?? "",
     status: (profile?.status ?? "active") as LocalUser["status"],
     email_verified: true,
+    id_number: idNumber,
     created_at: profile?.created_at ?? authUser.created_at,
   };
 

@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { logAction } from "@/lib/local-storage";
-// use plain <img> for avatars (data URLs / local storage friendly)
+import { formatEmployeeId } from "@/lib/employee-id";
+import EmployeeIdCard from "@/components/employee-id-card";
+import { CreditCard } from "lucide-react";
 
 export default function AdminEmployeeDetailPage() {
   const t = useTranslations();
@@ -252,8 +254,19 @@ export default function AdminEmployeeDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Info */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="font-semibold">{t("auth.email")}</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">{t("auth.email")}</h3>
+            <span className="text-xs font-mono font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-md border border-primary/20">
+              {formatEmployeeId(employee.id_number, employee.email || employee.id)}
+            </span>
+          </div>
           <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-muted-foreground">Employee ID Number</dt>
+              <dd className="font-mono font-bold text-primary">
+                {formatEmployeeId(employee.id_number, employee.email || employee.id)}
+              </dd>
+            </div>
             <div>
               <dt className="text-muted-foreground">{t("auth.email")}</dt>
               <dd className="font-medium">{employee.email}</dd>
@@ -511,6 +524,31 @@ export default function AdminEmployeeDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Official ID Badge Preview for Admin */}
+      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-lg">Official Member ID Card Badge</h3>
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">
+            Auto-generated from employee credentials
+          </span>
+        </div>
+        <div className="flex justify-center py-4 bg-muted/20 rounded-xl border border-border/50">
+          <EmployeeIdCard
+            fullName={employee.full_name || employee.email}
+            position={employee.desired_position || "Hospitality Professional"}
+            idNumber={employee.id_number}
+            email={employee.email}
+            phone={employee.phone || "—"}
+            avatarUrl={avatarUrl}
+            isVerified={employee.status === "active"}
+            showControls={true}
+          />
+        </div>
+      </div>
     </div>
   );
 }
