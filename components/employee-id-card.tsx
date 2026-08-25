@@ -681,12 +681,12 @@ export default function EmployeeIdCard({
           <div className="flex items-center justify-between text-xs text-muted-foreground px-2">
             <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-semibold">
               <ShieldCheck className="h-4 w-4" />
-              {isVerified ? "Verified Official Member Badge" : "Pending Verification"}
+              {isVerified ? "Verified Official Member Badge" : "Member Identification Badge"}
             </span>
             <button
               type="button"
               onClick={() => setIsFlipped(!isFlipped)}
-              className="flex items-center gap-1 text-primary hover:underline font-medium cursor-pointer"
+              className="flex items-center gap-1 text-primary hover:underline font-bold cursor-pointer bg-primary/10 px-2.5 py-1 rounded-md"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Flip to {isFlipped ? "Front" : "Back"}
@@ -694,47 +694,46 @@ export default function EmployeeIdCard({
           </div>
 
           {/* Download Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <Button
               variant="outline"
-              size="sm"
-              disabled={!isVerified || isDownloading}
+              size="default"
+              disabled={isDownloading}
               onClick={() => handleDownload("front")}
-              className="w-full gap-1.5 text-xs font-semibold"
+              className="w-full gap-2 text-xs font-bold border-2 border-[#004838]/30 hover:bg-[#004838]/10 text-[#004838] dark:text-emerald-400 shadow-xs cursor-pointer"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-4 w-4" />
               Front (PNG)
             </Button>
 
             <Button
               variant="outline"
-              size="sm"
-              disabled={!isVerified || isDownloading}
+              size="default"
+              disabled={isDownloading}
               onClick={() => handleDownload("back")}
-              className="w-full gap-1.5 text-xs font-semibold"
+              className="w-full gap-2 text-xs font-bold border-2 border-[#004838]/30 hover:bg-[#004838]/10 text-[#004838] dark:text-emerald-400 shadow-xs cursor-pointer"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-4 w-4" />
               Back (PNG)
             </Button>
 
             <Button
               variant="default"
-              size="sm"
-              disabled={!isVerified || isDownloading}
+              size="default"
+              disabled={isDownloading}
               onClick={() => handleDownload("both")}
-              className="w-full gap-1.5 text-xs font-semibold bg-[#004838] hover:bg-[#00382b] text-white"
+              className="w-full gap-2 text-xs font-bold bg-[#004838] hover:bg-[#00382b] text-white shadow-md cursor-pointer"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-4 w-4" />
               Both Sides
             </Button>
           </div>
 
           <Button
             variant="secondary"
-            size="sm"
-            disabled={!isVerified}
+            size="default"
             onClick={handlePrint}
-            className="w-full gap-2 text-xs"
+            className="w-full gap-2 text-xs font-semibold border border-border shadow-xs cursor-pointer"
           >
             <Printer className="h-4 w-4" />
             Print ID Badge
