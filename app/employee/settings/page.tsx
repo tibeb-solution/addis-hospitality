@@ -92,46 +92,55 @@ export default function EmployeeSettings() {
           router.push("/auth/login");
           return;
         }
-        const { data: profile } = await supabase
+        const { data: employeeData } = await supabase
           .from("employee_profiles")
           .select("*")
           .eq("id", authUser.id)
           .single();
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+        const resolvedStatus = profileData?.status || employeeData?.status || "active";
         const account = {
           ...authUser,
-          ...profile,
+          ...profileData,
+          ...employeeData,
+          status: resolvedStatus,
+          is_verified: resolvedStatus === "active" || Boolean(profileData?.is_verified) || Boolean(employeeData?.is_verified),
           id: authUser.id,
           email: authUser.email,
         };
         setUser(account);
-        setAvatarPath(profile?.avatar_url || null);
-        setPositionChoice(profile?.desired_position || "");
+        setAvatarPath(employeeData?.avatar_url || null);
+        setPositionChoice(employeeData?.desired_position || "");
         setFormData({
           full_name:
-            profile?.full_name || authUser.user_metadata?.full_name || "",
+            employeeData?.full_name || profileData?.full_name || authUser.user_metadata?.full_name || "",
           email: authUser.email || "",
-          phone: profile?.phone || "",
-          gender: profile?.gender || "",
-          date_of_birth: profile?.date_of_birth || "",
-          work_sector: profile?.work_sector || "",
-          languages: profile?.languages || [],
-          alternative_phone: profile?.alternative_phone || "",
-          residence_city: profile?.residence_city || "",
-          residence_sub_city: profile?.residence_sub_city || "",
-          residence_woreda: profile?.residence_woreda || "",
-          residence_area: profile?.residence_area || "",
-          emergency_contact_name: profile?.emergency_contact_name || "",
+          phone: employeeData?.phone || profileData?.phone || "",
+          gender: employeeData?.gender || "",
+          date_of_birth: employeeData?.date_of_birth || "",
+          work_sector: employeeData?.work_sector || "",
+          languages: employeeData?.languages || [],
+          alternative_phone: employeeData?.alternative_phone || "",
+          residence_city: employeeData?.residence_city || "",
+          residence_sub_city: employeeData?.residence_sub_city || "",
+          residence_woreda: employeeData?.residence_woreda || "",
+          residence_area: employeeData?.residence_area || "",
+          emergency_contact_name: employeeData?.emergency_contact_name || "",
           emergency_contact_relationship:
-            profile?.emergency_contact_relationship || "",
-          emergency_contact_phone: profile?.emergency_contact_phone || "",
-          desired_position: profile?.desired_position || "",
-          years_experience: profile?.years_experience?.toString() || "",
-          highest_education: profile?.highest_education || "",
-          availability: profile?.availability || "",
-          preferred_cities: profile?.preferred_cities || "",
-          willing_to_relocate: Boolean(profile?.willing_to_relocate),
-          expected_salary_min: profile?.expected_salary_min?.toString() || "",
-          expected_salary_max: profile?.expected_salary_max?.toString() || "",
+            employeeData?.emergency_contact_relationship || "",
+          emergency_contact_phone: employeeData?.emergency_contact_phone || "",
+          desired_position: employeeData?.desired_position || "",
+          years_experience: employeeData?.years_experience?.toString() || "",
+          highest_education: employeeData?.highest_education || "",
+          availability: employeeData?.availability || "",
+          preferred_cities: employeeData?.preferred_cities || "",
+          willing_to_relocate: Boolean(employeeData?.willing_to_relocate),
+          expected_salary_min: employeeData?.expected_salary_min?.toString() || "",
+          expected_salary_max: employeeData?.expected_salary_max?.toString() || "",
         });
         setLoading(false);
       };

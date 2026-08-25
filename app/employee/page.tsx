@@ -31,23 +31,37 @@ export default function EmployeeDashboard() {
         return;
       }
 
-      const { data } = await supabase
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      const { data: employeeData } = await supabase
         .from("employee_profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      if (data) {
-        setProfile({ ...user, ...data });
-        if (data.avatar_url) {
-          const { data: signed } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(data.avatar_url);
-          setAvatarUrl(signed.publicUrl || "");
-        }
-        calculateCompleteness(data);
-      } else {
-        setProfile(user);
+      const resolvedStatus = profileData?.status || employeeData?.status || "active";
+      const merged = {
+        ...user,
+        ...profileData,
+        ...employeeData,
+        status: resolvedStatus,
+        is_verified: resolvedStatus === "active" || Boolean(profileData?.is_verified) || Boolean(employeeData?.is_verified),
+      };
+
+      setProfile(merged);
+
+      if (employeeData?.avatar_url) {
+        const { data: signed } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(employeeData.avatar_url);
+        setAvatarUrl(signed.publicUrl || "");
+      }
+      if (employeeData) {
+        calculateCompleteness(employeeData);
       }
 
       setLoading(false);
