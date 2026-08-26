@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { logAction } from "@/lib/local-storage";
 import { formatEmployeeId } from "@/lib/employee-id";
 import EmployeeIdCard from "@/components/employee-id-card";
-import { CreditCard } from "lucide-react";
+import EmployeeCvPreview from "@/components/employee-cv-preview";
+import { CreditCard, Eye, X } from "lucide-react";
 
 export default function AdminEmployeeDetailPage() {
   const t = useTranslations();
@@ -23,6 +24,7 @@ export default function AdminEmployeeDetailPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
   const [cv, setCv] = useState<any>(null);
+  const [showCvModal, setShowCvModal] = useState(false);
 
   useEffect(() => {
     const loadEmployee = async () => {
@@ -494,11 +496,40 @@ export default function AdminEmployeeDetailPage() {
             <div><p className="text-muted-foreground">Work experience</p><p className="font-medium">{cv.data?.experience?.filter((item: any) => item.title || item.detail).length || 0} entries</p></div>
             <div><p className="text-muted-foreground">References</p><p className="font-medium">{cv.data?.references?.filter((item: any) => item.name).length || 0} entries</p></div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCvModal(true)}
+              className="flex items-center gap-1.5"
+            >
+              <Eye className="h-4 w-4 text-primary" />
+              Preview Full CV
+            </Button>
             {cv.status !== "approved" && <Button disabled={updating} onClick={() => void handleCvStatus("approved")}>Approve CV</Button>}
             {cv.status !== "rejected" && <Button disabled={updating} variant="destructive" onClick={() => void handleCvStatus("rejected")}>Reject CV</Button>}
           </div>
           {cv.review_note && <p className="text-sm text-muted-foreground">Review note: {cv.review_note}</p>}
+
+          {showCvModal && cv.data && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+              <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-card p-4 sm:p-6 shadow-2xl border border-border">
+                <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
+                  <h4 className="font-bold text-lg">Branded CV Preview</h4>
+                  <button
+                    onClick={() => setShowCvModal(false)}
+                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                    aria-label="Close modal"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto pb-4">
+                  <EmployeeCvPreview cv={cv.data} avatarUrl={avatarUrl} />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
