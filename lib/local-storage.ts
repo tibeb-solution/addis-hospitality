@@ -38,6 +38,7 @@ export interface EmployeeProfile extends LocalUser {
   skills?: string[];
   bio?: string;
   status_note?: string;
+  cv_data?: Record<string, any>;
 }
 
 export interface CompanyProfile extends LocalUser {

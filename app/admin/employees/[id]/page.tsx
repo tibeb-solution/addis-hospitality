@@ -22,6 +22,7 @@ export default function AdminEmployeeDetailPage() {
   const [statusNote, setStatusNote] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
+  const [cv, setCv] = useState<any>(null);
 
   useEffect(() => {
     const loadEmployee = async () => {
@@ -42,6 +43,12 @@ export default function AdminEmployeeDetailPage() {
           .eq("owner_id", params.id as string);
 
         setDocuments(docs || []);
+        const { data: cvData } = await supabase
+          .from("employee_cvs")
+          .select("*")
+          .eq("employee_id", params.id as string)
+          .maybeSingle();
+        setCv(cvData || null);
         // Load employee/company profile avatar (if available)
         try {
           const { data: profile } = await supabase
@@ -126,6 +133,31 @@ export default function AdminEmployeeDetailPage() {
             : item,
         ),
       );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errors.serverError"));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCvStatus = async (newStatus: "approved" | "rejected") => {
+    if (!cv) return;
+    setUpdating(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { data: reviewer } = await supabase.auth.getUser();
+      const { error: updateError } = await supabase
+        .from("employee_cvs")
+        .update({
+          status: newStatus,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewer.user?.id,
+          review_note: statusNote,
+        })
+        .eq("employee_id", params.id as string);
+      if (updateError) throw updateError;
+      setCv({ ...cv, status: newStatus, review_note: statusNote });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
@@ -448,6 +480,28 @@ export default function AdminEmployeeDetailPage() {
       </div>
 
       {/* Documents */}
+      {cv && (
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-semibold">Employee CV submission</h3>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">{cv.status}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Review the employee's completed CV before approving download access.</p>
+          <div className="grid gap-4 rounded-lg border border-border bg-muted/20 p-4 text-sm sm:grid-cols-2">
+            <div><p className="text-muted-foreground">Professional title</p><p className="font-medium">{cv.data?.contact?.title || "—"}</p></div>
+            <div><p className="text-muted-foreground">Contact</p><p className="font-medium">{[cv.data?.contact?.email, cv.data?.contact?.phone].filter(Boolean).join(" | ") || "—"}</p></div>
+            <div className="sm:col-span-2"><p className="text-muted-foreground">Professional summary</p><p className="whitespace-pre-wrap font-medium">{cv.data?.summary || "—"}</p></div>
+            <div><p className="text-muted-foreground">Work experience</p><p className="font-medium">{cv.data?.experience?.filter((item: any) => item.title || item.detail).length || 0} entries</p></div>
+            <div><p className="text-muted-foreground">References</p><p className="font-medium">{cv.data?.references?.filter((item: any) => item.name).length || 0} entries</p></div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {cv.status !== "approved" && <Button disabled={updating} onClick={() => void handleCvStatus("approved")}>Approve CV</Button>}
+            {cv.status !== "rejected" && <Button disabled={updating} variant="destructive" onClick={() => void handleCvStatus("rejected")}>Reject CV</Button>}
+          </div>
+          {cv.review_note && <p className="text-sm text-muted-foreground">Review note: {cv.review_note}</p>}
+        </div>
+      )}
+
       {documents.length > 0 && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <h3 className="font-semibold">{t("nav.documents")}</h3>

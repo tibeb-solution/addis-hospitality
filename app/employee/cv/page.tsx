@@ -1,0 +1,175 @@
+"use client";
+
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  getCurrentUser,
+  getEmployeeProfile,
+  updateEmployeeProfile,
+} from "@/lib/local-storage";
+import { Button } from "@/components/ui/button";
+import {
+  CheckCircle2,
+  Clock3,
+  Download,
+  Eye,
+  FileUser,
+  Plus,
+  Send,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+
+type ListItem = { title: string; detail: string };
+type Reference = { name: string; role: string; company: string; phone: string; email: string };
+type CvData = {
+  contact: { fullName: string; title: string; email: string; phone: string; address: string };
+  personal: { dateOfBirth: string; nationality: string; gender: string; maritalStatus: string };
+  summary: string;
+  experience: ListItem[];
+  education: ListItem[];
+  skills: string;
+  certifications: ListItem[];
+  achievements: string;
+  languages: string;
+  references: Reference[];
+};
+
+const emptyItem = (): ListItem => ({ title: "", detail: "" });
+const emptyReference = (): Reference => ({ name: "", role: "", company: "", phone: "", email: "" });
+
+function initialCv(profile: any): CvData {
+  return {
+    contact: {
+      fullName: profile?.full_name || "",
+      title: profile?.desired_position || "",
+      email: profile?.email || "",
+      phone: profile?.phone || "",
+      address: [profile?.residence_area, profile?.residence_city].filter(Boolean).join(", "),
+    },
+    personal: {
+      dateOfBirth: profile?.date_of_birth || "",
+      nationality: profile?.nationality || "",
+      gender: profile?.gender || "",
+      maritalStatus: profile?.marital_status || "",
+    },
+    summary: profile?.bio || "",
+    experience: profile?.cv_data?.experience || [emptyItem()],
+    education: profile?.cv_data?.education || [{ title: profile?.highest_education || "", detail: "" }],
+    skills: Array.isArray(profile?.skills) ? profile.skills.join(", ") : profile?.skills || "",
+    certifications: profile?.cv_data?.certifications || [emptyItem()],
+    achievements: profile?.cv_data?.achievements || "",
+    languages: Array.isArray(profile?.languages) ? profile.languages.join(", ") : profile?.languages || "",
+    references: profile?.cv_data?.references || [emptyReference()],
+  };
+}
+
+function Field({ label, value, onChange, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; type?: string; required?: boolean }) {
+  return (
+    <label className="space-y-1.5 text-sm font-medium">
+      <span>{label}{required && <span className="text-destructive"> *</span>}</span>
+      <input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+    </label>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="space-y-4 border-t border-border pt-6"><h2 className="text-lg font-semibold">{title}</h2>{children}</section>;
+}
+
+function Preview({ cv }: { cv: CvData }) {
+  return (
+    <article className="mx-auto min-h-[900px] max-w-[760px] bg-white p-8 text-[11px] text-slate-900 shadow-lg sm:p-12 print:shadow-none">
+      <header className="border-b-4 border-emerald-800 pb-4"><h1 className="text-3xl font-bold text-emerald-900">{cv.contact.fullName || "Your full name"}</h1><p className="mt-1 text-sm font-bold uppercase">{cv.contact.title || "Professional title"}</p><p className="mt-2 text-slate-600">{[cv.contact.email, cv.contact.phone, cv.contact.address].filter(Boolean).join(" | ")}</p></header>
+      <div className="mt-5 grid grid-cols-[1fr_2fr] gap-6"><aside className="space-y-5">
+        <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">Personal Information</h3><p className="mt-2">Date of Birth: {cv.personal.dateOfBirth || "-"}</p><p>Nationality: {cv.personal.nationality || "-"}</p><p>Gender: {cv.personal.gender || "-"}</p><p>Marital Status: {cv.personal.maritalStatus || "-"}</p></div>
+        <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">Skills</h3><p className="mt-2 whitespace-pre-wrap">{cv.skills || "-"}</p></div>
+        <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">Languages</h3><p className="mt-2 whitespace-pre-wrap">{cv.languages || "-"}</p></div>
+      </aside><main className="space-y-5">
+        <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">Professional Summary</h3><p className="mt-2 whitespace-pre-wrap leading-relaxed">{cv.summary || "-"}</p></div>
+        <PreviewList title="Work Experience" items={cv.experience} /><PreviewList title="Education" items={cv.education} /><PreviewList title="Training & Certifications" items={cv.certifications} />
+        <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">Key Achievements</h3><p className="mt-2 whitespace-pre-wrap">{cv.achievements || "-"}</p></div>
+        <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">References</h3>{cv.references.map((reference, index) => <div key={index} className="mt-2"><strong>{reference.name || "-"}</strong><p>{[reference.role, reference.company, reference.phone, reference.email].filter(Boolean).join(" | ")}</p></div>)}</div>
+      </main></div>
+    </article>
+  );
+}
+
+function PreviewList({ title, items }: { title: string; items: ListItem[] }) {
+  return <div><h3 className="border-b border-emerald-800 pb-1 font-bold uppercase text-emerald-900">{title}</h3>{items.map((item, index) => <div key={index} className="mt-2"><strong>{item.title || "-"}</strong><p className="whitespace-pre-wrap">{item.detail || "-"}</p></div>)}</div>;
+}
+
+export default function EmployeeCvPage() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [cv, setCv] = useState<CvData | null>(null);
+  const [status, setStatus] = useState("draft");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      if (isSupabaseConfigured()) {
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) { router.push("/auth/login"); return; }
+        const [{ data: employee }, { data: account }, { data: savedCv }] = await Promise.all([
+          supabase.from("employee_profiles").select("*").eq("id", authUser.id).maybeSingle(),
+          supabase.from("profiles").select("*").eq("id", authUser.id).maybeSingle(),
+          supabase.from("employee_cvs").select("*").eq("employee_id", authUser.id).maybeSingle(),
+        ]);
+        const merged = { ...authUser, ...account, ...employee, email: authUser.email };
+        setUser(authUser); setProfile(merged); setCv(savedCv?.data ? { ...initialCv(merged), ...savedCv.data } : initialCv(merged)); setStatus(savedCv?.status || "draft");
+      } else {
+        const current = getCurrentUser();
+        if (!current) { router.push("/auth/login"); return; }
+        const employee = getEmployeeProfile(current.id) || current;
+        setUser(current); setProfile({ ...current, ...employee }); setCv(initialCv({ ...current, ...employee })); setStatus((employee as any).cv_status || "draft");
+      }
+      setLoading(false);
+    };
+    void load();
+  }, [router]);
+
+  const requiredFields = useMemo(() => cv ? [cv.contact.fullName, cv.contact.title, cv.contact.email, cv.contact.phone, cv.personal.dateOfBirth, cv.personal.nationality, cv.summary, cv.experience.some((item) => item.title && item.detail), cv.education.some((item) => item.title && item.detail), cv.skills, cv.certifications.some((item) => item.title && item.detail), cv.achievements, cv.languages, cv.references.some((item) => item.name && item.role && item.company && item.phone && item.email)] : [], [cv]);
+  const complete = requiredFields.filter(Boolean).length;
+  const isComplete = complete === requiredFields.length && requiredFields.length > 0;
+
+  const update = (change: Partial<CvData>) => setCv((current) => current ? { ...current, ...change } : current);
+  const updateList = (key: "experience" | "education" | "certifications", index: number, value: Partial<ListItem>) => update({ [key]: cv![key].map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item) } as Partial<CvData>);
+  const updateReference = (index: number, value: Partial<Reference>) => update({ references: cv!.references.map((item, itemIndex) => itemIndex === index ? { ...item, ...value } : item) });
+
+  const save = async (nextStatus = "draft") => {
+    if (!user || !cv) return;
+    setSaving(true); setMessage("");
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await createClient().from("employee_cvs").upsert({ employee_id: user.id, data: cv, status: nextStatus, submitted_at: nextStatus === "submitted" ? new Date().toISOString() : undefined }, { onConflict: "employee_id" });
+        if (error) throw error;
+      } else {
+        updateEmployeeProfile(user.id, { cv_data: cv, cv_status: nextStatus } as any);
+      }
+      setStatus(nextStatus); setMessage(nextStatus === "submitted" ? "Your CV has been sent to admin for review." : "CV saved.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save CV."); }
+    finally { setSaving(false); }
+  };
+
+  if (loading || !cv) return <div>{"Loading..."}</div>;
+
+  return <div className="space-y-8">
+    <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="flex items-center gap-2 text-3xl font-bold"><FileUser className="h-7 w-7 text-primary" />My CV</h1><p className="mt-1 text-sm text-muted-foreground">Complete each section, preview your CV, then submit it for admin review.</p></div><span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${status === "approved" ? "bg-green-500/10 text-green-700" : status === "rejected" ? "bg-red-500/10 text-red-700" : status === "submitted" ? "bg-amber-500/10 text-amber-700" : "bg-muted text-muted-foreground"}`}>{status === "approved" ? <CheckCircle2 className="h-4 w-4" /> : status === "rejected" ? <XCircle className="h-4 w-4" /> : <Clock3 className="h-4 w-4" />}{status === "submitted" ? "Awaiting admin review" : status[0].toUpperCase() + status.slice(1)}</span></div>
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(420px,760px)] xl:items-start"><form onSubmit={(event: FormEvent) => { event.preventDefault(); void save(); }} className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-6">
+      <div className="rounded-lg bg-primary/5 p-4"><div className="flex items-center justify-between text-sm font-medium"><span>CV completeness</span><span>{complete}/{requiredFields.length}</span></div><div className="mt-2 h-2 rounded-full bg-muted"><div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${(complete / Math.max(requiredFields.length, 1)) * 100}%` }} /></div><p className="mt-2 text-xs text-muted-foreground">All required sections must be complete before submission.</p></div>
+      <Section title="Contact Information"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name" required value={cv.contact.fullName} onChange={(value) => update({ contact: { ...cv.contact, fullName: value } })} /><Field label="Professional title" required value={cv.contact.title} onChange={(value) => update({ contact: { ...cv.contact, title: value } })} /><Field label="Email" required type="email" value={cv.contact.email} onChange={(value) => update({ contact: { ...cv.contact, email: value } })} /><Field label="Phone" required value={cv.contact.phone} onChange={(value) => update({ contact: { ...cv.contact, phone: value } })} /></div><Field label="Address" value={cv.contact.address} onChange={(value) => update({ contact: { ...cv.contact, address: value } })} /></Section>
+      <Section title="Personal Information"><div className="grid gap-4 sm:grid-cols-2"><Field label="Date of birth" required type="date" value={cv.personal.dateOfBirth} onChange={(value) => update({ personal: { ...cv.personal, dateOfBirth: value } })} /><Field label="Nationality" required value={cv.personal.nationality} onChange={(value) => update({ personal: { ...cv.personal, nationality: value } })} /><Field label="Gender" value={cv.personal.gender} onChange={(value) => update({ personal: { ...cv.personal, gender: value } })} /><Field label="Marital status" value={cv.personal.maritalStatus} onChange={(value) => update({ personal: { ...cv.personal, maritalStatus: value } })} /></div></Section>
+      <Section title="Professional Summary"><textarea required value={cv.summary} onChange={(event) => update({ summary: event.target.value })} rows={5} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Describe your experience and strengths..." /></Section>
+      {(["experience", "education", "certifications"] as const).map((key) => <Section key={key} title={key === "experience" ? "Work Experience" : key === "education" ? "Education" : "Training & Certifications"}><div className="space-y-4">{cv[key].map((item, index) => <div key={index} className="rounded-lg border border-border p-4"><div className="flex gap-3"><div className="grid flex-1 gap-3 sm:grid-cols-2"><Field label={key === "experience" ? "Job title and employer" : "Qualification or course"} required value={item.title} onChange={(value) => updateList(key, index, { title: value })} /><label className="space-y-1.5 text-sm font-medium"><span>Details</span><textarea required value={item.detail} onChange={(event) => updateList(key, index, { detail: event.target.value })} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></label></div><button type="button" aria-label="Remove entry" className="mt-7 text-muted-foreground hover:text-destructive" onClick={() => update({ [key]: cv[key].filter((_, itemIndex) => itemIndex !== index) } as Partial<CvData>)}><Trash2 className="h-4 w-4" /></button></div></div>)}<Button type="button" variant="outline" size="sm" onClick={() => update({ [key]: [...cv[key], emptyItem()] } as Partial<CvData>)}><Plus className="mr-1 h-4 w-4" />Add entry</Button></div></Section>)}
+      <Section title="Skills"><textarea required value={cv.skills} onChange={(event) => update({ skills: event.target.value })} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Team leadership, customer service, budgeting..." /></Section><Section title="Key Achievements"><textarea required value={cv.achievements} onChange={(event) => update({ achievements: event.target.value })} rows={4} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></Section><Section title="Languages"><textarea required value={cv.languages} onChange={(event) => update({ languages: event.target.value })} rows={2} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Amharic - Native; English - Fluent" /></Section>
+      <Section title="References"><div className="space-y-4">{cv.references.map((reference, index) => <div key={index} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">{(["name", "role", "company", "phone", "email"] as const).map((field) => <Field key={field} label={field === "name" ? "Reference name" : field[0].toUpperCase() + field.slice(1)} required value={reference[field]} onChange={(value) => updateReference(index, { [field]: value })} type={field === "email" ? "email" : "text"} />)}<button type="button" className="text-left text-xs text-destructive sm:col-span-2" onClick={() => update({ references: cv.references.filter((_, itemIndex) => itemIndex !== index) })}>Remove reference</button></div>)}<Button type="button" variant="outline" size="sm" onClick={() => update({ references: [...cv.references, emptyReference()] })}><Plus className="mr-1 h-4 w-4" />Add reference</Button></div></Section>
+      {message && <p className="rounded-md bg-muted p-3 text-sm">{message}</p>}<div className="flex flex-wrap gap-3"><Button type="submit" variant="outline" disabled={saving}><CheckCircle2 className="mr-2 h-4 w-4" />Save draft</Button><Button type="button" disabled={saving || !isComplete || status === "submitted"} onClick={() => void save("submitted")}><Send className="mr-2 h-4 w-4" />Submit for review</Button></div>
+    </form><div className="space-y-4 xl:sticky xl:top-24"><div className="flex items-center justify-between"><h2 className="flex items-center gap-2 text-lg font-semibold"><Eye className="h-5 w-5" />Live preview</h2>{status === "approved" && <Button size="sm" onClick={() => window.print()}><Download className="mr-2 h-4 w-4" />Download PDF</Button>}</div><Preview cv={cv} /></div></div>
+  </div>;
+}

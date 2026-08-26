@@ -17,6 +17,7 @@ import {
   CalendarDays,
   Bell,
   CreditCard,
+  FileUser,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { clearCurrentUser } from "@/lib/local-storage";
@@ -95,6 +96,11 @@ export default function SideNav({
               href: "/employee/id-card",
               label: "ID Card",
               icon: CreditCard,
+            },
+            {
+              href: "/employee/cv",
+              label: "My CV",
+              icon: FileUser,
             },
             { href: "/employee/jobs", label: "Jobs", icon: Briefcase },
             {
