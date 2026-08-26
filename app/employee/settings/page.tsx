@@ -59,6 +59,7 @@ export default function EmployeeSettings() {
     emergency_contact_relationship: "",
     emergency_contact_phone: "",
     desired_position: "",
+    employment_type: "",
     years_experience: "",
     highest_education: "",
     availability: "",
@@ -134,6 +135,7 @@ export default function EmployeeSettings() {
             employeeData?.emergency_contact_relationship || "",
           emergency_contact_phone: employeeData?.emergency_contact_phone || "",
           desired_position: employeeData?.desired_position || "",
+          employment_type: employeeData?.employment_type || "",
           years_experience: employeeData?.years_experience?.toString() || "",
           highest_education: employeeData?.highest_education || "",
           availability: employeeData?.availability || "",
@@ -175,6 +177,7 @@ export default function EmployeeSettings() {
       emergency_contact_phone:
         (employeeProfile as any)?.emergency_contact_phone || "",
       desired_position: employeeProfile?.desired_position || "",
+      employment_type: (employeeProfile as any)?.employment_type || "",
       years_experience: employeeProfile?.years_experience?.toString() || "",
       highest_education: (employeeProfile as any)?.highest_education || "",
       availability: (employeeProfile as any)?.availability || "",
@@ -198,6 +201,7 @@ export default function EmployeeSettings() {
       work_sector: formData.work_sector,
       languages: formData.languages,
       desired_position: positionChoice,
+      employment_type: formData.employment_type,
       years_experience: formData.years_experience
         ? Number(formData.years_experience)
         : undefined,
@@ -618,7 +622,31 @@ export default function EmployeeSettings() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Employment Type
+                </label>
+                <select
+                  value={formData.employment_type}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      employment_type: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select</option>
+                  <option value="full_time">Full Time</option>
+                  <option value="part_time">Part Time</option>
+                  <option value="office_hours">Office Hours</option>
+                  <option value="contract">Contract</option>
+                  <option value="temporary">Temporary</option>
+                  <option value="internship">Internship</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Years of Experience

@@ -247,8 +247,23 @@ export default function EmployeeCvPage() {
 
   const selectedSkills = useMemo(() => {
     if (!cv?.skills) return [];
+    if (cv.skills.includes("\n")) {
+      return cv.skills
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    const found: string[] = [];
+    let remaining = cv.skills;
+    for (const skill of HOSPITALITY_SKILLS) {
+      if (remaining.includes(skill)) {
+        found.push(skill);
+        remaining = remaining.replace(skill, "");
+      }
+    }
+    if (found.length > 0) return found;
     return cv.skills
-      .split(",")
+      .split(/,|\r?\n|;/)
       .map((s) => s.trim())
       .filter(Boolean);
   }, [cv?.skills]);
@@ -257,11 +272,11 @@ export default function EmployeeCvPage() {
     if (!cv) return;
     if (selectedSkills.includes(skill)) {
       const next = selectedSkills.filter((s) => s !== skill);
-      update({ skills: next.join(", ") });
+      update({ skills: next.join("\n") });
     } else {
       if (selectedSkills.length >= 5) return;
       const next = [...selectedSkills, skill];
-      update({ skills: next.join(", ") });
+      update({ skills: next.join("\n") });
     }
   };
 

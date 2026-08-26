@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo } from "react";
+import { HOSPITALITY_SKILLS } from "@/lib/nationalities";
 
 export type ListItem = { title: string; detail: string };
 export type Reference = {
@@ -66,6 +67,27 @@ function splitLines(text: string): string[] {
 
 function parseSkills(skills: string): string[] {
   if (!skills) return [];
+  if (skills.includes("\n")) {
+    return skills
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  const found: string[] = [];
+  let remaining = skills;
+  for (const known of HOSPITALITY_SKILLS) {
+    if (remaining.includes(known)) {
+      found.push(known);
+      remaining = remaining.replace(known, "");
+    }
+  }
+  if (found.length > 0) {
+    const others = remaining
+      .split(/,|\r?\n|;/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return [...found, ...others];
+  }
   return skills
     .split(/,|\r?\n|;/)
     .map((s) => s.trim())
