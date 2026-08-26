@@ -466,6 +466,7 @@ export default function EmployeeProfilePage() {
                 {[
                   "full_time",
                   "part_time",
+                  "office_hours",
                   "contract",
                   "temporary",
                   "internship",

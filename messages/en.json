@@ -217,6 +217,7 @@
   "taxonomy": {
     "employment_full_time": "Full Time",
     "employment_part_time": "Part Time",
+    "employment_office_hours": "Office Hours",
     "employment_contract": "Contract",
     "employment_temporary": "Temporary",
     "employment_internship": "Internship",

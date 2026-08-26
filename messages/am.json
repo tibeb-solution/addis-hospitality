@@ -217,6 +217,7 @@
   "taxonomy": {
     "employment_full_time": "ሙሉ ጊዜ",
     "employment_part_time": "ክፍል ጊዜ",
+    "employment_office_hours": "የቢሮ ሰዓት",
     "employment_contract": "በውል",
     "employment_temporary": "ጊዜያዊ",
     "employment_internship": "ሥልጠና",

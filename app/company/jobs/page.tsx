@@ -201,6 +201,7 @@ export default function CompanyJobsPage() {
         <select name="employment_type" className={fieldClass}>
           <option value="full_time">Full time</option>
           <option value="part_time">Part time</option>
+          <option value="office_hours">Office hours</option>
           <option value="contract">Contract</option>
         </select>
         <input
