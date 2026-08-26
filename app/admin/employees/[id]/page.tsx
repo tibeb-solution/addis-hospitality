@@ -9,7 +9,13 @@ import { logAction } from "@/lib/local-storage";
 import { formatEmployeeId } from "@/lib/employee-id";
 import EmployeeIdCard from "@/components/employee-id-card";
 import EmployeeCvPreview from "@/components/employee-cv-preview";
-import { CreditCard, Eye, X } from "lucide-react";
+import { CheckCircle2, CreditCard, Eye, LockKeyhole, X } from "lucide-react";
+
+const ID_DOCUMENT_TYPES = new Set(["national_id", "passport"]);
+
+function isIdDocument(documentType?: string) {
+  return ID_DOCUMENT_TYPES.has(documentType || "");
+}
 
 export default function AdminEmployeeDetailPage() {
   const t = useTranslations();
@@ -110,6 +116,11 @@ export default function AdminEmployeeDetailPage() {
     documentId: string,
     status: "approved" | "rejected",
   ) => {
+    const document = documents.find((item) => item.id === documentId);
+    if (document && isIdDocument(document.document_type) && employee?.status !== "active") {
+      setError("Approve the employee account before verifying identity documents.");
+      return;
+    }
     setUpdating(true);
     setError(null);
     try {
@@ -144,6 +155,18 @@ export default function AdminEmployeeDetailPage() {
 
   const handleCvStatus = async (newStatus: "approved" | "rejected") => {
     if (!cv) return;
+    if (employee?.status !== "active") {
+      setError("Approve the employee account before reviewing the CV.");
+      return;
+    }
+    if (!documents.some((item) => isIdDocument(item.document_type) && item.status === "approved")) {
+      setError("Verify a national ID or passport before reviewing the CV.");
+      return;
+    }
+    if (cv.status !== "submitted") {
+      setError("The employee must submit the CV before it can be reviewed.");
+      return;
+    }
     setUpdating(true);
     setError(null);
     try {
@@ -174,6 +197,11 @@ export default function AdminEmployeeDetailPage() {
   if (!employee) {
     return <div>{t("admin.noResults")}</div>;
   }
+
+  const accountVerified = employee.status === "active";
+  const idDocuments = documents.filter((document) => isIdDocument(document.document_type));
+  const idVerified = idDocuments.some((document) => document.status === "approved");
+  const cvSubmitted = cv?.status === "submitted";
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -284,6 +312,69 @@ export default function AdminEmployeeDetailPage() {
           {t("common.back")}
         </Button>
       </div>
+
+      <section className="rounded-lg border border-border bg-card p-4 sm:p-6 space-y-4">
+        <div>
+          <h2 className="font-semibold">Verification workflow</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Complete each step in order: account, identity, then CV.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            {
+              number: "1",
+              title: "Account",
+              detail: accountVerified ? "Account is approved" : "Review account information",
+              complete: accountVerified,
+            },
+            {
+              number: "2",
+              title: "Identity / ID",
+              detail: !accountVerified
+                ? "Waiting for account approval"
+                : idVerified
+                  ? "Identity document is verified"
+                  : idDocuments.length
+                    ? "Verify a national ID or passport"
+                    : "Waiting for an ID document",
+              complete: idVerified,
+              locked: !accountVerified,
+            },
+            {
+              number: "3",
+              title: "CV",
+              detail: !accountVerified || !idVerified
+                ? "Waiting for account and ID approval"
+                : cvSubmitted
+                  ? "CV is ready for review"
+                  : cv?.status === "approved"
+                    ? "CV is approved"
+                    : "Waiting for CV submission",
+              complete: cv?.status === "approved",
+              locked: !accountVerified || !idVerified,
+            },
+          ].map((step) => (
+            <div key={step.number} className="rounded-md border border-border p-4">
+              <div className="flex items-start gap-3">
+                {step.complete ? (
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                ) : step.locked ? (
+                  <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                ) : (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {step.number}
+                  </span>
+                )}
+                <div>
+                  <p className="font-medium">{step.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{step.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Info */}
@@ -485,7 +576,7 @@ export default function AdminEmployeeDetailPage() {
       {cv && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="font-semibold">Employee CV submission</h3>
+            <h3 className="font-semibold">CV review</h3>
             <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">{cv.status}</span>
           </div>
           <p className="text-sm text-muted-foreground">Review the employee's completed CV before approving download access.</p>
@@ -506,9 +597,17 @@ export default function AdminEmployeeDetailPage() {
               <Eye className="h-4 w-4 text-primary" />
               Preview Full CV
             </Button>
-            {cv.status !== "approved" && <Button disabled={updating} onClick={() => void handleCvStatus("approved")}>Approve CV</Button>}
-            {cv.status !== "rejected" && <Button disabled={updating} variant="destructive" onClick={() => void handleCvStatus("rejected")}>Reject CV</Button>}
+            {cv.status !== "approved" && <Button disabled={updating || !accountVerified || !idVerified || cv.status !== "submitted"} onClick={() => void handleCvStatus("approved")}>Approve CV</Button>}
+            {cv.status !== "rejected" && <Button disabled={updating || !accountVerified || !idVerified || cv.status !== "submitted"} variant="destructive" onClick={() => void handleCvStatus("rejected")}>Reject CV</Button>}
           </div>
+          {(!accountVerified || !idVerified) && (
+            <p className="text-sm text-muted-foreground">
+              CV review unlocks after the account and an identity document are approved.
+            </p>
+          )}
+          {accountVerified && idVerified && !cvSubmitted && cv.status !== "approved" && (
+            <p className="text-sm text-muted-foreground">Waiting for the employee to submit this CV.</p>
+          )}
           {cv.review_note && <p className="text-sm text-muted-foreground">Review note: {cv.review_note}</p>}
 
           {showCvModal && cv.data && (
@@ -535,7 +634,12 @@ export default function AdminEmployeeDetailPage() {
 
       {documents.length > 0 && (
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <h3 className="font-semibold">{t("nav.documents")}</h3>
+          <div>
+            <h3 className="font-semibold">Identity and supporting documents</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Verify a national ID or passport here to unlock CV review.
+            </p>
+          </div>
           <div className="space-y-2">
             {documents.map((doc) => (
               <div
@@ -571,8 +675,8 @@ export default function AdminEmployeeDetailPage() {
                   {doc.status !== "approved" && (
                     <button
                       type="button"
-                      disabled={updating}
-                      className="text-sm text-green-700 underline"
+                      disabled={updating || (isIdDocument(doc.document_type) && !accountVerified)}
+                      className="text-sm text-green-700 underline disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={() =>
                         void handleDocumentStatus(doc.id, "approved")
                       }
@@ -583,8 +687,8 @@ export default function AdminEmployeeDetailPage() {
                   {doc.status !== "rejected" && (
                     <button
                       type="button"
-                      disabled={updating}
-                      className="text-sm text-red-700 underline"
+                      disabled={updating || (isIdDocument(doc.document_type) && !accountVerified)}
+                      className="text-sm text-red-700 underline disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={() =>
                         void handleDocumentStatus(doc.id, "rejected")
                       }
