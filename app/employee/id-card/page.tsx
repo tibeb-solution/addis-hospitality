@@ -8,6 +8,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getCurrentUser, getEmployeeProfile } from "@/lib/local-storage";
 import EmployeeIdCard from "@/components/employee-id-card";
 import { Button } from "@/components/ui/button";
+import { canAccessEmployeeId, getEmployeeWorkflow } from "@/lib/employee-workflow";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -27,6 +28,8 @@ export default function EmployeeIdCardPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [cv, setCv] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -53,6 +56,10 @@ export default function EmployeeIdCardPage() {
           .eq("id", authUser.id)
           .single();
 
+        const [{ data: cvData }, { data: documentData }] = await Promise.all([
+          supabase.from("employee_cvs").select("status").eq("employee_id", authUser.id).maybeSingle(),
+          supabase.from("documents").select("document_type,holder_type,status").eq("owner_id", authUser.id),
+        ]);
         const merged = {
           ...authUser,
           ...profileData,
@@ -61,6 +68,8 @@ export default function EmployeeIdCardPage() {
           email: authUser.email,
         };
 
+        setCv(cvData);
+        setDocuments(documentData || []);
         setProfile(merged);
 
         if (employeeData?.avatar_url) {
@@ -107,7 +116,28 @@ export default function EmployeeIdCardPage() {
     );
   }
 
-  const isVerified = profile?.status === "active" || profile?.is_verified === true;
+  const workflow = getEmployeeWorkflow(profile, cv, documents);
+  const isVerified = canAccessEmployeeId(profile, cv, documents);
+
+  if (!isVerified) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h1 className="text-2xl font-bold">Your digital ID is locked</h1>
+          <p className="mt-2 text-muted-foreground">Complete every verification step below before your official ID can be accessed.</p>
+        </div>
+        <div className="space-y-3">
+          {workflow.map((step) => (
+            <div key={step.key} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+              <div><p className="font-medium">{step.label}</p><p className="text-sm text-muted-foreground">{step.status}</p></div>
+              {!step.complete && step.href !== "/employee" && <Link href={step.href}><Button variant="outline" size="sm">Continue</Button></Link>}
+              {step.complete && <ShieldCheck className="h-5 w-5 text-primary" />}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">

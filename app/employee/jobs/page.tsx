@@ -92,19 +92,22 @@ export default function EmployeeJobsPage() {
   const openApplication = async (job: Job) => {
     setSelectedJob(job);
     if (user) {
-      const draft = await recruitment.getApplicationDraft(job.id, user.id);
-      void recruitment.saveApplicationDraft(
-        job.id,
-        user.id,
-        draft?.cover_note || "",
-      );
+      try {
+        const draft = await recruitment.getApplicationDraft(job.id, user.id);
+        if (draft) setMessage("Draft restored. You can submit when ready.");
+      } catch {
+        setMessage("Application opened. Your draft could not be loaded, but you can still submit.");
+      }
     }
-    setMessage("");
+    setMessage((current) => current || "");
   };
 
   const apply = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedJob || !user || applying) return;
+
+    const form = event.currentTarget;
+    const note = String(new FormData(form).get("cover_note") || "");
 
     try {
       setApplying(true);
@@ -118,13 +121,13 @@ export default function EmployeeJobsPage() {
               .maybeSingle()
           ).data
         : getEmployeeProfile(user.id);
+      if (isSupabaseConfigured() && !profile) {
+        throw new Error("Your employee profile could not be loaded. Please complete your profile, then try again.");
+      }
       if (!profile?.gender || !profile?.date_of_birth || !profile?.emergency_contact_name || !profile?.emergency_contact_relationship || !profile?.emergency_contact_phone) {
         setMessage("Update your gender, date of birth, and complete emergency contact information in your profile before applying.");
         return;
       }
-      const note = String(
-        new FormData(event.currentTarget).get("cover_note") || "",
-      );
       await recruitment.apply(selectedJob, user.id, profile, note);
       try {
         await recruitment.deleteApplicationDraft(selectedJob.id, user.id);
