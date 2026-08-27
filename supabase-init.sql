@@ -290,8 +290,12 @@ CREATE TABLE IF NOT EXISTS documents (
   status text DEFAULT 'pending',
   uploaded_at timestamptz DEFAULT now(),
   reviewed_at timestamptz,
-  review_note text
+  review_note text,
+  holder_type text NOT NULL DEFAULT 'employee' CHECK (holder_type IN ('employee','collateral_relative')),
+  relative_name text
 );
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS holder_type text NOT NULL DEFAULT 'employee';
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS relative_name text;
 
 -- Avatars / logos mapping (optional, storage handled separately)
 CREATE TABLE IF NOT EXISTS avatars (

@@ -92,19 +92,24 @@ export default function AdminEmployeeDetailPage() {
 
     try {
       const supabase = createClient();
-      const { error: updateError } = await supabase
+      const reviewer = (await supabase.auth.getUser()).data.user;
+      if (!reviewer) throw new Error("Your admin session has expired. Please sign in again.");
+      const { data: updatedProfile, error: updateError } = await supabase
         .from("profiles")
         .update({
           status: newStatus,
           status_note: statusNote,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: (await supabase.auth.getUser()).data.user?.id,
+          reviewed_by: reviewer.id,
         })
-        .eq("id", employee.id);
+        .eq("id", employee.id)
+        .select("id,status,status_note,reviewed_at,reviewed_by")
+        .maybeSingle();
 
       if (updateError) throw updateError;
+      if (!updatedProfile) throw new Error("Approval was not saved. Confirm you are an active admin and refresh the page.");
 
-      setEmployee({ ...employee, status: newStatus });
+      setEmployee({ ...employee, ...updatedProfile });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {
@@ -172,17 +177,22 @@ export default function AdminEmployeeDetailPage() {
     try {
       const supabase = createClient();
       const { data: reviewer } = await supabase.auth.getUser();
-      const { error: updateError } = await supabase
+      if (!reviewer.user) throw new Error("Your admin session has expired. Please sign in again.");
+      const { data: updatedCv, error: updateError } = await supabase
         .from("employee_cvs")
         .update({
           status: newStatus,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: reviewer.user?.id,
+          reviewed_by: reviewer.user.id,
           review_note: statusNote,
         })
-        .eq("employee_id", params.id as string);
+        .eq("employee_id", params.id as string)
+        .eq("status", "submitted")
+        .select("employee_id,status,review_note,reviewed_at")
+        .maybeSingle();
       if (updateError) throw updateError;
-      setCv({ ...cv, status: newStatus, review_note: statusNote });
+      if (!updatedCv) throw new Error("CV approval was not saved. Confirm you are an active admin and the CV is still submitted.");
+      setCv({ ...cv, ...updatedCv });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
     } finally {

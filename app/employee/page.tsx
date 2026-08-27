@@ -10,6 +10,7 @@ import Image from "next/image";
 
 import { CreditCard, ShieldCheck, ArrowRight, Clock } from "lucide-react";
 import { formatEmployeeId } from "@/lib/employee-id";
+import { getEmployeeWorkflow } from "@/lib/employee-workflow";
 
 export default function EmployeeDashboard() {
   const t = useTranslations();
@@ -18,6 +19,8 @@ export default function EmployeeDashboard() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [completeness, setCompleteness] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [cv, setCv] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -63,6 +66,12 @@ export default function EmployeeDashboard() {
       if (employeeData) {
         calculateCompleteness(employeeData);
       }
+      const [{ data: cvData }, { data: documentData }] = await Promise.all([
+        supabase.from("employee_cvs").select("status").eq("employee_id", user.id).maybeSingle(),
+        supabase.from("documents").select("document_type,holder_type,status").eq("owner_id", user.id),
+      ]);
+      setCv(cvData);
+      setDocuments(documentData || []);
 
       setLoading(false);
     };
@@ -90,7 +99,9 @@ export default function EmployeeDashboard() {
     return <div>{t("common.loading")}</div>;
   }
 
-  const isVerified = profile?.status === "active" || profile?.is_verified === true;
+  const workflow = getEmployeeWorkflow(profile, cv, documents);
+  const isVerified = workflow.every((step) => step.complete);
+  const completedSteps = workflow.filter((step) => step.complete).length;
   const idNumber = formatEmployeeId(profile?.id_number, profile?.email || profile?.id);
 
   return (
@@ -126,6 +137,17 @@ export default function EmployeeDashboard() {
         ) : null}
       </div>
 
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div><h2 className="text-lg font-bold">Your verification journey</h2><p className="text-sm text-muted-foreground">{completedSteps} of {workflow.length} steps complete</p></div>
+          <span className="text-2xl font-bold text-primary">{Math.round((completedSteps / workflow.length) * 100)}%</span>
+        </div>
+        <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(completedSteps / workflow.length) * 100}%` }} /></div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {workflow.map((step) => <Link key={step.key} href={step.href} className="rounded-xl border border-border p-3 transition hover:border-primary"><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium">{step.label}</span><span className="text-xs text-muted-foreground">{step.status}</span></div></Link>)}
+        </div>
+      </section>
+
       {/* ID Card Banner Widget */}
       <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-4">
@@ -155,13 +177,13 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        <Link href="/employee/id-card">
-          <Button variant="default" className="gap-2 bg-[#004838] hover:bg-[#00382b] text-white shrink-0">
+        {isVerified ? <Link href="/employee/id-card">
+          <Button variant="default" className="gap-2 shrink-0">
             <CreditCard className="h-4 w-4" />
             {isVerified ? "Download ID Card" : "View ID Badge"}
             <ArrowRight className="h-4 w-4" />
           </Button>
-        </Link>
+        </Link> : <Button variant="outline" disabled className="shrink-0"><Clock className="h-4 w-4" />Complete verification</Button>}
       </div>
 
       {/* Profile Status */}

@@ -23,6 +23,8 @@ export default function EmployeeDocumentsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState('')
+  const [holderType, setHolderType] = useState('employee')
+  const [relativeName, setRelativeName] = useState('')
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -86,6 +88,8 @@ export default function EmployeeDocumentsPage() {
           {
             owner_id: user.id,
             document_type: selectedType,
+            holder_type: holderType,
+            relative_name: holderType === 'collateral_relative' ? relativeName.trim() : null,
             file_name: file.name,
             file_path: filePath,
             file_size: file.size,
@@ -138,6 +142,14 @@ export default function EmployeeDocumentsPage() {
         <h3 className="font-semibold">{t('documents.uploadDocument')}</h3>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Document belongs to</label>
+            <select value={holderType} onChange={(e) => setHolderType(e.target.value)} className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" disabled={uploading}>
+              <option value="employee">Me (employee)</option>
+              <option value="collateral_relative">My collateral relative</option>
+            </select>
+            {holderType === 'collateral_relative' && <input value={relativeName} onChange={(e) => setRelativeName(e.target.value)} placeholder="Relative's full name" className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" disabled={uploading} required />}
+          </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('documents.documentType')}</label>
             <select
@@ -200,6 +212,7 @@ export default function EmployeeDocumentsPage() {
                   <p className="font-medium">{doc.file_name}</p>
                   <div className="flex gap-4 text-sm text-muted-foreground">
                     <span>{t(`taxonomy.doc_${doc.document_type}`)}</span>
+                    <span>{doc.holder_type === 'collateral_relative' ? `Collateral relative${doc.relative_name ? `: ${doc.relative_name}` : ''}` : 'Employee document'}</span>
                     <span>{t('documents.status')}: {t(`taxonomy.doc_status_${doc.status}`)}</span>
                     <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>
                   </div>
