@@ -106,6 +106,9 @@ export default function EmployeeJobsPage() {
     event.preventDefault();
     if (!selectedJob || !user || applying) return;
 
+    const form = event.currentTarget;
+    const note = String(new FormData(form).get("cover_note") || "");
+
     try {
       setApplying(true);
       setMessage("");
@@ -125,9 +128,6 @@ export default function EmployeeJobsPage() {
         setMessage("Update your gender, date of birth, and complete emergency contact information in your profile before applying.");
         return;
       }
-      const note = String(
-        new FormData(event.currentTarget).get("cover_note") || "",
-      );
       await recruitment.apply(selectedJob, user.id, profile, note);
       try {
         await recruitment.deleteApplicationDraft(selectedJob.id, user.id);
