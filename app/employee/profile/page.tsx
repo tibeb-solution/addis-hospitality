@@ -59,18 +59,21 @@ export default function EmployeeProfilePage() {
       setUser(user);
 
       // Load employee profile
-      const { data } = await supabase
+      const { data, error: profileError } = await supabase
         .from("employee_profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) throw profileError;
 
       if (!data) {
-        const { data: created } = await supabase
+        const { data: created, error: createError } = await supabase
           .from("employee_profiles")
-          .insert([{ id: user.id }])
+          .upsert([{ id: user.id, full_name: user.user_metadata?.full_name || "", email: user.email || "" }])
           .select()
           .single();
+        if (createError) throw createError;
         setProfile(created || { id: user.id });
       } else {
         setProfile(data);
@@ -206,6 +209,39 @@ export default function EmployeeProfilePage() {
         .eq("id", user.id);
 
       if (accountError) throw accountError;
+
+      // Keep the generated CV in sync with profile fields used by its header.
+      const { data: existingCv, error: cvLoadError } = await supabase
+        .from("employee_cvs")
+        .select("data,status")
+        .eq("employee_id", user.id)
+        .maybeSingle();
+      if (cvLoadError) throw cvLoadError;
+      const currentCv = existingCv?.data || {};
+      const syncedCv = {
+        ...currentCv,
+        contact: {
+          ...(currentCv.contact || {}),
+          fullName: savedProfile?.full_name || profile.full_name || user.user_metadata?.full_name || "",
+          email: user.email || profile.email || "",
+          phone: updates.phone,
+          title: updates.desired_position,
+          address: [updates.residence_area, updates.residence_city].filter(Boolean).join(", "),
+        },
+        personal: {
+          ...(currentCv.personal || {}),
+          dateOfBirth: updates.date_of_birth || "",
+          gender: updates.gender,
+        },
+        summary: updates.bio,
+        languages: languages.join(", "),
+        skills: Array.isArray(savedProfile?.skills) ? savedProfile.skills.join(", ") : savedProfile?.skills || "",
+      };
+      const { error: cvSyncError } = await supabase.from("employee_cvs").upsert(
+        { employee_id: user.id, data: syncedCv },
+        { onConflict: "employee_id" },
+      );
+      if (cvSyncError) throw cvSyncError;
 
       setProfile(savedProfile || { ...profile, ...updates });
       setSuccess("Profile saved successfully.");

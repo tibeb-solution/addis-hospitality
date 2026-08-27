@@ -34,17 +34,19 @@ export default function EmployeeDashboard() {
         return;
       }
 
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+      if (profileError) throw profileError;
 
-      const { data: employeeData } = await supabase
+      const { data: employeeData, error: employeeError } = await supabase
         .from("employee_profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+      if (employeeError) throw employeeError;
 
       const resolvedStatus = profileData?.status || employeeData?.status || "active";
       const merged = {

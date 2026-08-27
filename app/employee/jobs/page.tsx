@@ -30,16 +30,22 @@ export default function EmployeeJobsPage() {
   const [genderFilter, setGenderFilter] = useState("");
 
   const refresh = async () => {
-    const {
-      data: { user: authUser },
-    } = await createClient().auth.getUser();
-    const current = isSupabaseConfigured() ? authUser : getCurrentUser();
-    setUser(current);
-    const currentProfile = current
-      ? isSupabaseConfigured()
-        ? (await createClient().from("employee_profiles").select("*").eq("id", current.id).maybeSingle()).data
-        : getEmployeeProfile(current.id)
-      : null;
+    try {
+      const {
+        data: { user: authUser },
+      } = await createClient().auth.getUser();
+      const current = isSupabaseConfigured() ? authUser : getCurrentUser();
+      setUser(current);
+      let currentProfile = current ? getEmployeeProfile(current.id) : null;
+      if (current && isSupabaseConfigured()) {
+        const { data, error } = await createClient()
+          .from("employee_profiles")
+          .select("*")
+          .eq("id", current.id)
+          .maybeSingle();
+        if (error) throw error;
+        currentProfile = data;
+      }
 
     const [
       availableJobs,
@@ -81,6 +87,9 @@ export default function EmployeeJobsPage() {
     );
     setDrafts(allDrafts);
     setRatings(allRatings);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to load jobs.");
+    }
   };
 
   useEffect(() => {

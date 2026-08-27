@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   role text NOT NULL DEFAULT 'employee',
   full_name text,
   phone text,
+  id_number text UNIQUE,
   status text DEFAULT 'pending',
   email_verified boolean DEFAULT false,
   created_at timestamptz DEFAULT now(),
@@ -20,7 +21,14 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- Production auth link. Supabase Auth owns credentials; profiles stores app data only.
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS auth_user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS id_number text;
 ALTER TABLE profiles DROP COLUMN IF EXISTS password;
+
+UPDATE public.profiles
+SET id_number = 'AHS-001-' || lpad((100 + (abs(hashtext(id::text)) % 900))::text, 3, '0') || '-' || extract(year FROM created_at)::text
+WHERE id_number IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_id_number ON public.profiles (id_number);
 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS trigger
@@ -34,7 +42,7 @@ BEGIN
     selected_role := NEW.raw_user_meta_data->>'role';
   END IF;
 
-  INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, status, email_verified)
+  INSERT INTO public.profiles (id, auth_user_id, email, role, full_name, phone, id_number, status, email_verified)
   VALUES (
     NEW.id,
     NEW.id,
@@ -42,6 +50,7 @@ BEGIN
     selected_role,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'name', ''),
     COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+    'AHS-001-' || lpad((100 + (abs(hashtext(NEW.id::text)) % 900))::text, 3, '0') || '-' || extract(year FROM now())::text,
     CASE WHEN selected_role = 'admin' THEN 'active' ELSE 'pending' END,
     true
   )

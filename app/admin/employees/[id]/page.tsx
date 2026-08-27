@@ -621,19 +621,30 @@ export default function AdminEmployeeDetailPage() {
           {cv.review_note && <p className="text-sm text-muted-foreground">Review note: {cv.review_note}</p>}
 
           {showCvModal && cv.data && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-              <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-card p-4 sm:p-6 shadow-2xl border border-border">
-                <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
+            <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-xs">
+              <div className="flex items-center justify-between gap-4 border-b border-border bg-card px-4 py-3 shadow-sm sm:px-6">
+                <div>
                   <h4 className="font-bold text-lg">Branded CV Preview</h4>
-                  <button
-                    onClick={() => setShowCvModal(false)}
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                    aria-label="Close modal"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
                 </div>
-                <div className="overflow-x-auto pb-4">
+                <div className="flex items-center gap-2">
+                  {cv.status === "submitted" && (
+                    <>
+                      <Button disabled={updating || !accountVerified || !idVerified} onClick={() => void handleCvStatus("approved")}>
+                        Approve CV
+                      </Button>
+                      <Button disabled={updating || !accountVerified || !idVerified} variant="destructive" onClick={() => void handleCvStatus("rejected")}>
+                        Reject CV
+                      </Button>
+                    </>
+                  )}
+                  <Button type="button" variant="outline" onClick={() => setShowCvModal(false)}>
+                    <X className="mr-1 h-4 w-4" />
+                    Back to review
+                  </Button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+                <div className="mx-auto w-full max-w-5xl">
                   <EmployeeCvPreview cv={cv.data} avatarUrl={avatarUrl} />
                 </div>
               </div>
