@@ -120,7 +120,7 @@ export default function EmployeeCvPreview({
       >
         <div className="relative aspect-[2.35/1] w-[62%] opacity-[0.07]">
           <Image
-            src="/logo.png"
+            src="/cv-logo.png"
             alt="Addis Hospitality Watermark"
             fill
             className="object-contain"
@@ -146,7 +146,7 @@ export default function EmployeeCvPreview({
           <div className="flex items-center shrink-0">
             <div className="relative h-12 w-32 sm:h-14 sm:w-36 rounded-md overflow-hidden">
               <Image
-                src="/logo.png"
+                src="/cv-logo.png"
                 alt="Addis Hospitality Service"
                 fill
                 className="object-contain object-left"
@@ -432,7 +432,7 @@ export default function EmployeeCvPreview({
         <div className="flex items-end justify-between gap-4">
           <div className="flex-1 text-center space-y-0.5">
             <p className="text-[12px] italic text-black font-serif">
-              Professional CV Sample | Addis Hospitality Solutions PLC
+              Professional CV | Addis Hospitality Solutions PLC
             </p>
             <p className="text-[11px] italic text-black font-serif">
               Visual & Verbal Identity Addis hospitality Service
