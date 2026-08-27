@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   getCurrentUser,
@@ -167,6 +168,7 @@ function Section({
 
 export default function EmployeeCvPage() {
   const router = useRouter();
+  const previewOnly = usePathname() === "/employee/cv";
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [cv, setCv] = useState<CvData | null>(null);
@@ -383,8 +385,9 @@ export default function EmployeeCvPage() {
             My CV
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Complete each section, preview your CV, then submit it for admin
-            review.
+            {previewOnly
+              ? "Your profile information generates this CV automatically."
+              : "Complete your CV details from your profile, preview it here, then submit it for admin review."}
           </p>
         </div>
         <span
@@ -412,7 +415,7 @@ export default function EmployeeCvPage() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(420px,760px)] xl:items-start">
-        <form
+          {!previewOnly && <form
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
             void save();
@@ -891,13 +894,13 @@ export default function EmployeeCvPage() {
               Submit for review
             </Button>
           </div>
-        </form>
+        </form>}
 
-        <div className="space-y-4 xl:sticky xl:top-24">
+        <div className={`${previewOnly ? "xl:col-span-2" : ""} space-y-4 xl:sticky xl:top-24`}>
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Eye className="h-5 w-5 text-primary" />
-              Live preview
+              {previewOnly ? "My generated CV" : "Live preview"}
             </h2>
             {status === "approved" && (
               <Button size="sm" onClick={() => window.print()}>
@@ -906,6 +909,11 @@ export default function EmployeeCvPage() {
               </Button>
             )}
           </div>
+          {previewOnly && status !== "approved" && (
+            <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+              Download becomes available after admin approval.
+            </p>
+          )}
           <EmployeeCvPreview cv={cv} avatarUrl={avatarUrl} />
         </div>
       </div>

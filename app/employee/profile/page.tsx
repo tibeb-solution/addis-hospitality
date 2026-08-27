@@ -10,6 +10,7 @@ import { WORK_SECTORS, getPositionsForSector } from "@/lib/employee-positions";
 import PositionSearchSelect from "@/components/position-search-select";
 import LanguageMultiSelect from "@/components/language-multi-select";
 import { LANGUAGES } from "@/lib/languages";
+import EmployeeCvPage from "@/app/employee/cv/page";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -627,6 +628,15 @@ export default function EmployeeProfilePage() {
           </Button>
         </div>
       </form>
+      <section className="space-y-4 border-t border-border pt-8">
+        <div>
+          <h2 className="text-2xl font-bold">CV details</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Complete your CV information here. Your generated CV is available from the CV menu.
+          </p>
+        </div>
+        <EmployeeCvPage />
+      </section>
     </div>
   );
 }

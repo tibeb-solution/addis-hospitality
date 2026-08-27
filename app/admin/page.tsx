@@ -31,19 +31,18 @@ export default function AdminDashboard() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
 
-        const { count: empCount } = await supabase
-          .from("employee_profiles")
-          .select("id", { count: "exact", head: true });
-
-        const { count: compCount } = await supabase
-          .from("company_profiles")
-          .select("id", { count: "exact", head: true });
-
         const { data: profiles } = await supabase
           .from("profiles")
           .select(
             "id, email, full_name, role, status, email_verified, created_at",
           );
+
+        const empCount = (profiles || []).filter(
+          (profile: any) => profile.role === "employee",
+        ).length;
+        const compCount = (profiles || []).filter(
+          (profile: any) => profile.role === "company",
+        ).length;
 
         const [jobs, notifications, interviews, applications] = await Promise.all([
           recruitment.jobs(),

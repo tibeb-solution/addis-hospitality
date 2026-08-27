@@ -68,7 +68,7 @@ BEGIN
     )
     ON CONFLICT (id) DO UPDATE SET
       email = EXCLUDED.email;
-  ELSE
+  ELSIF selected_role = 'employee' THEN
     INSERT INTO public.employee_profiles (id, full_name, email)
     VALUES (
       NEW.id,
@@ -287,6 +287,17 @@ UPDATE public.employee_profiles ep
 SET email = p.email
 FROM public.profiles p
 WHERE ep.id = p.id AND (ep.email IS NULL OR ep.email = '');
+
+-- A manually created admin Auth user may have received an employee/company
+-- detail row before its profiles.role was changed to admin. Remove those
+-- incompatible rows; the parent profiles row remains the account record.
+DELETE FROM public.employee_profiles ep
+USING public.profiles p
+WHERE ep.id = p.id AND p.role = 'admin';
+
+DELETE FROM public.company_profiles cp
+USING public.profiles p
+WHERE cp.id = p.id AND p.role = 'admin';
 
 -- Documents uploaded by users
 CREATE TABLE IF NOT EXISTS documents (
