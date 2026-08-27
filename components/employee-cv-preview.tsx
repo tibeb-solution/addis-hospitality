@@ -113,12 +113,12 @@ export default function EmployeeCvPreview({
       id="cv-printable-document"
       className="relative mx-auto min-h-[1100px] w-full max-w-[820px] overflow-hidden bg-white text-black shadow-2xl transition-all print:m-0 print:w-full print:max-w-none print:shadow-none font-sans"
     >
-      {/* Background Watermark */}
+      {/* Horizontal brand watermark */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none z-0"
       >
-        <div className="relative w-[460px] h-[460px] opacity-[0.04] -rotate-12">
+        <div className="relative aspect-[2.35/1] w-[62%] opacity-[0.07]">
           <Image
             src="/logo.png"
             alt="Addis Hospitality Watermark"
