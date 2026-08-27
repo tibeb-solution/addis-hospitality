@@ -418,7 +418,7 @@ export default function EmployeeCvPage() {
           {!previewOnly && <form
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
-            void save();
+            void save("submitted");
           }}
           className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-6"
         >
@@ -880,20 +880,17 @@ export default function EmployeeCvPage() {
             <p className="rounded-md bg-muted p-3 text-sm">{message}</p>
           )}
 
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" variant="outline" disabled={saving}>
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Save draft
-            </Button>
-            <Button
-              type="button"
-              disabled={saving || !isComplete || status === "submitted"}
-              onClick={() => void save("submitted")}
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Submit for review
-            </Button>
-          </div>
+          {!previewOnly && (
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="submit"
+                disabled={saving || !isComplete || status === "submitted"}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Save CV and send for review
+              </Button>
+            </div>
+          )}
         </form>}
 
         <div className={`${previewOnly ? "xl:col-span-2" : ""} space-y-4 xl:sticky xl:top-24`}>
