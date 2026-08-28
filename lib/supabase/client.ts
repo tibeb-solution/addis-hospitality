@@ -348,6 +348,23 @@ const tabAuthCookies = {
         });
       }
     }
+
+    // OAuth callbacks set the initial session as browser cookies on the
+    // server. Import those cookies into this tab before using its session store.
+    if (cookies.length === 0) {
+      document.cookie.split(";").forEach((entry) => {
+        const separator = entry.indexOf("=");
+        if (separator < 0) return;
+
+        const name = entry.slice(0, separator).trim();
+        if (!name.startsWith("sb-") || name.endsWith("-code-verifier")) return;
+
+        const value = decodeURIComponent(entry.slice(separator + 1));
+        cookies.push({ name, value });
+        window.sessionStorage.setItem(`${TAB_AUTH_STORAGE_PREFIX}${name}`, value);
+      });
+    }
+
     return cookies;
   },
   setAll(cookies: Array<{ name: string; value: string; options?: { maxAge?: number } }>) {
