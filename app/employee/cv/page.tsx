@@ -166,7 +166,7 @@ function Section({
   );
 }
 
-export default function EmployeeCvPage() {
+export default function EmployeeCvPage({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const previewOnly = usePathname() === "/employee/cv";
   const [profile, setProfile] = useState<any>(null);
@@ -377,7 +377,7 @@ export default function EmployeeCvPage() {
   if (loading || !cv) return <div>{"Loading..."}</div>;
 
   return (
-    <div className="space-y-8">
+    <div className={embedded ? "min-w-0 space-y-6" : "space-y-8"}>
       <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold">
@@ -414,7 +414,7 @@ export default function EmployeeCvPage() {
         </span>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(420px,760px)] xl:items-start">
+        <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,760px)] xl:items-start">
           {!previewOnly && <form
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
@@ -893,7 +893,7 @@ export default function EmployeeCvPage() {
           )}
         </form>}
 
-        <div className={`${previewOnly ? "xl:col-span-2" : ""} space-y-4 xl:sticky xl:top-24`}>
+        <div className={`${previewOnly ? "xl:col-span-2" : ""} min-w-0 space-y-4 ${embedded ? "" : "xl:sticky xl:top-24"}`}>
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Eye className="h-5 w-5 text-primary" />
