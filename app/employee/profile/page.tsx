@@ -10,7 +10,6 @@ import { WORK_SECTORS, getPositionsForSector } from "@/lib/employee-positions";
 import PositionSearchSelect from "@/components/position-search-select";
 import LanguageMultiSelect from "@/components/language-multi-select";
 import { LANGUAGES } from "@/lib/languages";
-import EmployeeCvPage from "@/app/employee/cv/page";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -40,7 +39,6 @@ export default function EmployeeProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [cropImage, setCropImage] = useState<string | null>(null);
-  const [tab, setTab] = useState("basic");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [positionChoice, setPositionChoice] = useState("");
   const [workSector, setWorkSector] = useState("");
@@ -153,6 +151,16 @@ export default function EmployeeProfilePage() {
     e.preventDefault();
     if (!user || !profile) return;
 
+    const firstInvalid = e.currentTarget.querySelector<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >(":invalid");
+    if (firstInvalid) {
+      setError("Please complete this required field before saving.");
+      firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+      firstInvalid.focus({ preventScroll: true });
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -264,9 +272,9 @@ export default function EmployeeProfilePage() {
         <h1 className="text-3xl font-bold">{t("employee.title")}</h1>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-8">
+      <form onSubmit={handleSave} noValidate className="profile-form space-y-8">
         {/* Avatar Section */}
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <div id="profile-section" className="bg-card border border-border rounded-lg p-6 space-y-4 scroll-mt-24">
           <h3 className="font-semibold">{t("employee.avatar")}</h3>
           <div className="flex items-center gap-6">
             {avatarUrl && (
@@ -305,9 +313,10 @@ export default function EmployeeProfilePage() {
           <h3 className="font-semibold">{t("employee.personalInfo")}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("auth.phone")}</label>
+              <label className="text-sm font-medium">{t("auth.phone")} <span className="text-destructive">*</span></label>
               <input
                 name="phone"
+                required
                 defaultValue={profile?.phone}
                 placeholder="+251..."
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -315,7 +324,7 @@ export default function EmployeeProfilePage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("employee.gender")}
+                {t("employee.gender")} <span className="text-destructive">*</span>
               </label>
               <select
                 name="gender"
@@ -335,7 +344,7 @@ export default function EmployeeProfilePage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("employee.dateOfBirth")}
+                {t("employee.dateOfBirth")} <span className="text-destructive">*</span>
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -365,7 +374,7 @@ export default function EmployeeProfilePage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Workplace type</label>
+              <label className="text-sm font-medium">Workplace type <span className="text-destructive">*</span></label>
               <select
                 name="work_sector"
                 value={workSector}
@@ -381,7 +390,7 @@ export default function EmployeeProfilePage() {
                   <option key={sector} value={sector}>{sector === "cafe" ? "Cafe" : "Restaurant"}</option>
                 ))}
               </select>
-              <label className="text-sm font-medium">{t("employee.desiredPosition")}</label>
+              <label className="text-sm font-medium">{t("employee.desiredPosition")} <span className="text-destructive">*</span></label>
               <PositionSearchSelect
                 name="desired_position"
                 value={positionChoice}
@@ -393,9 +402,10 @@ export default function EmployeeProfilePage() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t("employee.bio")}</label>
+            <label className="text-sm font-medium">{t("employee.bio")} <span className="text-destructive">*</span></label>
             <textarea
               name="bio"
+              required
               defaultValue={profile?.bio}
               placeholder={t("employee.bio")}
               rows={4}
@@ -412,7 +422,7 @@ export default function EmployeeProfilePage() {
                 ["residence_area", t("employee.area")],
               ].map(([name, label]) => (
                 <div key={name} className="space-y-2">
-                  <label className="text-sm font-medium">{label}</label>
+                  <label className="text-sm font-medium">{label} <span className="text-destructive">*</span></label>
                   <input
                     name={name}
                     defaultValue={profile?.[name] || ""}
@@ -432,10 +442,11 @@ export default function EmployeeProfilePage() {
                 ["emergency_contact_phone", t("employee.contactPhone")],
               ].map(([name, label]) => (
                 <div key={name} className="space-y-2">
-                  <label className="text-sm font-medium">{label}</label>
+                  <label className="text-sm font-medium">{label} <span className="text-destructive">*</span></label>
                   <input
                     name={name}
                     type={name === "emergency_contact_phone" ? "tel" : "text"}
+                    required
                     defaultValue={profile?.[name] || ""}
                     placeholder={name === "emergency_contact_name" ? "e.g. Abel Bekele" : name === "emergency_contact_relationship" ? "e.g. Brother" : "e.g. +251 911 234 567"}
                     className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -464,10 +475,11 @@ export default function EmployeeProfilePage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("employee.highestEducation")}
+                {t("employee.highestEducation")} <span className="text-destructive">*</span>
               </label>
               <select
                 name="highest_education"
+                required
                 defaultValue={profile?.highest_education}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
@@ -492,10 +504,11 @@ export default function EmployeeProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("employee.employmentType")}
+                {t("employee.employmentType")} <span className="text-destructive">*</span>
               </label>
               <select
                 name="employment_type"
+                required
                 defaultValue={profile?.employment_type}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
@@ -516,10 +529,11 @@ export default function EmployeeProfilePage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("employee.availability")}
+                {t("employee.availability")} <span className="text-destructive">*</span>
               </label>
               <select
                 name="availability"
+                required
                 defaultValue={profile?.availability}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
               >
@@ -628,15 +642,6 @@ export default function EmployeeProfilePage() {
           </Button>
         </div>
       </form>
-      <section className="space-y-4 border-t border-border pt-8">
-        <div>
-          <h2 className="text-2xl font-bold">CV details</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Complete your CV information here, then save it to send it for admin review. Your generated CV is available from the CV menu.
-          </p>
-        </div>
-        <EmployeeCvPage />
-      </section>
     </div>
   );
 }

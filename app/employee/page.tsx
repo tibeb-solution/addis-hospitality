@@ -219,7 +219,7 @@ export default function EmployeeDashboard() {
                 {completeness}% {t("common.complete")}
               </p>
             </div>
-            <Link href="/employee/profile" className="block">
+            <Link href="/employee/profile#profile-section" className="block">
               <Button variant="outline" className="w-full">
                 {t("common.edit")}
               </Button>

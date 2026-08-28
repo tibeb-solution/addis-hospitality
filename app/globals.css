@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.profile-form [required]:invalid {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 1px var(--destructive);
+}
+
 @theme inline {
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
