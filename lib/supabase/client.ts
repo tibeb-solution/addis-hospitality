@@ -332,55 +332,6 @@ function createLocalClient() {
 
 let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
-const TAB_AUTH_STORAGE_PREFIX = "addis-tab-auth:";
-
-const tabAuthCookies = {
-  getAll() {
-    if (typeof window === "undefined") return [];
-
-    const cookies: Array<{ name: string; value: string }> = [];
-    for (let index = 0; index < window.sessionStorage.length; index += 1) {
-      const key = window.sessionStorage.key(index);
-      if (key?.startsWith(TAB_AUTH_STORAGE_PREFIX)) {
-        cookies.push({
-          name: key.slice(TAB_AUTH_STORAGE_PREFIX.length),
-          value: window.sessionStorage.getItem(key) ?? "",
-        });
-      }
-    }
-
-    // OAuth callbacks set the initial session as browser cookies on the
-    // server. Import those cookies into this tab before using its session store.
-    if (cookies.length === 0) {
-      document.cookie.split(";").forEach((entry) => {
-        const separator = entry.indexOf("=");
-        if (separator < 0) return;
-
-        const name = entry.slice(0, separator).trim();
-        if (!name.startsWith("sb-") || name.endsWith("-code-verifier")) return;
-
-        const value = decodeURIComponent(entry.slice(separator + 1));
-        cookies.push({ name, value });
-        window.sessionStorage.setItem(`${TAB_AUTH_STORAGE_PREFIX}${name}`, value);
-      });
-    }
-
-    return cookies;
-  },
-  setAll(cookies: Array<{ name: string; value: string; options?: { maxAge?: number } }>) {
-    if (typeof window === "undefined") return;
-
-    cookies.forEach(({ name, value, options }) => {
-      const key = `${TAB_AUTH_STORAGE_PREFIX}${name}`;
-      if (options?.maxAge === 0 || !value) {
-        window.sessionStorage.removeItem(key);
-      } else {
-        window.sessionStorage.setItem(key, value);
-      }
-    });
-  },
-};
-
 export function isSupabaseConfigured() {
   return Boolean(
     (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://katuecvwrvqhgoidqsea.supabase.co") &&
@@ -396,7 +347,6 @@ export function createClient() {
     browserClient = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: tabAuthCookies },
     );
   }
 

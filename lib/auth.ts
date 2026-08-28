@@ -1,7 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { LocalUser } from "@/lib/local-storage";
+import { LocalUser, setCurrentUser } from "@/lib/local-storage";
 
 import { formatEmployeeId } from "@/lib/employee-id";
 
@@ -59,5 +59,6 @@ export async function syncAuthenticatedUser(
     created_at: profile?.created_at ?? authUser.created_at,
   };
 
+  setCurrentUser(localUser);
   return localUser;
 }
