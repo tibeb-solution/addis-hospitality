@@ -647,10 +647,10 @@ export default function EmployeeProfilePage() {
         <div>
           <h2 className="text-2xl font-bold">CV details</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Complete your CV information here, then save it to send it for admin review. Your generated CV is available from the CV menu.
+            Complete your CV information here, then save it to send it for admin review. Your generated CV preview is available from the CV menu.
           </p>
         </div>
-        <EmployeeCvPage embedded />
+        <EmployeeCvPage embedded showPreview={false} />
       </section>
     </div>
   );

@@ -166,7 +166,13 @@ function Section({
   );
 }
 
-export default function EmployeeCvPage({ embedded = false }: { embedded?: boolean }) {
+export default function EmployeeCvPage({
+  embedded = false,
+  showPreview = true,
+}: {
+  embedded?: boolean;
+  showPreview?: boolean;
+}) {
   const router = useRouter();
   const previewOnly = usePathname() === "/employee/cv";
   const [profile, setProfile] = useState<any>(null);
@@ -387,7 +393,9 @@ export default function EmployeeCvPage({ embedded = false }: { embedded?: boolea
           <p className="mt-1 text-sm text-muted-foreground">
             {previewOnly
               ? "Your profile information generates this CV automatically."
-              : "Complete your CV details from your profile, preview it here, then submit it for admin review."}
+              : showPreview
+                ? "Complete your CV details from your profile, preview it here, then submit it for admin review."
+                : "Complete your CV details here, then submit it for admin review."}
           </p>
         </div>
         <span
@@ -414,7 +422,7 @@ export default function EmployeeCvPage({ embedded = false }: { embedded?: boolea
         </span>
       </div>
 
-        <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,760px)] xl:items-start">
+        <div className={`grid min-w-0 gap-8 ${showPreview ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,760px)]" : "grid-cols-1"} xl:items-start`}>
           {!previewOnly && <form
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
@@ -893,7 +901,7 @@ export default function EmployeeCvPage({ embedded = false }: { embedded?: boolea
           )}
         </form>}
 
-        <div className={`${previewOnly ? "xl:col-span-2" : ""} min-w-0 space-y-4 ${embedded ? "" : "xl:sticky xl:top-24"}`}>
+        {showPreview && <div className={`${previewOnly ? "xl:col-span-2" : ""} min-w-0 space-y-4 ${embedded ? "" : "xl:sticky xl:top-24"}`}>
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Eye className="h-5 w-5 text-primary" />
@@ -912,7 +920,7 @@ export default function EmployeeCvPage({ embedded = false }: { embedded?: boolea
             </p>
           )}
           <EmployeeCvPreview cv={cv} avatarUrl={avatarUrl} />
-        </div>
+        </div>}
       </div>
     </div>
   );
