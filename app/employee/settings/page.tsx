@@ -20,6 +20,7 @@ import Link from "next/link";
 import PositionSearchSelect from "@/components/position-search-select";
 import LanguageMultiSelect from "@/components/language-multi-select";
 import { LANGUAGES } from "@/lib/languages";
+import EmployeeCvPage from "@/app/employee/cv/page";
 
 function getAge(dateOfBirth: string): number | null {
   if (!dateOfBirth) return null;
@@ -871,6 +872,17 @@ export default function EmployeeSettings() {
               Change Password
             </Button>
           </form>
+        </div>
+
+        {/* CV Section */}
+        <div className="space-y-4 border-t border-border pt-8">
+          <div>
+            <h2 className="text-2xl font-bold">CV details</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Complete your CV information here, then save it to send it for admin review. Your generated CV preview is available from the CV menu.
+            </p>
+          </div>
+          <EmployeeCvPage embedded showPreview={false} />
         </div>
       </div>
     </div>

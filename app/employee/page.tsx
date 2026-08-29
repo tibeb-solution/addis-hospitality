@@ -65,15 +65,16 @@ export default function EmployeeDashboard() {
           .getPublicUrl(employeeData.avatar_url);
         setAvatarUrl(signed.publicUrl || "");
       }
-      if (employeeData) {
-        calculateCompleteness(employeeData);
-      }
       const [{ data: cvData }, { data: documentData }] = await Promise.all([
         supabase.from("employee_cvs").select("status").eq("employee_id", user.id).maybeSingle(),
         supabase.from("documents").select("document_type,holder_type,status").eq("owner_id", user.id),
       ]);
       setCv(cvData);
       setDocuments(documentData || []);
+      
+      if (employeeData) {
+        calculateCompleteness(employeeData, cvData);
+      }
 
       setLoading(false);
     };
@@ -81,8 +82,8 @@ export default function EmployeeDashboard() {
     loadProfile();
   }, [router]);
 
-  const calculateCompleteness = (data: any) => {
-    const fields = [
+  const calculateCompleteness = (data: any, cvData: any) => {
+    const profileFields = [
       data.bio,
       data.phone,
       data.highest_education,
@@ -92,8 +93,11 @@ export default function EmployeeDashboard() {
       data.availability,
       data.willing_to_relocate !== null,
     ];
-    const completed = fields.filter(Boolean).length;
-    const percentage = (completed / fields.length) * 100;
+    const cvSubmitted = cvData?.status === "approved" || cvData?.status === "submitted";
+    
+    const allFields = [...profileFields, cvSubmitted];
+    const completed = allFields.filter(Boolean).length;
+    const percentage = (completed / allFields.length) * 100;
     setCompleteness(Math.round(percentage));
   };
 
