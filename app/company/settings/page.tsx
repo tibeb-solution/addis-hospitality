@@ -32,6 +32,7 @@ export default function CompanySettings() {
     website: "",
     contact_person: "",
     contact_phone: "",
+    contact_email: "",
     region: "",
     sub_city: "",
     address: "",
@@ -66,6 +67,7 @@ export default function CompanySettings() {
           website: profile?.website || "",
           contact_phone: profile?.contact_phone || "",
           contact_person: profile?.contact_person || "",
+          contact_email: profile?.contact_email || "",
           region: profile?.region || "",
           sub_city: profile?.sub_city || "",
           address: profile?.address || "",
@@ -93,6 +95,7 @@ export default function CompanySettings() {
       website: profile?.website || "",
       contact_phone: profile?.contact_phone || currentUser.phone || "",
       contact_person: profile?.contact_person || currentUser.full_name || "",
+      contact_email: profile?.contact_email || "",
       region: profile?.region || "",
       sub_city: profile?.sub_city || "",
       address: profile?.address || "",
@@ -112,6 +115,7 @@ export default function CompanySettings() {
       website: formData.website,
       contact_phone: formData.contact_phone,
       contact_person: formData.contact_person,
+      contact_email: formData.contact_email,
       region: formData.region,
       sub_city: formData.sub_city,
       address: formData.address,
@@ -352,7 +356,7 @@ export default function CompanySettings() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Contact Person
@@ -378,6 +382,21 @@ export default function CompanySettings() {
                   placeholder="e.g. +251 911 234 567"
                   onChange={(e) =>
                     setFormData({ ...formData, contact_phone: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Contact Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.contact_email}
+                  placeholder="e.g. contact@company.com"
+                  onChange={(e) =>
+                    setFormData({ ...formData, contact_email: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />

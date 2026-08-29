@@ -84,6 +84,7 @@ export default function SideNav({
           },
           { href: "/admin/jobs", label: "Job Approvals", icon: FileText },
           { href: "/admin/audit", label: t("admin.auditLog"), icon: Archive },
+          { href: "/admin/settings", label: t("nav.settings"), icon: Settings },
         ]
       : role === "employee"
         ? [
@@ -113,6 +114,11 @@ export default function SideNav({
               label: t("nav.documents"),
               icon: FileText,
             },
+            {
+              href: "/employee/settings",
+              label: t("nav.settings"),
+              icon: Settings,
+            },
           ]
         : [
             {
@@ -135,6 +141,11 @@ export default function SideNav({
               href: "/company/documents",
               label: t("nav.documents"),
               icon: Archive,
+            },
+            {
+              href: "/company/settings",
+              label: t("nav.settings"),
+              icon: Settings,
             },
           ];
 
@@ -242,24 +253,8 @@ export default function SideNav({
         </ul>
       </nav>
 
-      {/* Settings and Logout Buttons - Fixed at bottom */}
+      {/* Logout Button - Fixed at bottom */}
       <div className="space-y-2 border-t border-border pt-4 mt-auto">
-        <Link
-          href={
-            role === "employee"
-              ? "/employee/settings"
-              : role === "admin"
-                ? "/admin/settings"
-                : "/company/settings"
-          }
-          onClick={() => {
-            if (mobile) onClose?.();
-          }}
-          className="flex items-center gap-3 w-full rounded-md px-3 py-2.5 transition text-muted-foreground hover:bg-accent/10 hover:text-foreground text-sm font-medium"
-        >
-          <Settings className="h-4 w-4 shrink-0" />
-          <span>{t("nav.settings")}</span>
-        </Link>
         <button
           type="button"
           onClick={() => {

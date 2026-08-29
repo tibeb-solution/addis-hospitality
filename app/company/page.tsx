@@ -131,7 +131,7 @@ export default function CompanyDashboard() {
             <p className="text-sm text-muted-foreground">
               {t("company.legalInfo")}
             </p>
-            <Link href="/company/profile" className="block">
+            <Link href="/company/settings" className="block">
               <Button variant="outline" className="w-full">
                 {t("common.edit")}
               </Button>
