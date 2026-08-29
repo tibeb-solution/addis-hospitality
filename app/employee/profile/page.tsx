@@ -458,6 +458,8 @@ export default function EmployeeProfilePage() {
           </div>
         </div>
 
+
+
         {/* Job Preferences Section */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <h3 className="font-semibold">{t("employee.jobPreferences")}</h3>
