@@ -25,20 +25,19 @@ export default function EmployeeDocumentsPage() {
   const [selectedType, setSelectedType] = useState('')
   const [holderType, setHolderType] = useState('employee')
   const [relativeName, setRelativeName] = useState('')
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [frontFile, setFrontFile] = useState<File | null>(null)
   const [backFile, setBackFile] = useState<File | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const frontInputRef = useRef<HTMLInputElement>(null)
   const backInputRef = useRef<HTMLInputElement>(null)
 
-  const requiresBothSides = selectedType === 'national_id'
-  const existingIdSides = documents.filter(
+  const requiresBothSides = Boolean(selectedType)
+  const existingDocumentPair = documents.filter(
     (document) =>
-      document.document_type === 'national_id' &&
-      document.holder_type === holderType,
+      document.document_type === selectedType &&
+      document.holder_type === holderType &&
+      (holderType !== 'collateral_relative' || document.relative_name === relativeName.trim()),
   )
-  const identityUploadLocked = requiresBothSides && existingIdSides.length > 0
+  const documentUploadLocked = requiresBothSides && existingDocumentPair.length > 0
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -66,10 +65,8 @@ export default function EmployeeDocumentsPage() {
   }, [router])
 
   const resetSelectedFiles = () => {
-    setSelectedFile(null)
     setFrontFile(null)
     setBackFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
     if (frontInputRef.current) frontInputRef.current.value = ''
     if (backInputRef.current) backInputRef.current.value = ''
   }
@@ -89,12 +86,10 @@ export default function EmployeeDocumentsPage() {
 
   const handleDocumentUpload = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const files = requiresBothSides
-      ? [
-          { file: frontFile, side: 'front' },
-          { file: backFile, side: 'back' },
-        ]
-      : [{ file: selectedFile, side: null }]
+    const files = [
+      { file: frontFile, side: 'front' },
+      { file: backFile, side: 'back' },
+    ]
 
     if (!user || !selectedType || files.some(({ file }) => !file)) {
       setError(t('validation.required'))
@@ -109,8 +104,8 @@ export default function EmployeeDocumentsPage() {
       return
     }
 
-    if (identityUploadLocked) {
-      setError('This ID already has an upload. Delete both the front and back files before uploading a replacement.')
+    if (documentUploadLocked) {
+      setError('This document already has an upload. Delete both the front and back files before uploading a replacement.')
       return
     }
 
@@ -121,23 +116,25 @@ export default function EmployeeDocumentsPage() {
     try {
       const supabase = createClient()
       // Check the latest state too, so a second browser tab cannot add another pair.
-      if (requiresBothSides) {
-        const { data: existing, error: existingError } = await supabase
-          .from('documents')
-          .select('id')
-          .eq('owner_id', user.id)
-          .eq('holder_type', holderType)
-          .eq('document_type', 'national_id')
-        if (existingError) throw existingError
-        if (existing?.length) {
-          throw new Error('This ID already has an upload. Delete both the front and back files before uploading a replacement.')
-        }
+      let existingQuery = supabase
+        .from('documents')
+        .select('id')
+        .eq('owner_id', user.id)
+        .eq('holder_type', holderType)
+        .eq('document_type', selectedType)
+      existingQuery = holderType === 'collateral_relative'
+        ? existingQuery.eq('relative_name', relativeName.trim())
+        : existingQuery
+      const { data: existing, error: existingError } = await existingQuery
+      if (existingError) throw existingError
+      if (existing?.length) {
+        throw new Error('This document already has an upload. Delete both the front and back files before uploading a replacement.')
       }
 
       const uploadedFiles: { file: File; filePath: string; side: string | null }[] = []
       for (const { file, side } of files) {
         const selected = file!
-        const filePath = `${user.id}/${side ? `national-id-${side}-` : ''}${crypto.randomUUID()}-${selected.name}`
+        const filePath = `${user.id}/${selectedType}-${side}-${crypto.randomUUID()}-${selected.name}`
         const { error: storageError } = await supabase.storage
           .from('documents')
           .upload(filePath, selected, { upsert: false })
@@ -167,9 +164,7 @@ export default function EmployeeDocumentsPage() {
       setDocuments([...(newDocuments || []), ...documents])
       setSelectedType('')
       resetSelectedFiles()
-      setSuccess(requiresBothSides
-        ? 'Both sides were submitted successfully and are awaiting admin review.'
-        : 'File submitted successfully and is awaiting admin review.')
+      setSuccess('Both sides were submitted successfully and are awaiting admin review.')
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.serverError'))
     } finally {
@@ -177,47 +172,30 @@ export default function EmployeeDocumentsPage() {
     }
   }
 
-  const handleDeleteDocument = async (docId: string, filePath: string) => {
-    if (!confirm(t('admin.confirmAction'))) return
-
-    try {
-      const supabase = createClient()
-
-      // Delete record
-      const { error: storageError } = await supabase.storage.from('documents').remove([filePath])
-      if (storageError) throw storageError
-      const { error: deleteError } = await supabase.from('documents').delete().eq('id', docId)
-      if (deleteError) throw deleteError
-
-      setDocuments(documents.filter((d) => d.id !== docId))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('errors.serverError'))
-    }
-  }
-
-  const handleDeleteNationalIdPair = async (document: any) => {
-    const idPair = documents.filter(
+  const handleDeleteDocumentPair = async (document: any) => {
+    const documentPair = documents.filter(
       (item) =>
-        item.document_type === 'national_id' &&
-        item.holder_type === document.holder_type,
+        item.document_type === document.document_type &&
+        item.holder_type === document.holder_type &&
+        (item.holder_type !== 'collateral_relative' || item.relative_name === document.relative_name),
     )
 
-    if (!confirm('Delete both sides of this National ID? You can then upload a new front-and-back pair.')) return
+    if (!confirm('Delete both sides of this document? You can then upload a new front-and-back pair.')) return
 
     try {
       const supabase = createClient()
       const { error: storageError } = await supabase.storage
         .from('documents')
-        .remove(idPair.map((item) => item.file_path))
+        .remove(documentPair.map((item) => item.file_path))
       if (storageError) throw storageError
 
       const { error: deleteError } = await supabase
         .from('documents')
         .delete()
-        .in('id', idPair.map((item) => item.id))
+        .in('id', documentPair.map((item) => item.id))
       if (deleteError) throw deleteError
 
-      setDocuments(documents.filter((item) => !idPair.some((idDocument) => idDocument.id === item.id)))
+      setDocuments(documents.filter((item) => !documentPair.some((pairDocument) => pairDocument.id === item.id)))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.serverError'))
     }
@@ -263,7 +241,7 @@ export default function EmployeeDocumentsPage() {
 
           {requiresBothSides && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-              <p className="font-semibold">Upload both sides of the {holderType === 'collateral_relative' ? 'collateral relative’s' : 'National'} ID</p>
+              <p className="font-semibold">Upload both sides of the selected document for the {holderType === 'collateral_relative' ? 'representative' : 'employee'}</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
                 <li>Select one clear file for the front and one for the back.</li>
                 <li>You can submit this pair only once.</li>
@@ -272,11 +250,11 @@ export default function EmployeeDocumentsPage() {
             </div>
           )}
 
-          {identityUploadLocked ? (
+          {documentUploadLocked ? (
             <p className="rounded-lg border border-border bg-muted p-3 text-sm text-muted-foreground">
-              A National ID upload already exists for this {holderType === 'collateral_relative' ? 'collateral relative' : 'employee'}. Delete both sides from the list below to upload a replacement.
+              This document already has an upload for this {holderType === 'collateral_relative' ? 'representative' : 'employee'}. Delete both sides from the list below to upload a replacement.
             </p>
-          ) : requiresBothSides ? (
+          ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm font-medium">Front side
                 <input ref={frontInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setFrontFile(e.target.files?.[0] || null)} disabled={uploading} className="block w-full text-sm" />
@@ -285,14 +263,10 @@ export default function EmployeeDocumentsPage() {
                 <input ref={backInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setBackFile(e.target.files?.[0] || null)} disabled={uploading} className="block w-full text-sm" />
               </label>
             </div>
-          ) : (
-            <label className="space-y-2 text-sm font-medium">File
-              <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} disabled={uploading || !selectedType} className="block w-full text-sm" />
-            </label>
           )}
 
-          <Button type="submit" disabled={uploading || !selectedType || identityUploadLocked}>
-            {uploading ? t('common.loading') : requiresBothSides ? 'Upload both sides' : t('documents.uploadDocument')}
+          <Button type="submit" disabled={uploading || !selectedType || documentUploadLocked}>
+            {uploading ? t('common.loading') : 'Upload both sides'}
           </Button>
         </form>
 
@@ -342,11 +316,9 @@ export default function EmployeeDocumentsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => doc.document_type === 'national_id'
-                    ? handleDeleteNationalIdPair(doc)
-                    : handleDeleteDocument(doc.id, doc.file_path)}
+                  onClick={() => handleDeleteDocumentPair(doc)}
                 >
-                  {doc.document_type === 'national_id' ? 'Delete ID pair' : t('common.delete')}
+                  Delete document pair
                 </Button>
                 <button className="ml-2 text-sm text-primary underline" onClick={async () => {
                   const { data, error: signedError } = await createClient().storage.from('documents').createSignedUrl(doc.file_path, 3600)
