@@ -316,7 +316,6 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS holder_type text NOT NULL DEFAULT 'employee';
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS relative_name text;
-ALTER TABLE documents ADD COLUMN IF NOT EXISTS document_side text CHECK (document_side IN ('front', 'back'));
 
 -- Avatars / logos mapping (optional, storage handled separately)
 CREATE TABLE IF NOT EXISTS avatars (
@@ -331,10 +330,6 @@ CREATE TABLE IF NOT EXISTS avatars (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_status ON profiles (status);
 CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents (owner_id);
--- A National ID may have one front and one back per employee/collateral holder.
-CREATE UNIQUE INDEX IF NOT EXISTS documents_national_id_side_unique
-  ON documents (owner_id, holder_type, document_type, document_side)
-  WHERE document_type = 'national_id' AND document_side IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_employee_cvs_status ON employee_cvs (status);
 
 -- Recruitment workflow. Keep IDs tied to profiles.id so the same schema can

@@ -137,7 +137,7 @@ export default function EmployeeDocumentsPage() {
       const uploadedFiles: { file: File; filePath: string; side: string | null }[] = []
       for (const { file, side } of files) {
         const selected = file!
-        const filePath = `${user.id}/${crypto.randomUUID()}-${selected.name}`
+        const filePath = `${user.id}/${side ? `national-id-${side}-` : ''}${crypto.randomUUID()}-${selected.name}`
         const { error: storageError } = await supabase.storage
           .from('documents')
           .upload(filePath, selected, { upsert: false })
@@ -152,10 +152,9 @@ export default function EmployeeDocumentsPage() {
             document_type: selectedType,
             holder_type: holderType,
             relative_name: holderType === 'collateral_relative' ? relativeName.trim() : null,
-            file_name: file.name,
+            file_name: side ? `${side === 'front' ? 'Front' : 'Back'} - ${file.name}` : file.name,
             file_path: filePath,
             file_size: file.size,
-            document_side: side,
             status: 'pending',
           })))
         .select()
@@ -328,7 +327,8 @@ export default function EmployeeDocumentsPage() {
                   <p className="font-medium">{doc.file_name}</p>
                   <div className="flex gap-4 text-sm text-muted-foreground">
                     <span>{t(`taxonomy.doc_${doc.document_type}`)}</span>
-                    {doc.document_side && <span>{doc.document_side === 'front' ? 'Front side' : 'Back side'}</span>}
+                    {doc.file_name?.startsWith('Front - ') && <span>Front side</span>}
+                    {doc.file_name?.startsWith('Back - ') && <span>Back side</span>}
                     <span>{doc.holder_type === 'collateral_relative' ? `Collateral relative${doc.relative_name ? `: ${doc.relative_name}` : ''}` : 'Employee document'}</span>
                     <span>{t('documents.status')}: {t(`taxonomy.doc_status_${doc.status}`)}</span>
                     <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>
