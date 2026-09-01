@@ -253,6 +253,47 @@ export default function EmployeeCvPage({
     void load();
   }, [router]);
 
+  const handlePrintCv = () => {
+    if (!cv) return;
+
+    const printRoot = document.getElementById("cv-printable-document");
+    if (!printRoot) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open(
+      "",
+      "_blank",
+      "noopener,noreferrer,width=980,height=1400"
+    );
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const styles = `
+      <style>
+        @page { size: A4; margin: 10mm; }
+        html, body { margin: 0; padding: 0; background: #fff; }
+        body { font-family: Arial, sans-serif; }
+        * { box-sizing: border-box; }
+        img { max-width: 100%; }
+      </style>
+    `;
+
+    printWindow.document.write(
+      `<!doctype html><html><head><title>${cv.contact.fullName || "Employee CV"}</title>${styles}</head><body>${printRoot.outerHTML}</body></html>`
+    );
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+      setTimeout(() => printWindow.close(), 500);
+    }, 250);
+  };
+
   const selectedSkills = useMemo(() => {
     if (!cv?.skills) return [];
     if (cv.skills.includes("\n")) {
@@ -911,7 +952,7 @@ export default function EmployeeCvPage({
               <Button
                 size="sm"
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrintCv}
                 title="Open the print dialog to save your CV as a PDF"
               >
                 <Download className="mr-2 h-4 w-4" />
