@@ -471,15 +471,25 @@ nav a:hover::after {
     visibility: hidden;
   }
   .printable-id-card,
-  .printable-id-card * {
+  .printable-id-card *,
+  #cv-printable-document,
+  #cv-printable-document * {
     visibility: visible;
   }
-  .printable-id-card {
+  .printable-id-card,
+  #cv-printable-document {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+  }
+  .printable-id-card {
     display: flex !important;
     justify-content: center;
+  }
+  #cv-printable-document {
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
 }

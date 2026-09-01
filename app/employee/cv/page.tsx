@@ -908,9 +908,14 @@ export default function EmployeeCvPage({
               {previewOnly ? "My generated CV" : "Live preview"}
             </h2>
             {status === "approved" && (
-              <Button size="sm" onClick={() => window.print()}>
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => window.print()}
+                title="Open the print dialog to save your CV as a PDF"
+              >
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                Print / Save PDF
               </Button>
             )}
           </div>
