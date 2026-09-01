@@ -467,32 +467,43 @@ nav a:hover::after {
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   html,
   body {
     background: #fff !important;
-    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   body {
-    visibility: visible !important;
+    overflow: visible !important;
   }
 
   body > *:not(.printable-id-card):not(#cv-printable-document) {
     display: none !important;
-    visibility: hidden !important;
   }
 
   .printable-id-card,
   #cv-printable-document {
+    display: block !important;
     position: static !important;
     left: auto !important;
     top: auto !important;
-    display: block !important;
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
     box-shadow: none !important;
-    visibility: visible !important;
+    transform: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #cv-printable-document * {
+    color: inherit !important;
   }
 
   .printable-id-card {

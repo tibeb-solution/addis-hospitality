@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import html2canvas from "html2canvas";
 import { encodeCode128, formatEmployeeId } from "@/lib/employee-id";
-import { Download, RefreshCw, Printer, CheckCircle2, ShieldCheck, Mail, Phone, Hash } from "lucide-react";
+import {
+  Download,
+  RefreshCw,
+  Printer,
+  CheckCircle2,
+  ShieldCheck,
+  Mail,
+  Phone,
+  Hash,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface EmployeeIdCardProps {
@@ -29,19 +39,25 @@ export default function EmployeeIdCard({
 }: EmployeeIdCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const frontRef = useRef<HTMLDivElement | null>(null);
+  const backRef = useRef<HTMLDivElement | null>(null);
   const formattedId = formatEmployeeId(idNumber, email || fullName);
   const barcodePattern = encodeCode128(formattedId);
 
-  const displayPosition = (position && position.trim().length > 0)
-    ? position.toUpperCase()
-    : "HOSPITALITY PROFESSIONAL";
+  const displayPosition =
+    position && position.trim().length > 0
+      ? position.toUpperCase()
+      : "HOSPITALITY PROFESSIONAL";
 
-  const displayName = (fullName && fullName.trim().length > 0)
-    ? fullName.toUpperCase()
-    : "ADDIS EMPLOYEE";
+  const displayName =
+    fullName && fullName.trim().length > 0
+      ? fullName.toUpperCase()
+      : "ADDIS EMPLOYEE";
 
   // Canvas drawing function for high-res PNG export
-  const renderCardToCanvas = async (side: "front" | "back"): Promise<HTMLCanvasElement> => {
+  const renderCardToCanvas = async (
+    side: "front" | "back",
+  ): Promise<HTMLCanvasElement> => {
     const scale = 3; // 3x scale for crisp 300DPI export
     const width = 380 * scale;
     const height = 580 * scale;
@@ -86,7 +102,14 @@ export default function EmployeeIdCard({
       ctx.moveTo(0, 0);
       ctx.lineTo(width, 0);
       ctx.lineTo(width, 95 * scale);
-      ctx.bezierCurveTo(width * 0.75, 115 * scale, width * 0.25, 65 * scale, 0, 95 * scale);
+      ctx.bezierCurveTo(
+        width * 0.75,
+        115 * scale,
+        width * 0.25,
+        65 * scale,
+        0,
+        95 * scale,
+      );
       ctx.closePath();
       ctx.fill();
 
@@ -95,7 +118,14 @@ export default function EmployeeIdCard({
       ctx.lineWidth = 4 * scale;
       ctx.beginPath();
       ctx.moveTo(0, 95 * scale);
-      ctx.bezierCurveTo(width * 0.25, 65 * scale, width * 0.75, 115 * scale, width, 95 * scale);
+      ctx.bezierCurveTo(
+        width * 0.25,
+        65 * scale,
+        width * 0.75,
+        115 * scale,
+        width,
+        95 * scale,
+      );
       ctx.stroke();
 
       // Lanyard punch hole
@@ -157,10 +187,22 @@ export default function EmployeeIdCard({
       } else {
         ctx.fillStyle = "#94a3b8";
         ctx.beginPath();
-        ctx.arc(photoX + photoW / 2, photoY + photoH * 0.4, 30 * scale, 0, Math.PI * 2);
+        ctx.arc(
+          photoX + photoW / 2,
+          photoY + photoH * 0.4,
+          30 * scale,
+          0,
+          Math.PI * 2,
+        );
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(photoX + photoW / 2, photoY + photoH * 1.1, 55 * scale, 0, Math.PI * 2);
+        ctx.arc(
+          photoX + photoW / 2,
+          photoY + photoH * 1.1,
+          55 * scale,
+          0,
+          Math.PI * 2,
+        );
         ctx.fill();
       }
       ctx.restore();
@@ -190,7 +232,11 @@ export default function EmployeeIdCard({
       // Contact details
       ctx.fillStyle = "#334155";
       ctx.font = `${10 * scale}px 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillText(`Email: ${email}  •  Phone: ${phone}`, width / 2, 410 * scale);
+      ctx.fillText(
+        `Email: ${email}  •  Phone: ${phone}`,
+        width / 2,
+        410 * scale,
+      );
 
       // Draw Barcode
       const barY = 422 * scale;
@@ -212,7 +258,14 @@ export default function EmployeeIdCard({
       ctx.moveTo(0, height);
       ctx.lineTo(width, height);
       ctx.lineTo(width, height - 90 * scale);
-      ctx.bezierCurveTo(width * 0.7, height - 120 * scale, width * 0.3, height - 60 * scale, 0, height - 90 * scale);
+      ctx.bezierCurveTo(
+        width * 0.7,
+        height - 120 * scale,
+        width * 0.3,
+        height - 60 * scale,
+        0,
+        height - 90 * scale,
+      );
       ctx.closePath();
       ctx.fill();
 
@@ -221,7 +274,14 @@ export default function EmployeeIdCard({
       ctx.lineWidth = 4 * scale;
       ctx.beginPath();
       ctx.moveTo(0, height - 90 * scale);
-      ctx.bezierCurveTo(width * 0.3, height - 60 * scale, width * 0.7, height - 120 * scale, width, height - 90 * scale);
+      ctx.bezierCurveTo(
+        width * 0.3,
+        height - 60 * scale,
+        width * 0.7,
+        height - 120 * scale,
+        width,
+        height - 90 * scale,
+      );
       ctx.stroke();
 
       // Bottom Logo Text in white
@@ -230,8 +290,11 @@ export default function EmployeeIdCard({
       ctx.fillText("addis hospitality service", width / 2, height - 35 * scale);
       ctx.font = `${9 * scale}px 'Segoe UI', Roboto, sans-serif`;
       ctx.fillStyle = goldLight;
-      ctx.fillText("Official Verified Identity Badge", width / 2, height - 18 * scale);
-
+      ctx.fillText(
+        "Official Verified Identity Badge",
+        width / 2,
+        height - 18 * scale,
+      );
     } else {
       // BACK SIDE
       // 1. Top Teal Header
@@ -240,7 +303,14 @@ export default function EmployeeIdCard({
       ctx.moveTo(0, 0);
       ctx.lineTo(width, 0);
       ctx.lineTo(width, 100 * scale);
-      ctx.bezierCurveTo(width * 0.75, 120 * scale, width * 0.25, 75 * scale, 0, 100 * scale);
+      ctx.bezierCurveTo(
+        width * 0.75,
+        120 * scale,
+        width * 0.25,
+        75 * scale,
+        0,
+        100 * scale,
+      );
       ctx.closePath();
       ctx.fill();
 
@@ -249,7 +319,14 @@ export default function EmployeeIdCard({
       ctx.lineWidth = 4 * scale;
       ctx.beginPath();
       ctx.moveTo(0, 100 * scale);
-      ctx.bezierCurveTo(width * 0.25, 75 * scale, width * 0.75, 120 * scale, width, 100 * scale);
+      ctx.bezierCurveTo(
+        width * 0.25,
+        75 * scale,
+        width * 0.75,
+        120 * scale,
+        width,
+        100 * scale,
+      );
       ctx.stroke();
 
       // Lanyard punch hole
@@ -275,7 +352,11 @@ export default function EmployeeIdCard({
 
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `italic ${10 * scale}px 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillText("Visual & Verbal Identity Addis hospitality Service", width / 2, 80 * scale);
+      ctx.fillText(
+        "Visual & Verbal Identity Addis hospitality Service",
+        width / 2,
+        80 * scale,
+      );
 
       // Back Content: ABOUT AHS
       ctx.textAlign = "left";
@@ -288,12 +369,26 @@ export default function EmployeeIdCard({
       ctx.font = `${11 * scale}px 'Segoe UI', Roboto, sans-serif`;
       const p1 =
         "Addis Hospitality Solutions PLC (AHS) is a professional hospitality workforce solutions provider dedicated to connecting skilled and passionate individuals with leading restaurants, hotels, cafes, catering companies, event venues, and supermarkets.";
-      wrapText(ctx, p1, 24 * scale, 160 * scale, width - 48 * scale, 15 * scale);
+      wrapText(
+        ctx,
+        p1,
+        24 * scale,
+        160 * scale,
+        width - 48 * scale,
+        15 * scale,
+      );
 
       // Paragraph 2
       const p2 =
         "We believe in people, potential, and partnership. Together, we build a better hospitality industry.";
-      wrapText(ctx, p2, 24 * scale, 240 * scale, width - 48 * scale, 15 * scale);
+      wrapText(
+        ctx,
+        p2,
+        24 * scale,
+        240 * scale,
+        width - 48 * scale,
+        15 * scale,
+      );
 
       // 4 Bullet points
       const bullets = [
@@ -318,12 +413,22 @@ export default function EmployeeIdCard({
       // Authorized Signature line
       ctx.fillStyle = "#0f172a";
       ctx.font = `bold ${12 * scale}px 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillText("Authorized Signature  ___________________________", 24 * scale, 395 * scale);
+      ctx.fillText(
+        "Authorized Signature  ___________________________",
+        24 * scale,
+        395 * scale,
+      );
 
       // ID Badge Tag on back
       ctx.fillStyle = "#f1f5f9";
       ctx.beginPath();
-      ctx.roundRect(24 * scale, 415 * scale, width - 48 * scale, 26 * scale, 6 * scale);
+      ctx.roundRect(
+        24 * scale,
+        415 * scale,
+        width - 48 * scale,
+        26 * scale,
+        6 * scale,
+      );
       ctx.fill();
       ctx.fillStyle = "#004838";
       ctx.font = `bold ${11 * scale}px 'Segoe UI', Roboto, sans-serif`;
@@ -336,7 +441,14 @@ export default function EmployeeIdCard({
       ctx.moveTo(0, height);
       ctx.lineTo(width, height);
       ctx.lineTo(width, height - 90 * scale);
-      ctx.bezierCurveTo(width * 0.7, height - 110 * scale, width * 0.3, height - 70 * scale, 0, height - 90 * scale);
+      ctx.bezierCurveTo(
+        width * 0.7,
+        height - 110 * scale,
+        width * 0.3,
+        height - 70 * scale,
+        0,
+        height - 90 * scale,
+      );
       ctx.closePath();
       ctx.fill();
 
@@ -345,17 +457,32 @@ export default function EmployeeIdCard({
       ctx.lineWidth = 3 * scale;
       ctx.beginPath();
       ctx.moveTo(0, height - 90 * scale);
-      ctx.bezierCurveTo(width * 0.3, height - 70 * scale, width * 0.7, height - 110 * scale, width, height - 90 * scale);
+      ctx.bezierCurveTo(
+        width * 0.3,
+        height - 70 * scale,
+        width * 0.7,
+        height - 110 * scale,
+        width,
+        height - 90 * scale,
+      );
       ctx.stroke();
 
       // Footer notice text
       ctx.textAlign = "center";
       ctx.fillStyle = "#ffffff";
       ctx.font = `italic ${10 * scale}px 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillText("This card is the property of Addis Hospitality Solutions PLC.", width / 2, height - 42 * scale);
+      ctx.fillText(
+        "This card is the property of Addis Hospitality Solutions PLC.",
+        width / 2,
+        height - 42 * scale,
+      );
       ctx.font = `italic ${9.5 * scale}px 'Segoe UI', Roboto, sans-serif`;
       ctx.fillStyle = goldLight;
-      ctx.fillText("If found, please return to the nearest AHS office.", width / 2, height - 24 * scale);
+      ctx.fillText(
+        "If found, please return to the nearest AHS office.",
+        width / 2,
+        height - 24 * scale,
+      );
     }
 
     ctx.restore();
@@ -390,38 +517,67 @@ export default function EmployeeIdCard({
     ctx.fillText(line, x, currentY);
   }
 
+  const captureCardSide = async (
+    cardRef: React.RefObject<HTMLDivElement | null>,
+  ) => {
+    if (!cardRef.current) {
+      throw new Error("Card element not found");
+    }
+
+    const canvas = await html2canvas(cardRef.current, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      width: cardRef.current.scrollWidth,
+      height: cardRef.current.scrollHeight,
+    });
+
+    return canvas;
+  };
+
   // Download card as PNG
   const handleDownload = async (side: "front" | "back" | "both") => {
     try {
       setIsDownloading(true);
-      if (side === "front" || side === "back") {
-        const canvas = await renderCardToCanvas(side);
-        const dataUrl = canvas.toDataURL("image/png");
+
+      if (side === "front") {
+        const canvas = await captureCardSide(frontRef);
         const link = document.createElement("a");
-        link.download = `AHS_ID_${side.toUpperCase()}_${formattedId}.png`;
-        link.href = dataUrl;
+        link.download = `AHS_ID_FRONT_${formattedId}.png`;
+        link.href = canvas.toDataURL("image/png");
         link.click();
-      } else {
-        // Both sides side-by-side
-        const canvasFront = await renderCardToCanvas("front");
-        const canvasBack = await renderCardToCanvas("back");
+        return;
+      }
 
-        const combined = document.createElement("canvas");
-        const gap = 40;
-        combined.width = canvasFront.width * 2 + gap;
-        combined.height = canvasFront.height;
-        const ctx = combined.getContext("2d");
-        if (ctx) {
-          ctx.fillStyle = "#0f172a";
-          ctx.fillRect(0, 0, combined.width, combined.height);
-          ctx.drawImage(canvasFront, 0, 0);
-          ctx.drawImage(canvasBack, canvasFront.width + gap, 0);
+      if (side === "back") {
+        const canvas = await captureCardSide(backRef);
+        const link = document.createElement("a");
+        link.download = `AHS_ID_BACK_${formattedId}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        return;
+      }
 
-          const link = document.createElement("a");
-          link.download = `AHS_ID_COMPLETE_${formattedId}.png`;
-          link.href = combined.toDataURL("image/png");
-          link.click();
-        }
+      const canvasFront = await captureCardSide(frontRef);
+      const canvasBack = await captureCardSide(backRef);
+
+      const combined = document.createElement("canvas");
+      const gap = 40;
+      combined.width = canvasFront.width * 2 + gap;
+      combined.height = canvasFront.height;
+      const ctx = combined.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, combined.width, combined.height);
+        ctx.drawImage(canvasFront, 0, 0);
+        ctx.drawImage(canvasBack, canvasFront.width + gap, 0);
+
+        const link = document.createElement("a");
+        link.download = `AHS_ID_COMPLETE_${formattedId}.png`;
+        link.href = combined.toDataURL("image/png");
+        link.click();
       }
     } catch (err) {
       console.error("Error downloading ID Card:", err);
@@ -446,7 +602,10 @@ export default function EmployeeIdCard({
           title="Click to flip card"
         >
           {/* ================= FRONT SIDE ================= */}
-          <div className="absolute inset-0 w-full h-full rounded-3xl bg-white shadow-2xl border border-border/80 overflow-hidden flex flex-col justify-between backface-hidden">
+          <div
+            ref={frontRef}
+            className="absolute inset-0 w-full h-full rounded-3xl bg-white shadow-2xl border border-border/80 overflow-hidden flex flex-col justify-between backface-hidden"
+          >
             {/* Top Teal Banner with wave */}
             <div className="relative bg-[#004838] pt-2 pb-6 px-4 text-center">
               {/* Lanyard punch hole */}
@@ -498,7 +657,9 @@ export default function EmployeeIdCard({
                 ) : (
                   <div className="w-full h-full bg-gradient-to-b from-slate-200 to-slate-300 flex flex-col items-center justify-center text-slate-500">
                     <div className="w-16 h-16 rounded-full bg-slate-400/50 mb-1" />
-                    <span className="text-[11px] font-semibold text-slate-600">PHOTO</span>
+                    <span className="text-[11px] font-semibold text-slate-600">
+                      PHOTO
+                    </span>
                   </div>
                 )}
               </div>
@@ -514,7 +675,10 @@ export default function EmployeeIdCard({
               </p>
               <div className="inline-block bg-slate-100 px-3 py-0.5 rounded-full border border-slate-200">
                 <p className="font-bold text-xs text-[#051a14] tracking-wide">
-                  ID No.: <span className="font-mono text-[#004838]">{formattedId}</span>
+                  ID No.:{" "}
+                  <span className="font-mono text-[#004838]">
+                    {formattedId}
+                  </span>
                 </p>
               </div>
 
@@ -533,18 +697,20 @@ export default function EmployeeIdCard({
                   className="w-full h-full"
                   preserveAspectRatio="none"
                 >
-                  {barcodePattern.split("").map((bit, idx) =>
-                    bit === "1" ? (
-                      <rect
-                        key={idx}
-                        x={idx}
-                        y={0}
-                        width={1}
-                        height={30}
-                        fill="#000000"
-                      />
-                    ) : null,
-                  )}
+                  {barcodePattern
+                    .split("")
+                    .map((bit, idx) =>
+                      bit === "1" ? (
+                        <rect
+                          key={idx}
+                          x={idx}
+                          y={0}
+                          width={1}
+                          height={30}
+                          fill="#000000"
+                        />
+                      ) : null,
+                    )}
                 </svg>
               </div>
             </div>
@@ -582,7 +748,10 @@ export default function EmployeeIdCard({
           </div>
 
           {/* ================= BACK SIDE ================= */}
-          <div className="absolute inset-0 w-full h-full rounded-3xl bg-white shadow-2xl border border-border/80 overflow-hidden flex flex-col justify-between rotate-y-180 backface-hidden">
+          <div
+            ref={backRef}
+            className="absolute inset-0 w-full h-full rounded-3xl bg-white shadow-2xl border border-border/80 overflow-hidden flex flex-col justify-between rotate-y-180 backface-hidden"
+          >
             {/* Top Teal Banner */}
             <div className="relative bg-[#004838] pt-2 pb-5 px-4 text-center text-white">
               {/* Lanyard punch hole */}
@@ -617,10 +786,19 @@ export default function EmployeeIdCard({
                   ABOUT AHS
                 </h3>
                 <p className="text-[10.5px] leading-snug text-slate-700 font-medium">
-                  <strong>Addis Hospitality Solutions PLC (AHS)</strong> is a professional hospitality workforce solutions provider dedicated to connecting skilled and passionate individuals with leading <strong>restaurants, hotels, cafes, catering companies, event venues, and supermarkets</strong>.
+                  <strong>Addis Hospitality Solutions PLC (AHS)</strong> is a
+                  professional hospitality workforce solutions provider
+                  dedicated to connecting skilled and passionate individuals
+                  with leading{" "}
+                  <strong>
+                    restaurants, hotels, cafes, catering companies, event
+                    venues, and supermarkets
+                  </strong>
+                  .
                 </p>
                 <p className="text-[10.5px] leading-snug text-slate-700 font-medium mt-1.5">
-                  We believe in people, potential, and partnership. Together, we build a better hospitality industry.
+                  We believe in people, potential, and partnership. Together, we
+                  build a better hospitality industry.
                 </p>
 
                 {/* 4 Bullet Points */}
@@ -631,8 +809,13 @@ export default function EmployeeIdCard({
                     "Professional Growth & Development",
                     "Integrity, Respect & Excellence",
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900">
-                      <span className="text-[#004838] font-bold text-xs leading-none">➔</span>
+                    <div
+                      key={idx}
+                      className="flex items-center gap-1.5 text-[11px] font-bold text-slate-900"
+                    >
+                      <span className="text-[#004838] font-bold text-xs leading-none">
+                        ➔
+                      </span>
                       <span>{item}</span>
                     </div>
                   ))}
@@ -642,7 +825,8 @@ export default function EmployeeIdCard({
               {/* Signature Line */}
               <div className="pt-2">
                 <div className="text-[11px] font-bold text-slate-900">
-                  Authorized Signature <span className="inline-block border-b-2 border-slate-400 w-36 ml-1" />
+                  Authorized Signature{" "}
+                  <span className="inline-block border-b-2 border-slate-400 w-36 ml-1" />
                 </div>
                 <div className="mt-2 bg-slate-100 rounded-md py-1 px-2 text-center border border-slate-200">
                   <span className="text-[10px] font-bold text-[#004838]">
@@ -681,7 +865,9 @@ export default function EmployeeIdCard({
           <div className="flex items-center justify-between text-xs text-muted-foreground px-2">
             <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-semibold">
               <ShieldCheck className="h-4 w-4" />
-              {isVerified ? "Verified Official Member Badge" : "Member Identification Badge"}
+              {isVerified
+                ? "Verified Official Member Badge"
+                : "Member Identification Badge"}
             </span>
             <button
               type="button"

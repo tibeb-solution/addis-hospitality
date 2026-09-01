@@ -224,7 +224,7 @@ export default function EmployeeCvPage({
         setCv(
           savedCv?.data
             ? { ...initialCv(merged), ...savedCv.data }
-            : initialCv(merged)
+            : initialCv(merged),
         );
         setStatus(savedCv?.status || "draft");
         if (employee?.avatar_url) {
@@ -254,44 +254,18 @@ export default function EmployeeCvPage({
   }, [router]);
 
   const handlePrintCv = () => {
-    if (!cv) return;
-
     const printRoot = document.getElementById("cv-printable-document");
-    if (!printRoot) {
-      window.print();
-      return;
-    }
+    if (!printRoot || !cv) return;
 
-    const printWindow = window.open(
-      "",
-      "_blank",
-      "noopener,noreferrer,width=980,height=1400"
-    );
-    if (!printWindow) {
-      window.print();
-      return;
-    }
+    document.body.classList.add("cv-export-printing");
 
-    const styles = `
-      <style>
-        @page { size: A4; margin: 10mm; }
-        html, body { margin: 0; padding: 0; background: #fff; }
-        body { font-family: Arial, sans-serif; }
-        * { box-sizing: border-box; }
-        img { max-width: 100%; }
-      </style>
-    `;
+    const cleanup = () => {
+      document.body.classList.remove("cv-export-printing");
+      window.removeEventListener("afterprint", cleanup);
+    };
 
-    printWindow.document.write(
-      `<!doctype html><html><head><title>${cv.contact.fullName || "Employee CV"}</title>${styles}</head><body>${printRoot.outerHTML}</body></html>`
-    );
-    printWindow.document.close();
-    printWindow.focus();
-
-    setTimeout(() => {
-      printWindow.print();
-      setTimeout(() => printWindow.close(), 500);
-    }, 250);
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.print();
   };
 
   const selectedSkills = useMemo(() => {
@@ -352,11 +326,11 @@ export default function EmployeeCvPage({
                 item.role &&
                 item.company &&
                 item.phone &&
-                item.email
+                item.email,
             ),
           ]
         : [],
-    [cv]
+    [cv],
   );
   const complete = requiredFields.filter(Boolean).length;
   const isComplete =
@@ -367,17 +341,17 @@ export default function EmployeeCvPage({
   const updateList = (
     key: "experience" | "education" | "certifications",
     index: number,
-    value: Partial<ListItem>
+    value: Partial<ListItem>,
   ) =>
     update({
       [key]: cv![key].map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...value } : item
+        itemIndex === index ? { ...item, ...value } : item,
       ),
     } as Partial<CvData>);
   const updateReference = (index: number, value: Partial<Reference>) =>
     update({
       references: cv!.references.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...value } : item
+        itemIndex === index ? { ...item, ...value } : item,
       ),
     });
 
@@ -399,7 +373,7 @@ export default function EmployeeCvPage({
                   ? new Date().toISOString()
                   : undefined,
             },
-            { onConflict: "employee_id" }
+            { onConflict: "employee_id" },
           );
         if (error) throw error;
       } else {
@@ -412,7 +386,7 @@ export default function EmployeeCvPage({
       setMessage(
         nextStatus === "submitted"
           ? "Your CV has been sent to admin for review."
-          : "CV saved."
+          : "CV saved.",
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save CV.");
@@ -444,10 +418,10 @@ export default function EmployeeCvPage({
             status === "approved"
               ? "bg-green-500/10 text-green-700"
               : status === "rejected"
-              ? "bg-red-500/10 text-red-700"
-              : status === "submitted"
-              ? "bg-amber-500/10 text-amber-700"
-              : "bg-muted text-muted-foreground"
+                ? "bg-red-500/10 text-red-700"
+                : status === "submitted"
+                  ? "bg-amber-500/10 text-amber-700"
+                  : "bg-muted text-muted-foreground"
           }`}
         >
           {status === "approved" ? (
@@ -463,423 +437,429 @@ export default function EmployeeCvPage({
         </span>
       </div>
 
-        <div className={`grid min-w-0 gap-8 ${showPreview ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,760px)]" : "grid-cols-1"} xl:items-start`}>
-          {!previewOnly && <form
-          onSubmit={(event: FormEvent) => {
-            event.preventDefault();
-            void save("submitted");
-          }}
-          className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-6"
-        >
-          <div className="rounded-lg bg-primary/5 p-4">
-            <div className="flex items-center justify-between text-sm font-medium">
-              <span>CV completeness</span>
-              <span>
-                {complete}/{requiredFields.length}
-              </span>
-            </div>
-            <div className="mt-2 h-2 rounded-full bg-muted">
-              <div
-                className="h-2 rounded-full bg-primary transition-all"
-                style={{
-                  width: `${
-                    (complete / Math.max(requiredFields.length, 1)) * 100
-                  }%`,
-                }}
-              />
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              All required sections must be complete before submission.
-            </p>
-          </div>
-
-          <Section title="Contact Information">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Full name"
-                required
-                value={cv.contact.fullName}
-                onChange={(value) =>
-                  update({ contact: { ...cv.contact, fullName: value } })
-                }
-              />
-              <Field
-                label="Professional title"
-                required
-                value={cv.contact.title}
-                onChange={(value) =>
-                  update({ contact: { ...cv.contact, title: value } })
-                }
-              />
-              <Field
-                label="Email"
-                required
-                type="email"
-                value={cv.contact.email}
-                onChange={(value) =>
-                  update({ contact: { ...cv.contact, email: value } })
-                }
-              />
-              <Field
-                label="Phone"
-                required
-                value={cv.contact.phone}
-                onChange={(value) =>
-                  update({ contact: { ...cv.contact, phone: value } })
-                }
-              />
-            </div>
-            <Field
-              label="Address"
-              value={cv.contact.address}
-              onChange={(value) =>
-                update({ contact: { ...cv.contact, address: value } })
-              }
-            />
-          </Section>
-
-          <Section title="Personal Information">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Date of birth"
-                required
-                type="date"
-                value={cv.personal.dateOfBirth}
-                onChange={(value) =>
-                  update({
-                    personal: { ...cv.personal, dateOfBirth: value },
-                  })
-                }
-              />
-              <SelectField
-                label="Nationality"
-                required
-                options={NATIONALITIES}
-                value={cv.personal.nationality}
-                onChange={(value) =>
-                  update({
-                    personal: { ...cv.personal, nationality: value },
-                  })
-                }
-                placeholder="Select nationality"
-              />
-              <Field
-                label="Gender"
-                value={cv.personal.gender}
-                onChange={(value) =>
-                  update({ personal: { ...cv.personal, gender: value } })
-                }
-              />
-              <SelectField
-                label="Marital status"
-                options={MARITAL_STATUS_OPTIONS}
-                value={cv.personal.maritalStatus}
-                onChange={(value) =>
-                  update({
-                    personal: { ...cv.personal, maritalStatus: value },
-                  })
-                }
-                placeholder="Select marital status"
-              />
-            </div>
-          </Section>
-
-          <Section title="Professional Summary">
-            <textarea
-              required
-              value={cv.summary}
-              onChange={(event) => update({ summary: event.target.value })}
-              rows={4}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Describe your hospitality background, key strengths, and career objective..."
-            />
-          </Section>
-
-          {/* Work Experience */}
-          <Section title="Work Experience">
-            <div className="space-y-4">
-              {cv.experience.map((item, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg border border-border p-4"
-                >
-                  <div className="flex gap-3">
-                    <div className="grid flex-1 gap-3 sm:grid-cols-2">
-                      <Field
-                        label="Job title and employer"
-                        required
-                        value={item.title}
-                        onChange={(value) =>
-                          updateList("experience", index, { title: value })
-                        }
-                        placeholder="e.g. Operations Manager | Golden Tulip Hotel"
-                      />
-                      <label className="space-y-1.5 text-sm font-medium">
-                        <span>Details & Responsibilities</span>
-                        <textarea
-                          required
-                          value={item.detail}
-                          onChange={(event) =>
-                            updateList("experience", index, {
-                              detail: event.target.value,
-                            })
-                          }
-                          rows={3}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          placeholder="• Oversee daily operations...&#10;• Manage service staff and inventory..."
-                        />
-                      </label>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label="Remove entry"
-                      className="mt-7 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        update({
-                          experience: cv.experience.filter(
-                            (_, itemIndex) => itemIndex !== index
-                          ),
-                        })
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  update({ experience: [...cv.experience, emptyItem()] })
-                }
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Add experience
-              </Button>
-            </div>
-          </Section>
-
-          {/* Education */}
-          <Section title="Education">
-            <div className="space-y-4">
-              {cv.education.map((item, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg border border-border p-4"
-                >
-                  <div className="flex gap-3">
-                    <div className="grid flex-1 gap-3 sm:grid-cols-2">
-                      <SelectField
-                        label="Qualification / Degree"
-                        required
-                        options={EDUCATION_QUALIFICATIONS}
-                        value={item.title}
-                        onChange={(value) =>
-                          updateList("education", index, { title: value })
-                        }
-                        placeholder="Select qualification"
-                      />
-                      <Field
-                        label="Institution, School & Years"
-                        required
-                        value={item.detail}
-                        onChange={(value) =>
-                          updateList("education", index, { detail: value })
-                        }
-                        placeholder="e.g. Ethiopian Tour & Hotel College (2012 – 2014)"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      aria-label="Remove entry"
-                      className="mt-7 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        update({
-                          education: cv.education.filter(
-                            (_, itemIndex) => itemIndex !== index
-                          ),
-                        })
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  update({ education: [...cv.education, emptyItem()] })
-                }
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Add education
-              </Button>
-            </div>
-          </Section>
-
-          {/* Training & Certifications */}
-          <Section title="Training & Certifications">
-            <div className="space-y-4">
-              {cv.certifications.map((item, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg border border-border p-4"
-                >
-                  <div className="flex gap-3">
-                    <div className="grid flex-1 gap-3 sm:grid-cols-2">
-                      <Field
-                        label="Certificate / Course Name"
-                        required
-                        value={item.title}
-                        onChange={(value) =>
-                          updateList("certifications", index, {
-                            title: value,
-                          })
-                        }
-                        placeholder="e.g. Food Safety and Hygiene"
-                      />
-                      <Field
-                        label="Issuing Organization & Year"
-                        required
-                        value={item.detail}
-                        onChange={(value) =>
-                          updateList("certifications", index, {
-                            detail: value,
-                          })
-                        }
-                        placeholder="e.g. Bureau Veritas (2020)"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      aria-label="Remove entry"
-                      className="mt-7 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        update({
-                          certifications: cv.certifications.filter(
-                            (_, itemIndex) => itemIndex !== index
-                          ),
-                        })
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  update({
-                    certifications: [...cv.certifications, emptyItem()],
-                  })
-                }
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Add certification
-              </Button>
-            </div>
-          </Section>
-
-          {/* Skills (Choose at most 5) */}
-          <Section title="Skills">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Select at most 5 skills that best represent your capabilities.
-                </p>
-                <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    selectedSkills.length === 5
-                      ? "bg-primary/20 text-primary"
-                      : selectedSkills.length > 0
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {selectedSkills.length} / 5 selected
+      <div
+        className={`grid min-w-0 gap-8 ${showPreview ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,760px)]" : "grid-cols-1"} xl:items-start`}
+      >
+        {!previewOnly && (
+          <form
+            onSubmit={(event: FormEvent) => {
+              event.preventDefault();
+              void save("submitted");
+            }}
+            className="space-y-6 rounded-xl border border-border bg-card p-5 sm:p-6"
+          >
+            <div className="rounded-lg bg-primary/5 p-4">
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>CV completeness</span>
+                <span>
+                  {complete}/{requiredFields.length}
                 </span>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {HOSPITALITY_SKILLS.map((skill) => {
-                  const isSelected = selectedSkills.includes(skill);
-                  const isDisabled = !isSelected && selectedSkills.length >= 5;
-                  return (
-                    <button
-                      key={skill}
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() => toggleSkill(skill)}
-                      className={`flex items-center gap-2.5 rounded-lg border p-2.5 text-left text-xs transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/10 text-primary font-medium shadow-xs"
-                          : isDisabled
-                          ? "border-border/50 opacity-45 cursor-not-allowed text-muted-foreground"
-                          : "border-border bg-background hover:bg-muted/50 text-foreground"
-                      }`}
-                    >
-                      <div
-                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+              <div className="mt-2 h-2 rounded-full bg-muted">
+                <div
+                  className="h-2 rounded-full bg-primary transition-all"
+                  style={{
+                    width: `${
+                      (complete / Math.max(requiredFields.length, 1)) * 100
+                    }%`,
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                All required sections must be complete before submission.
+              </p>
+            </div>
+
+            <Section title="Contact Information">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Full name"
+                  required
+                  value={cv.contact.fullName}
+                  onChange={(value) =>
+                    update({ contact: { ...cv.contact, fullName: value } })
+                  }
+                />
+                <Field
+                  label="Professional title"
+                  required
+                  value={cv.contact.title}
+                  onChange={(value) =>
+                    update({ contact: { ...cv.contact, title: value } })
+                  }
+                />
+                <Field
+                  label="Email"
+                  required
+                  type="email"
+                  value={cv.contact.email}
+                  onChange={(value) =>
+                    update({ contact: { ...cv.contact, email: value } })
+                  }
+                />
+                <Field
+                  label="Phone"
+                  required
+                  value={cv.contact.phone}
+                  onChange={(value) =>
+                    update({ contact: { ...cv.contact, phone: value } })
+                  }
+                />
+              </div>
+              <Field
+                label="Address"
+                value={cv.contact.address}
+                onChange={(value) =>
+                  update({ contact: { ...cv.contact, address: value } })
+                }
+              />
+            </Section>
+
+            <Section title="Personal Information">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Date of birth"
+                  required
+                  type="date"
+                  value={cv.personal.dateOfBirth}
+                  onChange={(value) =>
+                    update({
+                      personal: { ...cv.personal, dateOfBirth: value },
+                    })
+                  }
+                />
+                <SelectField
+                  label="Nationality"
+                  required
+                  options={NATIONALITIES}
+                  value={cv.personal.nationality}
+                  onChange={(value) =>
+                    update({
+                      personal: { ...cv.personal, nationality: value },
+                    })
+                  }
+                  placeholder="Select nationality"
+                />
+                <Field
+                  label="Gender"
+                  value={cv.personal.gender}
+                  onChange={(value) =>
+                    update({ personal: { ...cv.personal, gender: value } })
+                  }
+                />
+                <SelectField
+                  label="Marital status"
+                  options={MARITAL_STATUS_OPTIONS}
+                  value={cv.personal.maritalStatus}
+                  onChange={(value) =>
+                    update({
+                      personal: { ...cv.personal, maritalStatus: value },
+                    })
+                  }
+                  placeholder="Select marital status"
+                />
+              </div>
+            </Section>
+
+            <Section title="Professional Summary">
+              <textarea
+                required
+                value={cv.summary}
+                onChange={(event) => update({ summary: event.target.value })}
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Describe your hospitality background, key strengths, and career objective..."
+              />
+            </Section>
+
+            {/* Work Experience */}
+            <Section title="Work Experience">
+              <div className="space-y-4">
+                {cv.experience.map((item, index) => (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-border p-4"
+                  >
+                    <div className="flex gap-3">
+                      <div className="grid flex-1 gap-3 sm:grid-cols-2">
+                        <Field
+                          label="Job title and employer"
+                          required
+                          value={item.title}
+                          onChange={(value) =>
+                            updateList("experience", index, { title: value })
+                          }
+                          placeholder="e.g. Operations Manager | Golden Tulip Hotel"
+                        />
+                        <label className="space-y-1.5 text-sm font-medium">
+                          <span>Details & Responsibilities</span>
+                          <textarea
+                            required
+                            value={item.detail}
+                            onChange={(event) =>
+                              updateList("experience", index, {
+                                detail: event.target.value,
+                              })
+                            }
+                            rows={3}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            placeholder="• Oversee daily operations...&#10;• Manage service staff and inventory..."
+                          />
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Remove entry"
+                        className="mt-7 text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          update({
+                            experience: cv.experience.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          })
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update({ experience: [...cv.experience, emptyItem()] })
+                  }
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add experience
+                </Button>
+              </div>
+            </Section>
+
+            {/* Education */}
+            <Section title="Education">
+              <div className="space-y-4">
+                {cv.education.map((item, index) => (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-border p-4"
+                  >
+                    <div className="flex gap-3">
+                      <div className="grid flex-1 gap-3 sm:grid-cols-2">
+                        <SelectField
+                          label="Qualification / Degree"
+                          required
+                          options={EDUCATION_QUALIFICATIONS}
+                          value={item.title}
+                          onChange={(value) =>
+                            updateList("education", index, { title: value })
+                          }
+                          placeholder="Select qualification"
+                        />
+                        <Field
+                          label="Institution, School & Years"
+                          required
+                          value={item.detail}
+                          onChange={(value) =>
+                            updateList("education", index, { detail: value })
+                          }
+                          placeholder="e.g. Ethiopian Tour & Hotel College (2012 – 2014)"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Remove entry"
+                        className="mt-7 text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          update({
+                            education: cv.education.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          })
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update({ education: [...cv.education, emptyItem()] })
+                  }
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add education
+                </Button>
+              </div>
+            </Section>
+
+            {/* Training & Certifications */}
+            <Section title="Training & Certifications">
+              <div className="space-y-4">
+                {cv.certifications.map((item, index) => (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-border p-4"
+                  >
+                    <div className="flex gap-3">
+                      <div className="grid flex-1 gap-3 sm:grid-cols-2">
+                        <Field
+                          label="Certificate / Course Name"
+                          required
+                          value={item.title}
+                          onChange={(value) =>
+                            updateList("certifications", index, {
+                              title: value,
+                            })
+                          }
+                          placeholder="e.g. Food Safety and Hygiene"
+                        />
+                        <Field
+                          label="Issuing Organization & Year"
+                          required
+                          value={item.detail}
+                          onChange={(value) =>
+                            updateList("certifications", index, {
+                              detail: value,
+                            })
+                          }
+                          placeholder="e.g. Bureau Veritas (2020)"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Remove entry"
+                        className="mt-7 text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          update({
+                            certifications: cv.certifications.filter(
+                              (_, itemIndex) => itemIndex !== index,
+                            ),
+                          })
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update({
+                      certifications: [...cv.certifications, emptyItem()],
+                    })
+                  }
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add certification
+                </Button>
+              </div>
+            </Section>
+
+            {/* Skills (Choose at most 5) */}
+            <Section title="Skills">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Select at most 5 skills that best represent your
+                    capabilities.
+                  </p>
+                  <span
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      selectedSkills.length === 5
+                        ? "bg-primary/20 text-primary"
+                        : selectedSkills.length > 0
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {selectedSkills.length} / 5 selected
+                  </span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {HOSPITALITY_SKILLS.map((skill) => {
+                    const isSelected = selectedSkills.includes(skill);
+                    const isDisabled =
+                      !isSelected && selectedSkills.length >= 5;
+                    return (
+                      <button
+                        key={skill}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => toggleSkill(skill)}
+                        className={`flex items-center gap-2.5 rounded-lg border p-2.5 text-left text-xs transition-all ${
                           isSelected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-muted-foreground/40 bg-background"
+                            ? "border-primary bg-primary/10 text-primary font-medium shadow-xs"
+                            : isDisabled
+                              ? "border-border/50 opacity-45 cursor-not-allowed text-muted-foreground"
+                              : "border-border bg-background hover:bg-muted/50 text-foreground"
                         }`}
                       >
-                        {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
-                      </div>
-                      <span className="flex-1 leading-snug">{skill}</span>
-                    </button>
-                  );
-                })}
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                            isSelected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/40 bg-background"
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          )}
+                        </div>
+                        <span className="flex-1 leading-snug">{skill}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </Section>
+            </Section>
 
-          {/* Key Achievements */}
-          <Section title="Key Achievements">
-            <textarea
-              required
-              value={cv.achievements}
-              onChange={(event) =>
-                update({ achievements: event.target.value })
-              }
-              rows={4}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="• Improved guest satisfaction score from 82% to 94%...&#10;• Increased restaurant sales by 18%..."
-            />
-          </Section>
+            {/* Key Achievements */}
+            <Section title="Key Achievements">
+              <textarea
+                required
+                value={cv.achievements}
+                onChange={(event) =>
+                  update({ achievements: event.target.value })
+                }
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="• Improved guest satisfaction score from 82% to 94%...&#10;• Increased restaurant sales by 18%..."
+              />
+            </Section>
 
-          {/* Languages */}
-          <Section title="Languages">
-            <textarea
-              required
-              value={cv.languages}
-              onChange={(event) =>
-                update({ languages: event.target.value })
-              }
-              rows={2}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder="Amharic — Native, English — Fluent"
-            />
-          </Section>
+            {/* Languages */}
+            <Section title="Languages">
+              <textarea
+                required
+                value={cv.languages}
+                onChange={(event) => update({ languages: event.target.value })}
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Amharic — Native, English — Fluent"
+              />
+            </Section>
 
-          {/* References */}
-          <Section title="References">
-            <div className="space-y-4">
-              {cv.references.map((reference, index) => (
-                <div
-                  key={index}
-                  className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
-                >
-                  {(["name", "role", "company", "phone", "email"] as const).map(
-                    (field) => (
+            {/* References */}
+            <Section title="References">
+              <div className="space-y-4">
+                {cv.references.map((reference, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
+                  >
+                    {(
+                      ["name", "role", "company", "phone", "email"] as const
+                    ).map((field) => (
                       <Field
                         key={field}
                         label={
@@ -894,79 +874,83 @@ export default function EmployeeCvPage({
                         }
                         type={field === "email" ? "email" : "text"}
                       />
-                    )
-                  )}
-                  <button
-                    type="button"
-                    className="text-left text-xs text-destructive sm:col-span-2"
-                    onClick={() =>
-                      update({
-                        references: cv.references.filter(
-                          (_, itemIndex) => itemIndex !== index
-                        ),
-                      })
-                    }
-                  >
-                    Remove reference
-                  </button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  update({ references: [...cv.references, emptyReference()] })
-                }
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Add reference
-              </Button>
-            </div>
-          </Section>
+                    ))}
+                    <button
+                      type="button"
+                      className="text-left text-xs text-destructive sm:col-span-2"
+                      onClick={() =>
+                        update({
+                          references: cv.references.filter(
+                            (_, itemIndex) => itemIndex !== index,
+                          ),
+                        })
+                      }
+                    >
+                      Remove reference
+                    </button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update({ references: [...cv.references, emptyReference()] })
+                  }
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add reference
+                </Button>
+              </div>
+            </Section>
 
-          {message && (
-            <p className="rounded-md bg-muted p-3 text-sm">{message}</p>
-          )}
-
-          {!previewOnly && (
-            <div className="flex flex-wrap gap-3">
-              <Button
-                type="submit"
-                disabled={saving || !isComplete || status === "submitted"}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                Save CV and send for review
-              </Button>
-            </div>
-          )}
-        </form>}
-
-        {showPreview && <div className={`${previewOnly ? "xl:col-span-2" : ""} min-w-0 space-y-4 ${embedded ? "" : "xl:sticky xl:top-24"}`}>
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <Eye className="h-5 w-5 text-primary" />
-              {previewOnly ? "My generated CV" : "Live preview"}
-            </h2>
-            {status === "approved" && (
-              <Button
-                size="sm"
-                type="button"
-                onClick={handlePrintCv}
-                title="Open the print dialog to save your CV as a PDF"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Print / Save PDF
-              </Button>
+            {message && (
+              <p className="rounded-md bg-muted p-3 text-sm">{message}</p>
             )}
+
+            {!previewOnly && (
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="submit"
+                  disabled={saving || !isComplete || status === "submitted"}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Save CV and send for review
+                </Button>
+              </div>
+            )}
+          </form>
+        )}
+
+        {showPreview && (
+          <div
+            className={`${previewOnly ? "xl:col-span-2" : ""} min-w-0 space-y-4 ${embedded ? "" : "xl:sticky xl:top-24"}`}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <Eye className="h-5 w-5 text-primary" />
+                {previewOnly ? "My generated CV" : "Live preview"}
+              </h2>
+              {status === "approved" && (
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={handlePrintCv}
+                  title="Open the print dialog to save your CV as a PDF"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Print / Save PDF
+                </Button>
+              )}
+            </div>
+            {previewOnly && status !== "approved" && (
+              <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                Download becomes available after admin approval.
+              </p>
+            )}
+            <EmployeeCvPreview cv={cv} avatarUrl={avatarUrl} />
           </div>
-          {previewOnly && status !== "approved" && (
-            <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-              Download becomes available after admin approval.
-            </p>
-          )}
-          <EmployeeCvPreview cv={cv} avatarUrl={avatarUrl} />
-        </div>}
+        )}
       </div>
     </div>
   );
