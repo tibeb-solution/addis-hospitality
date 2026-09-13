@@ -556,7 +556,8 @@ export const recruitment = {
       const { data: updatedApplications, error } = await createClient()
         .from("applications")
         .update({ sent_to_company_at: sentAt, updated_at: sentAt })
-        .in("id", applicationIds);
+        .in("id", applicationIds)
+        .select("id");
       if (error) throw error;
       if (!updatedApplications || updatedApplications.length !== applicationIds.length) {
         throw new Error(
