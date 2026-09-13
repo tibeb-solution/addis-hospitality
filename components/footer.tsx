@@ -40,9 +40,9 @@ export function Footer() {
       },
       {
         label: t("footer.savedJobs") || "Saved Jobs",
-        href: "/employee/profile",
+        href: "/employee/settings",
       },
-      { label: t("footer.profile") || "Profile", href: "/employee/profile" },
+      { label: t("footer.profile") || "Profile", href: "/employee/settings" },
     ],
     employers: [
       { label: t("footer.postJob") || "Post a Job", href: "/company/jobs" },
@@ -53,7 +53,7 @@ export function Footer() {
       },
       {
         label: t("footer.companyProfile") || "Company Profile",
-        href: "/company/profile",
+        href: "/company/settings",
       },
     ],
     company: [

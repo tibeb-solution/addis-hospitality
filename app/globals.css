@@ -279,11 +279,10 @@ main .bg-card.border {
     box-shadow:
       0 22px 48px oklch(0.25 0.02 170 / 0.14),
       inset 0 1px 0 oklch(1 0 0 / 0.8);
-    transform: perspective(900px) translateY(-5px) rotateX(1.2deg)
-      rotateY(-0.8deg);
+    transform: translateY(-5px);
   }
   main .bg-gradient-to-r.from-primary.to-accent:hover {
-    transform: perspective(1000px) rotateX(1deg) translateY(-3px);
+    transform: translateY(-3px);
   }
 }
 main .bg-gradient-to-r.from-primary.to-accent {

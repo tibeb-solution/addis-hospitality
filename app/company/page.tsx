@@ -101,7 +101,7 @@ export default function CompanyDashboard() {
             {t("company.noProfileYet")}
           </h2>
           <p className="text-muted-foreground">{t("company.approval")}</p>
-          <Link href="/company/profile">
+          <Link href="/company/settings">
             <Button size="lg">{t("nav.profile")}</Button>
           </Link>
         </div>

@@ -223,7 +223,7 @@ export default function EmployeeDashboard() {
                 {completeness}% {t("common.complete")}
               </p>
             </div>
-            <Link href="/employee/profile#profile-section" className="block">
+            <Link href="/employee/settings" className="block">
               <Button variant="outline" className="w-full">
                 {t("common.edit")}
               </Button>
@@ -236,7 +236,7 @@ export default function EmployeeDashboard() {
             <p className="text-sm text-muted-foreground">
               {t("employee.addExperience")}
             </p>
-            <Link href="/employee/profile?tab=experience" className="block">
+            <Link href="/employee/settings" className="block">
               <Button variant="outline" className="w-full">
                 {t("common.view")}
               </Button>
