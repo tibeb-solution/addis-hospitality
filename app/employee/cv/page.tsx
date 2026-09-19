@@ -109,7 +109,7 @@ function applyProfileSync(cv: CvData, profile: ProfileSync): CvData {
       ? cv.education.map((item, index) =>
           index === 0
             ? { ...item, title: profile.highestEducation ?? item.title }
-            : item
+            : item,
         )
       : cv.education,
     languages: profile.languages ?? cv.languages,
@@ -285,7 +285,7 @@ export default function EmployeeCvPage({
         setCv(
           savedCv?.data
             ? applyProfileSync({ ...profileCv, ...savedCv.data }, syncedProfile)
-            : applyProfileSync(profileCv, syncedProfile)
+            : applyProfileSync(profileCv, syncedProfile),
         );
         setStatus(savedCv?.status || "draft");
         if (employee?.avatar_url) {
@@ -304,7 +304,9 @@ export default function EmployeeCvPage({
         setUser(current);
         const profileData = { ...current, ...employee };
         setProfile(profileData);
-        setCv(applyProfileSync(initialCv(profileData), profileToSync(profileData)));
+        setCv(
+          applyProfileSync(initialCv(profileData), profileToSync(profileData)),
+        );
         setStatus((employee as any).cv_status || "draft");
         if ((employee as any)?.avatar_url) {
           setAvatarUrl((employee as any).avatar_url);
@@ -332,7 +334,9 @@ export default function EmployeeCvPage({
 
   useEffect(() => {
     if (!profileSync) return;
-    setCv((current) => (current ? applyProfileSync(current, profileSync) : current));
+    setCv((current) =>
+      current ? applyProfileSync(current, profileSync) : current,
+    );
   }, [
     profileSync?.address,
     profileSync?.dateOfBirth,
