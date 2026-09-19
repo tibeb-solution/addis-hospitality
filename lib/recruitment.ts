@@ -97,6 +97,17 @@ export interface Rating {
   created_at: string;
 }
 
+export interface HiringRequest {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  manager_note?: string;
+  status: "pending_approval" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+}
+
 const keys = {
   jobs: "ah_jobs",
   applications: "ah_applications",
@@ -104,6 +115,7 @@ const keys = {
   interviews: "ah_interviews",
   notifications: "ah_notifications",
   ratings: "ah_ratings",
+  hiringRequests: "ah_hiring_requests",
 };
 
 const ADMIN_USER_ID = "admin-001";
@@ -122,6 +134,60 @@ function read<T>(key: string): T[] {
 
 function write<T>(key: string, value: T[]) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+export function employeeQualificationScore(profile: any) {
+  const educationWeight: Record<string, number> = {
+    primary: 18,
+    secondary: 28,
+    tvet: 42,
+    diploma: 54,
+    bachelor: 70,
+    masters: 82,
+    master: 82,
+    doctorate: 92,
+    phd: 92,
+  };
+
+  const educationKey = String(
+    profile?.highest_education || profile?.education_level || "",
+  )
+    .toLowerCase()
+    .trim();
+
+  let score = educationKey ? (educationWeight[educationKey] ?? 36) : 24;
+  score += Math.min(28, Number(profile?.years_experience || 0) * 5);
+
+  const skills = Array.isArray(profile?.skills)
+    ? profile.skills
+    : String(profile?.skills || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+  score += Math.min(18, skills.length * 2);
+
+  const languages = Array.isArray(profile?.languages)
+    ? profile.languages
+    : String(profile?.languages || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+  score += Math.min(14, languages.length * 3);
+
+  const experienceCount = Array.isArray(profile?.cv_data?.experience)
+    ? profile.cv_data.experience.length
+    : 0;
+  score += experienceCount > 0 ? 10 : 0;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+export function qualificationLevel(score: number) {
+  if (score >= 85) return "Excellent";
+  if (score >= 70) return "Strong";
+  if (score >= 55) return "Good";
+  if (score >= 35) return "Moderate";
+  return "Basic";
 }
 
 function calculateAge(dateOfBirth?: string | null) {
@@ -316,6 +382,14 @@ export const recruitment = {
       : read<Notification>(keys.notifications)
           .filter((item) => item.user_id === userId)
           .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+  hiringRequests: async (): Promise<HiringRequest[]> =>
+    isSupabaseConfigured()
+      ? remoteRows<HiringRequest>("hiring_requests", (query) =>
+          query.order("created_at", { ascending: false }),
+        )
+      : read<HiringRequest>(keys.hiringRequests).sort((a, b) =>
+          b.created_at.localeCompare(a.created_at),
+        ),
   ratings: async (): Promise<Rating[]> =>
     isSupabaseConfigured()
       ? remoteRows<Rating>("ratings", (query) =>
@@ -465,7 +539,10 @@ export const recruitment = {
       ["gender", profile?.gender],
       ["date of birth", profile?.date_of_birth],
       ["emergency contact name", profile?.emergency_contact_name],
-      ["emergency contact relationship", profile?.emergency_contact_relationship],
+      [
+        "emergency contact relationship",
+        profile?.emergency_contact_relationship,
+      ],
       ["emergency contact phone", profile?.emergency_contact_phone],
     ].filter(([, value]) => !String(value || "").trim());
     if (missingProfileFields.length) {
@@ -550,7 +627,8 @@ export const recruitment = {
     return application;
   },
   async sendApplicationsToCompany(applicationIds: string[], companyId: string) {
-    if (!applicationIds.length) throw new Error("Select at least one applicant.");
+    if (!applicationIds.length)
+      throw new Error("Select at least one applicant.");
     const sentAt = new Date().toISOString();
     if (isSupabaseConfigured()) {
       const { data: updatedApplications, error } = await createClient()
@@ -559,7 +637,10 @@ export const recruitment = {
         .in("id", applicationIds)
         .select("id");
       if (error) throw error;
-      if (!updatedApplications || updatedApplications.length !== applicationIds.length) {
+      if (
+        !updatedApplications ||
+        updatedApplications.length !== applicationIds.length
+      ) {
         throw new Error(
           "The applicants were not forwarded. Run the latest applications RLS policies from supabase-init.sql and confirm the current user is an active admin.",
         );
@@ -581,17 +662,30 @@ export const recruitment = {
       "applicants_sent",
     );
   },
-  async sendEmployeesToCompany(job: Job, employeeIds: string[], profiles: Record<string, any>) {
+  async sendEmployeesToCompany(
+    job: Job,
+    employeeIds: string[],
+    profiles: Record<string, any>,
+  ) {
     if (!employeeIds.length) throw new Error("Select at least one employee.");
     const existing = (await this.applications()).filter(
-      (application) => application.job_id === job.id && employeeIds.includes(application.employee_id),
+      (application) =>
+        application.job_id === job.id &&
+        employeeIds.includes(application.employee_id),
     );
-    const existingEmployeeIds = new Set(existing.map((application) => application.employee_id));
-    const missingIds = employeeIds.filter((employeeId) => !existingEmployeeIds.has(employeeId));
+    const existingEmployeeIds = new Set(
+      existing.map((application) => application.employee_id),
+    );
+    const missingIds = employeeIds.filter(
+      (employeeId) => !existingEmployeeIds.has(employeeId),
+    );
     if (isSupabaseConfigured() && missingIds.length) {
       const payload = missingIds.map((employeeId) => {
         const profile = profiles[employeeId] || {};
-        const applicantAge = typeof profile.age === "number" ? profile.age : calculateAge(profile.date_of_birth);
+        const applicantAge =
+          typeof profile.age === "number"
+            ? profile.age
+            : calculateAge(profile.date_of_birth);
         return {
           job_id: job.id,
           employee_id: employeeId,
@@ -602,20 +696,41 @@ export const recruitment = {
           applicant_age: applicantAge,
         };
       });
-      const { error } = await createClient().from("applications").insert(payload);
+      const { error } = await createClient()
+        .from("applications")
+        .insert(payload);
       if (error) throw error;
     } else if (!isSupabaseConfigured() && missingIds.length) {
       const now = new Date().toISOString();
       const added = missingIds.map((employeeId) => {
         const profile = profiles[employeeId] || {};
-        const applicantAge = typeof profile.age === "number" ? profile.age : calculateAge(profile.date_of_birth);
-        return { id: id(), job_id: job.id, employee_id: employeeId, status: "applied" as const, match_score: this.matchScore(job, profile), applicant_gender: profile.gender || null, applicant_date_of_birth: profile.date_of_birth || null, applicant_age: applicantAge, sent_to_company_at: null, created_at: now, updated_at: now };
+        const applicantAge =
+          typeof profile.age === "number"
+            ? profile.age
+            : calculateAge(profile.date_of_birth);
+        return {
+          id: id(),
+          job_id: job.id,
+          employee_id: employeeId,
+          status: "applied" as const,
+          match_score: this.matchScore(job, profile),
+          applicant_gender: profile.gender || null,
+          applicant_date_of_birth: profile.date_of_birth || null,
+          applicant_age: applicantAge,
+          sent_to_company_at: null,
+          created_at: now,
+          updated_at: now,
+        };
       });
       write(keys.applications, [...(await this.applications()), ...added]);
     }
     const latest = await this.applications();
     const applicationIds = latest
-      .filter((application) => application.job_id === job.id && employeeIds.includes(application.employee_id))
+      .filter(
+        (application) =>
+          application.job_id === job.id &&
+          employeeIds.includes(application.employee_id),
+      )
       .map((application) => application.id);
     await this.sendApplicationsToCompany(applicationIds, job.company_id);
   },
@@ -728,7 +843,9 @@ export const recruitment = {
     write(
       keys.interviews,
       (await this.interviews()).map((item) =>
-        item.id === interviewId ? { ...item, status: "cancelled" as const } : item,
+        item.id === interviewId
+          ? { ...item, status: "cancelled" as const }
+          : item,
       ),
     );
   },
@@ -770,6 +887,100 @@ export const recruitment = {
           : item,
       ),
     );
+  },
+  async createHiringRequest(input: {
+    company_id: string;
+    employee_id: string;
+    note?: string;
+  }) {
+    const request: HiringRequest = {
+      id: id(),
+      company_id: input.company_id,
+      employee_id: input.employee_id,
+      manager_note: input.note || "",
+      status: "pending_approval",
+      created_at: new Date().toISOString(),
+    };
+
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient()
+        .from("hiring_requests")
+        .insert(request);
+      if (error) throw error;
+    } else {
+      write(keys.hiringRequests, [...(await this.hiringRequests()), request]);
+    }
+
+    await this.notify(
+      ADMIN_USER_ID,
+      "Hiring request pending approval",
+      `A company requested approval to hire an employee.`,
+      "hire_request",
+    );
+    await this.notify(
+      input.company_id,
+      "Hiring request sent",
+      "Your hiring request is pending admin approval.",
+      "hire_request",
+    );
+    return request;
+  },
+  async reviewHiringRequest(
+    requestId: string,
+    status: "approved" | "rejected",
+  ) {
+    const request = (await this.hiringRequests()).find(
+      (item) => item.id === requestId,
+    );
+    if (!request) return null;
+
+    const updated = {
+      ...request,
+      status,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: ADMIN_USER_ID,
+    };
+
+    if (isSupabaseConfigured()) {
+      const { error } = await createClient()
+        .from("hiring_requests")
+        .update({
+          status,
+          reviewed_at: updated.reviewed_at,
+          reviewed_by: updated.reviewed_by,
+        })
+        .eq("id", requestId);
+      if (error) throw error;
+    } else {
+      write(
+        keys.hiringRequests,
+        (await this.hiringRequests()).map((item) =>
+          item.id === requestId ? updated : item,
+        ),
+      );
+    }
+
+    await this.notify(
+      request.company_id,
+      status === "approved"
+        ? "Hiring request approved"
+        : "Hiring request rejected",
+      status === "approved"
+        ? "The admin approved this hiring request. The employee is now marked as selected for your company."
+        : "The admin rejected this hiring request.",
+      "hire_request",
+    );
+    await this.notify(
+      request.employee_id,
+      status === "approved"
+        ? "You were selected for a company"
+        : "Hiring request closed",
+      status === "approved"
+        ? "A company selected you for a hiring request and the admin approved the match."
+        : "This hiring request was not approved at the moment.",
+      "hire_request",
+    );
+    return updated;
   },
   async rate(input: Omit<Rating, "id" | "created_at">) {
     if (isSupabaseConfigured()) {

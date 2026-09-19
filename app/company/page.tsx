@@ -13,6 +13,7 @@ export default function CompanyDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [jobs, setJobs] = useState<any[]>([]);
+  const [approvedHires, setApprovedHires] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +35,35 @@ export default function CompanyDashboard() {
         .single();
 
       setProfile(data || null);
-      setJobs((await recruitment.jobs()).filter((job) => job.company_id === user.id));
+      const companyJobs = (await recruitment.jobs()).filter(
+        (job) => job.company_id === user.id,
+      );
+      const hiringRequests = (await recruitment.hiringRequests()).filter(
+        (request) =>
+          request.company_id === user.id && request.status === "approved",
+      );
+      const employeeProfiles = await supabase
+        .from("employee_profiles")
+        .select("id, full_name, desired_position");
+      const employeeMap = new Map(
+        (employeeProfiles.data || []).map((profile: any) => [
+          profile.id,
+          profile as Record<string, any>,
+        ]),
+      );
+      setApprovedHires(
+        hiringRequests.map((request) => {
+          const employee = employeeMap.get(request.employee_id) as
+            | Record<string, any>
+            | undefined;
+          return {
+            ...request,
+            employeeName: employee?.["full_name"] || "Employee",
+            position: employee?.["desired_position"] || "—",
+          };
+        }),
+      );
+      setJobs(companyJobs);
       setLoading(false);
     };
 
@@ -60,31 +89,107 @@ export default function CompanyDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-card border border-border rounded-lg p-6 space-y-4 md:col-span-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="font-semibold text-lg">Job listings</h3>
-            <Link href="/company/jobs">
-              <Button variant="outline" size="sm">Manage jobs</Button>
+            <h3 className="font-semibold text-lg">Approved hires</h3>
+            <Link href="/company/employees">
+              <Button variant="outline" size="sm">
+                Find employees
+              </Button>
             </Link>
           </div>
-          {jobs.filter((job) => ["pending_review", "published", "rejected", "closed"].includes(job.status)).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No jobs submitted yet.</p>
+          {approvedHires.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No approved hires yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {approvedHires.map((hire) => (
+                <div
+                  key={hire.id}
+                  className="flex flex-col gap-2 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <p className="font-medium">{hire.employeeName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {hire.position}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700">
+                    Approved
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4 md:col-span-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-semibold text-lg">Job listings</h3>
+            <Link href="/company/jobs">
+              <Button variant="outline" size="sm">
+                Manage jobs
+              </Button>
+            </Link>
+          </div>
+          {jobs.filter((job) =>
+            ["pending_review", "published", "rejected", "closed"].includes(
+              job.status,
+            ),
+          ).length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No jobs submitted yet.
+            </p>
           ) : (
             <div className="space-y-3">
               {jobs
-                .filter((job) => ["pending_review", "published", "rejected", "closed"].includes(job.status))
+                .filter((job) =>
+                  [
+                    "pending_review",
+                    "published",
+                    "rejected",
+                    "closed",
+                  ].includes(job.status),
+                )
                 .sort((a, b) => b.created_at.localeCompare(a.created_at))
                 .slice(0, 4)
                 .map((job) => (
-                  <div key={job.id} className="flex flex-col gap-2 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between">
+                  <div
+                    key={job.id}
+                    className="flex flex-col gap-2 rounded-lg border border-border p-4 md:flex-row md:items-center md:justify-between"
+                  >
                     <div>
                       <p className="font-medium">{job.title}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{job.status.replace("_", " ")}</p>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {job.status.replace("_", " ")}
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {job.status !== "published" && (
-                        <Button size="sm" onClick={() => void recruitment.updateJob(job.id, { status: "published" })}>Publish</Button>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            void recruitment.updateJob(job.id, {
+                              status: "published",
+                            })
+                          }
+                        >
+                          Publish
+                        </Button>
                       )}
                       {job.status !== "rejected" && (
-                        <Button size="sm" variant="outline" onClick={() => void recruitment.updateJob(job.id, { status: "rejected" })}>Reject</Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            void recruitment.updateJob(job.id, {
+                              status: "rejected",
+                            })
+                          }
+                        >
+                          Reject
+                        </Button>
                       )}
                     </div>
                   </div>

@@ -13,7 +13,18 @@ import {
 } from "@/lib/local-storage";
 import ProfilePhotoEditor from "@/components/profile-photo-editor";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { Mail, Lock, User, Eye, EyeOff, CreditCard, ShieldCheck, Copy, Check, ExternalLink } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  CreditCard,
+  ShieldCheck,
+  Copy,
+  Check,
+  ExternalLink,
+} from "lucide-react";
 import { WORK_SECTORS, getPositionsForSector } from "@/lib/employee-positions";
 import { formatEmployeeId } from "@/lib/employee-id";
 import Link from "next/link";
@@ -104,13 +115,17 @@ export default function EmployeeSettings() {
           .select("*")
           .eq("id", authUser.id)
           .single();
-        const resolvedStatus = profileData?.status || employeeData?.status || "active";
+        const resolvedStatus =
+          profileData?.status || employeeData?.status || "active";
         const account = {
           ...authUser,
           ...profileData,
           ...employeeData,
           status: resolvedStatus,
-          is_verified: resolvedStatus === "active" || Boolean(profileData?.is_verified) || Boolean(employeeData?.is_verified),
+          is_verified:
+            resolvedStatus === "active" ||
+            Boolean(profileData?.is_verified) ||
+            Boolean(employeeData?.is_verified),
           id: authUser.id,
           email: authUser.email,
         };
@@ -119,7 +134,10 @@ export default function EmployeeSettings() {
         setPositionChoice(employeeData?.desired_position || "");
         setFormData({
           full_name:
-            employeeData?.full_name || profileData?.full_name || authUser.user_metadata?.full_name || "",
+            employeeData?.full_name ||
+            profileData?.full_name ||
+            authUser.user_metadata?.full_name ||
+            "",
           email: authUser.email || "",
           phone: employeeData?.phone || profileData?.phone || "",
           gender: employeeData?.gender || "",
@@ -142,8 +160,10 @@ export default function EmployeeSettings() {
           availability: employeeData?.availability || "",
           preferred_cities: employeeData?.preferred_cities || "",
           willing_to_relocate: Boolean(employeeData?.willing_to_relocate),
-          expected_salary_min: employeeData?.expected_salary_min?.toString() || "",
-          expected_salary_max: employeeData?.expected_salary_max?.toString() || "",
+          expected_salary_min:
+            employeeData?.expected_salary_min?.toString() || "",
+          expected_salary_max:
+            employeeData?.expected_salary_max?.toString() || "",
         });
         setLoading(false);
       };
@@ -360,7 +380,9 @@ export default function EmployeeSettings() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-foreground">Employee Member ID</h2>
+                  <h2 className="text-lg font-bold text-foreground">
+                    Employee Member ID
+                  </h2>
                   {user.status === "active" || user.is_verified ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400">
                       <ShieldCheck className="h-3 w-3" />
@@ -379,7 +401,10 @@ export default function EmployeeSettings() {
                   <button
                     type="button"
                     onClick={() => {
-                      const idToCopy = formatEmployeeId(user.id_number, user.email || user.id);
+                      const idToCopy = formatEmployeeId(
+                        user.id_number,
+                        user.email || user.id,
+                      );
                       navigator.clipboard.writeText(idToCopy);
                       setCopiedId(true);
                       setTimeout(() => setCopiedId(false), 2000);
@@ -387,14 +412,22 @@ export default function EmployeeSettings() {
                     className="p-1.5 rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     title="Copy ID Number"
                   >
-                    {copiedId ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedId ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                   </button>
                 </div>
               </div>
             </div>
 
             <Link href="/employee/id-card">
-              <Button variant="default" size="sm" className="gap-2 bg-[#004838] hover:bg-[#00382b] text-white">
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-2 bg-[#004838] hover:bg-[#00382b] text-white"
+              >
                 <CreditCard className="h-4 w-4" />
                 View &amp; Download ID Card
                 <ExternalLink className="h-3.5 w-3.5 opacity-80" />
@@ -434,7 +467,10 @@ export default function EmployeeSettings() {
               </label>
               <input
                 type="text"
-                value={formatEmployeeId(user?.id_number, user?.email || user?.id)}
+                value={formatEmployeeId(
+                  user?.id_number,
+                  user?.email || user?.id,
+                )}
                 disabled
                 className="w-full px-3 py-2 border border-border rounded-lg bg-muted opacity-80 font-mono font-bold text-primary cursor-not-allowed"
               />
@@ -513,7 +549,6 @@ export default function EmployeeSettings() {
                   value={formData.date_of_birth}
                   required
                   max={new Date().toISOString().split("T")[0]}
-                  max={new Date().toISOString().split("T")[0]}
                   onChange={(e) =>
                     setFormData({ ...formData, date_of_birth: e.target.value })
                   }
@@ -560,7 +595,15 @@ export default function EmployeeSettings() {
                     </label>
                     <input
                       value={formData[key]}
-                      placeholder={key === "residence_city" ? "e.g. Addis Ababa" : key === "residence_sub_city" ? "e.g. Bole" : key === "residence_woreda" ? "e.g. Woreda 03" : "e.g. Kazanchis"}
+                      placeholder={
+                        key === "residence_city"
+                          ? "e.g. Addis Ababa"
+                          : key === "residence_sub_city"
+                            ? "e.g. Bole"
+                            : key === "residence_woreda"
+                              ? "e.g. Woreda 03"
+                              : "e.g. Kazanchis"
+                      }
                       onChange={(e) =>
                         setFormData({ ...formData, [key]: e.target.value })
                       }
@@ -589,7 +632,13 @@ export default function EmployeeSettings() {
                       type={key === "emergency_contact_phone" ? "tel" : "text"}
                       required
                       value={formData[key]}
-                      placeholder={key === "emergency_contact_name" ? "e.g. Abel Bekele" : key === "emergency_contact_relationship" ? "e.g. Brother" : "e.g. +251 911 234 567"}
+                      placeholder={
+                        key === "emergency_contact_name"
+                          ? "e.g. Abel Bekele"
+                          : key === "emergency_contact_relationship"
+                            ? "e.g. Brother"
+                            : "e.g. +251 911 234 567"
+                      }
                       onChange={(e) =>
                         setFormData({ ...formData, [key]: e.target.value })
                       }
@@ -607,11 +656,22 @@ export default function EmployeeSettings() {
               <select
                 value={formData.work_sector}
                 required
-                onChange={(e) => { setFormData({ ...formData, work_sector: e.target.value, desired_position: "" }); setPositionChoice(""); }}
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    work_sector: e.target.value,
+                    desired_position: "",
+                  });
+                  setPositionChoice("");
+                }}
                 className="mb-2 w-full px-3 py-2 border border-border rounded-lg bg-background"
               >
                 <option value="">Choose cafe or restaurant</option>
-                {WORK_SECTORS.map((sector) => <option key={sector} value={sector}>{sector === "cafe" ? "Cafe" : "Restaurant"}</option>)}
+                {WORK_SECTORS.map((sector) => (
+                  <option key={sector} value={sector}>
+                    {sector === "cafe" ? "Cafe" : "Restaurant"}
+                  </option>
+                ))}
               </select>
               <PositionSearchSelect
                 name="desired_position"
@@ -619,7 +679,10 @@ export default function EmployeeSettings() {
                 positions={getPositionsForSector(formData.work_sector)}
                 required
                 placeholder="Search listed positions"
-                onChange={(value) => { setPositionChoice(value); setFormData({ ...formData, desired_position: value }); }}
+                onChange={(value) => {
+                  setPositionChoice(value);
+                  setFormData({ ...formData, desired_position: value });
+                }}
               />
             </div>
 
@@ -717,12 +780,16 @@ export default function EmployeeSettings() {
                 <label className="block text-sm font-medium mb-2">
                   Preferred Cities
                 </label>
-                <label className="mb-2 block text-sm font-medium">Languages</label>
+                <label className="mb-2 block text-sm font-medium">
+                  Languages
+                </label>
                 <LanguageMultiSelect
                   name="languages"
                   value={formData.languages}
                   languages={LANGUAGES}
-                  onChange={(languages) => setFormData({ ...formData, languages })}
+                  onChange={(languages) =>
+                    setFormData({ ...formData, languages })
+                  }
                 />
                 <input
                   type="text"
@@ -804,7 +871,9 @@ export default function EmployeeSettings() {
           <div>
             <h2 className="text-2xl font-bold">CV details</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Complete your CV information here, then save it to send it for admin review. Your generated CV preview is available from the CV menu.
+              Complete your CV information here, then save it to send it for
+              admin review. Your generated CV preview is available from the CV
+              menu.
             </p>
           </div>
           <EmployeeCvPage embedded showPreview={false} />

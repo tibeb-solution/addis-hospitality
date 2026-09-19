@@ -50,7 +50,9 @@ export default function CompanyApplicationsPage() {
 
   const refresh = async () => {
     const supabase = createClient();
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
     const current = isSupabaseConfigured() ? authUser : getCurrentUser();
     setUser(current);
 
@@ -59,36 +61,52 @@ export default function CompanyApplicationsPage() {
       setApplications([]);
       return;
     }
-    setNotifications((await recruitment.notifications(current.id)).filter((item) => !item.read_at));
+    setNotifications(
+      (await recruitment.notifications(current.id)).filter(
+        (item) => !item.read_at,
+      ),
+    );
 
     const ownJobs = (await recruitment.jobs())
       .filter((job) => job.company_id === current.id)
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
     setJobs(ownJobs);
-    setInterviews((await recruitment.interviews()).filter((interview) => interview.company_id === current.id));
+    setInterviews(
+      (await recruitment.interviews()).filter(
+        (interview) => interview.company_id === current.id,
+      ),
+    );
     const companyApplications = (await recruitment.applications())
       .filter((application) =>
         ownJobs.some((job) => job.id === application.job_id),
       )
       .filter((application) => Boolean(application.sent_to_company_at))
       .sort((a, b) => b.created_at.localeCompare(a.created_at));
-    const employeeIds = [...new Set(companyApplications.map((application) => application.employee_id))];
+    const employeeIds = [
+      ...new Set(
+        companyApplications.map((application) => application.employee_id),
+      ),
+    ];
     if (isSupabaseConfigured()) {
-      const [{ data: accounts }, { data: employeeProfiles }] = employeeIds.length
-        ? await Promise.all([
-            supabase
-              .from("profiles")
-              .select("id, full_name, email, phone")
-              .in("id", employeeIds),
-            supabase
-              .from("employee_profiles")
-              .select("*")
-              .in("id", employeeIds),
-          ])
-        : [{ data: [] }, { data: [] }];
+      const [{ data: accounts }, { data: employeeProfiles }] =
+        employeeIds.length
+          ? await Promise.all([
+              supabase
+                .from("profiles")
+                .select("id, full_name, email, phone")
+                .in("id", employeeIds),
+              supabase
+                .from("employee_profiles")
+                .select("*")
+                .in("id", employeeIds),
+            ])
+          : [{ data: [] }, { data: [] }];
       const profilesById = new Map(
-        (employeeProfiles || []).map((employee: any) => [employee.id, employee]),
+        (employeeProfiles || []).map((employee: any) => [
+          employee.id,
+          employee,
+        ]),
       );
       setEmployees(
         Object.fromEntries(
@@ -115,7 +133,10 @@ export default function CompanyApplicationsPage() {
     void refresh();
   }, []);
 
-  const update = async (application: Application, status: Application["status"]) => {
+  const update = async (
+    application: Application,
+    status: Application["status"],
+  ) => {
     await recruitment.updateApplication(application.id, status);
     setMessage(`Application marked as ${status.replace("_", " ")}.`);
     await refresh();
@@ -155,7 +176,11 @@ export default function CompanyApplicationsPage() {
       </div>
       {notifications.length > 0 && (
         <div className="rounded-lg border border-primary bg-primary/5 p-4 text-sm">
-          {notifications.map((notification) => <p key={notification.id}>{notification.title}: {notification.body}</p>)}
+          {notifications.map((notification) => (
+            <p key={notification.id}>
+              {notification.title}: {notification.body}
+            </p>
+          ))}
         </div>
       )}
 
@@ -198,9 +223,13 @@ export default function CompanyApplicationsPage() {
 
                   <dl className="grid grid-cols-1 gap-2 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <dt className="text-xs uppercase tracking-wide">Gender</dt>
+                      <dt className="text-xs uppercase tracking-wide">
+                        Gender
+                      </dt>
                       <dd className="capitalize text-foreground">
-                        {formatGender(employee?.gender ?? application.applicant_gender)}
+                        {formatGender(
+                          employee?.gender ?? application.applicant_gender,
+                        )}
                       </dd>
                     </div>
                     <div>
@@ -211,12 +240,12 @@ export default function CompanyApplicationsPage() {
                     </div>
                     <div>
                       <dt className="text-xs uppercase tracking-wide">Phone</dt>
-                      <dd className="text-foreground">
-                        {employee?.phone || "Not provided"}
-                      </dd>
+                      <dd className="text-foreground">Private</dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-wide">Position</dt>
+                      <dt className="text-xs uppercase tracking-wide">
+                        Position
+                      </dt>
                       <dd className="text-foreground">
                         {employee?.desired_position || "Not provided"}
                       </dd>
@@ -225,20 +254,60 @@ export default function CompanyApplicationsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setDetailFor(detailFor === application.id ? null : application.id)}
+                    onClick={() =>
+                      setDetailFor(
+                        detailFor === application.id ? null : application.id,
+                      )
+                    }
                   >
-                    {detailFor === application.id ? "Hide details" : "View employee details"}
+                    {detailFor === application.id
+                      ? "Hide details"
+                      : "View employee details"}
                   </Button>
                   {detailFor === application.id && (
                     <dl className="mt-3 grid grid-cols-1 gap-2 rounded-md border border-border bg-muted/30 p-3 text-sm sm:grid-cols-2">
-                      <div><dt className="text-muted-foreground">Email</dt><dd>{employee?.email || "Not provided"}</dd></div>
-                      <div><dt className="text-muted-foreground">Emergency contact</dt><dd>{employee?.emergency_contact_name || "Not provided"} ({employee?.emergency_contact_relationship || "Not provided"})</dd></div>
-                      <div><dt className="text-muted-foreground">Emergency phone</dt><dd>{employee?.emergency_contact_phone || "Not provided"}</dd></div>
-                      <div><dt className="text-muted-foreground">Languages</dt><dd>{employee?.languages?.join(", ") || "Not provided"}</dd></div>
-                      <div><dt className="text-muted-foreground">Experience</dt><dd>{employee?.years_experience ?? "Not provided"} years</dd></div>
-                      <div><dt className="text-muted-foreground">Education</dt><dd>{employee?.highest_education || "Not provided"}</dd></div>
-                      <div><dt className="text-muted-foreground">Residence</dt><dd>{[employee?.residence_city, employee?.residence_sub_city, employee?.residence_area].filter(Boolean).join(", ") || "Not provided"}</dd></div>
-                      <div><dt className="text-muted-foreground">Bio</dt><dd>{employee?.bio || "Not provided"}</dd></div>
+                      <div>
+                        <dt className="text-muted-foreground">Email</dt>
+                        <dd>Private</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">
+                          Emergency contact
+                        </dt>
+                        <dd>Private</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">Languages</dt>
+                        <dd>
+                          {employee?.languages?.join(", ") || "Not provided"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">Experience</dt>
+                        <dd>
+                          {employee?.years_experience ?? "Not provided"} years
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">Education</dt>
+                        <dd>{employee?.highest_education || "Not provided"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">Residence</dt>
+                        <dd>
+                          {[
+                            employee?.residence_city,
+                            employee?.residence_sub_city,
+                            employee?.residence_area,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "Not provided"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">Bio</dt>
+                        <dd>{employee?.bio || "Not provided"}</dd>
+                      </div>
                     </dl>
                   )}
 
@@ -247,16 +316,38 @@ export default function CompanyApplicationsPage() {
                       {application.cover_note}
                     </p>
                   )}
-                  {interviews.filter((interview) => interview.application_id === application.id && interview.status !== "cancelled").map((interview) => (
-                    <div key={interview.id} className="text-sm text-muted-foreground">
-                      Interview: {interview.status} | {new Date(interview.starts_at).toLocaleString()}
-                      {interview.status === "proposed" && (
-                        <Button size="sm" variant="outline" className="ml-2" onClick={() => void recruitment.cancelInterview(interview.id).then(() => { setMessage("Interview cancelled."); void refresh(); })}>
-                          Cancel interview
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                  {interviews
+                    .filter(
+                      (interview) =>
+                        interview.application_id === application.id &&
+                        interview.status !== "cancelled",
+                    )
+                    .map((interview) => (
+                      <div
+                        key={interview.id}
+                        className="text-sm text-muted-foreground"
+                      >
+                        Interview: {interview.status} |{" "}
+                        {new Date(interview.starts_at).toLocaleString()}
+                        {interview.status === "proposed" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-2"
+                            onClick={() =>
+                              void recruitment
+                                .cancelInterview(interview.id)
+                                .then(() => {
+                                  setMessage("Interview cancelled.");
+                                  void refresh();
+                                })
+                            }
+                          >
+                            Cancel interview
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                 </div>
 
                 <div className="flex flex-wrap gap-2">

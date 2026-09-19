@@ -20,8 +20,11 @@ export default function AdminDashboard() {
   });
   const [pendingAccounts, setPendingAccounts] = useState<any[]>([]);
   const [pendingJobs, setPendingJobs] = useState<any[]>([]);
-  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
+  const [applicationCounts, setApplicationCounts] = useState<
+    Record<string, number>
+  >({});
   const [hiringNotifications, setHiringNotifications] = useState<any[]>([]);
+  const [pendingHiringRequests, setPendingHiringRequests] = useState<any[]>([]);
   const [scheduledInterviews, setScheduledInterviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +32,9 @@ export default function AdminDashboard() {
     const loadStats = async () => {
       const supabase = createClient();
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         const { data: profiles } = await supabase
           .from("profiles")
@@ -44,18 +49,20 @@ export default function AdminDashboard() {
           (profile: any) => profile.role === "company",
         ).length;
 
-        const [jobs, notifications, interviews, applications] = await Promise.all([
-          recruitment.jobs(),
-          recruitment.notifications(user?.id || "admin-001"),
-          recruitment.interviews(),
-          recruitment.applications(),
-        ]);
+        const [jobs, notifications, interviews, applications, hiringRequests] =
+          await Promise.all([
+            recruitment.jobs(),
+            recruitment.notifications(user?.id || "admin-001"),
+            recruitment.interviews(),
+            recruitment.applications(),
+            recruitment.hiringRequests(),
+          ]);
 
         const statusMap =
           profiles?.reduce((acc: any, profile: any) => {
-          acc[profile.status] = (acc[profile.status] || 0) + 1;
-          return acc;
-        }, {}) || {};
+            acc[profile.status] = (acc[profile.status] || 0) + 1;
+            return acc;
+          }, {}) || {};
 
         setPendingAccounts(
           (profiles || [])
@@ -66,22 +73,56 @@ export default function AdminDashboard() {
             .slice(0, 5),
         );
 
-        setPendingJobs(jobs.filter((job) => job.status === "pending_review").slice(0, 5));
+        setPendingJobs(
+          jobs.filter((job) => job.status === "pending_review").slice(0, 5),
+        );
         setApplicationCounts(
           applications.reduce<Record<string, number>>((counts, application) => {
             counts[application.job_id] = (counts[application.job_id] || 0) + 1;
             return counts;
           }, {}),
         );
-        setHiringNotifications(notifications.filter((notification) => ["application", "interview"].includes(notification.type)).slice(0, 8));
+        setHiringNotifications(
+          notifications
+            .filter((notification) =>
+              ["application", "interview", "hire_request"].includes(
+                notification.type,
+              ),
+            )
+            .slice(0, 8),
+        );
+        setPendingHiringRequests(
+          hiringRequests
+            .filter((request) => request.status === "pending_approval")
+            .map((request) => ({
+              ...request,
+              companyName:
+                profiles?.find(
+                  (profile: any) => profile.id === request.company_id,
+                )?.company_name ||
+                profiles?.find(
+                  (profile: any) => profile.id === request.company_id,
+                )?.full_name ||
+                "Company",
+              employeeName:
+                profiles?.find(
+                  (profile: any) => profile.id === request.employee_id,
+                )?.full_name || "Employee",
+            }))
+            .slice(0, 5),
+        );
         setScheduledInterviews(
           interviews
             .map((interview) => {
-              const application = applications.find((item) => item.id === interview.application_id);
+              const application = applications.find(
+                (item) => item.id === interview.application_id,
+              );
               const job = jobs.find((item) => item.id === application?.job_id);
               const employee =
                 getEmployeeProfile(interview.employee_id) ||
-                profiles?.find((profile: any) => profile.id === interview.employee_id);
+                profiles?.find(
+                  (profile: any) => profile.id === interview.employee_id,
+                );
               return {
                 ...interview,
                 employeeName: employee?.full_name || "Employee",
@@ -242,10 +283,20 @@ export default function AdminDashboard() {
                   <div className="min-w-0">
                     <p className="font-medium">{job.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {job.company_name} | Age {job.min_age ?? 18}-{job.max_age ?? 65} | {job.application_deadline ? new Date(job.application_deadline).toLocaleDateString() : "No expiry"} | {applicationCounts[job.id] || 0} applicants
+                      {job.company_name} | Age {job.min_age ?? 18}-
+                      {job.max_age ?? 65} |{" "}
+                      {job.application_deadline
+                        ? new Date(
+                            job.application_deadline,
+                          ).toLocaleDateString()
+                        : "No expiry"}{" "}
+                      | {applicationCounts[job.id] || 0} applicants
                     </p>
                   </div>
-                  <Link href={`/admin/jobs/${job.id}`} className="shrink-0 text-sm text-primary hover:underline">
+                  <Link
+                    href={`/admin/jobs/${job.id}`}
+                    className="shrink-0 text-sm text-primary hover:underline"
+                  >
                     View details
                   </Link>
                 </div>
@@ -253,6 +304,50 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Pending hiring approvals</h2>
+        </div>
+        {pendingHiringRequests.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No hiring requests are waiting for approval.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {pendingHiringRequests.map((request) => (
+              <div
+                key={request.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {request.companyName} → {request.employeeName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Requested{" "}
+                    {new Date(request.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    await recruitment.reviewHiringRequest(
+                      request.id,
+                      "approved",
+                    );
+                    setPendingHiringRequests((current) =>
+                      current.filter((item) => item.id !== request.id),
+                    );
+                  }}
+                >
+                  Approve
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-card border border-border rounded-lg p-6 space-y-4">

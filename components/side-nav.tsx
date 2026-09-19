@@ -42,7 +42,9 @@ export default function SideNav({
     if (role !== "company" || !isSupabaseConfigured()) return;
     const loadUnread = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const { count } = await supabase
         .from("notifications")
@@ -83,6 +85,11 @@ export default function SideNav({
             icon: Briefcase,
           },
           { href: "/admin/jobs", label: "Job Approvals", icon: FileText },
+          {
+            href: "/admin/hiring-approvals",
+            label: "Hiring approvals",
+            icon: Users,
+          },
           { href: "/admin/audit", label: t("admin.auditLog"), icon: Archive },
           { href: "/admin/settings", label: t("nav.settings"), icon: Settings },
         ]
@@ -131,6 +138,11 @@ export default function SideNav({
               href: "/company/applications",
               label: "Applications",
               icon: FileText,
+            },
+            {
+              href: "/company/employees",
+              label: "Find employees",
+              icon: Users,
             },
             {
               href: "/company/notifications",
@@ -236,11 +248,12 @@ export default function SideNav({
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>
-                  {item.href === "/company/notifications" && unreadCount > 0 && (
-                    <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                      {unreadCount}
-                    </span>
-                  )}
+                  {item.href === "/company/notifications" &&
+                    unreadCount > 0 && (
+                      <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                        {unreadCount}
+                      </span>
+                    )}
                   {item.href === "/admin/jobs" && pendingJobCount > 0 && (
                     <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs text-white">
                       {pendingJobCount}
