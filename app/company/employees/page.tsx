@@ -20,6 +20,7 @@ export default function CompanyEmployeesPage() {
   const [filtered, setFiltered] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [requestedIds, setRequestedIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
@@ -31,78 +32,96 @@ export default function CompanyEmployeesPage() {
   const [sortBy, setSortBy] = useState("best_match");
 
   const loadEmployees = async () => {
-    const supabase = createClient();
-    const currentUser = isSupabaseConfigured()
-      ? (await supabase.auth.getUser()).data.user
-      : getCurrentUser();
-    setUser(currentUser);
+    try {
+      const supabase = createClient();
+      const currentUser = isSupabaseConfigured()
+        ? (await supabase.auth.getUser()).data.user
+        : getCurrentUser();
+      setUser(currentUser);
 
-    if (!currentUser) {
-      setLoading(false);
-      return;
-    }
+      if (!currentUser) return;
 
-    let rows: any[] = [];
-    if (isSupabaseConfigured()) {
-      const [{ data: profiles }, { data: employeeProfiles }] =
-        await Promise.all([
+      let rows: any[] = [];
+      if (isSupabaseConfigured()) {
+        const [
+          { data: profiles, error: profilesError },
+          { data: employeeProfiles, error: employeeError },
+        ] = await Promise.all([
           supabase
             .from("profiles")
             .select("id, full_name, role")
             .eq("role", "employee"),
           supabase.from("employee_profiles").select("*"),
         ]);
+        if (profilesError) throw profilesError;
+        if (employeeError) throw employeeError;
 
-      const byId = new Map(
-        (employeeProfiles || []).map((profile: any) => [profile.id, profile]),
+        const byId = new Map(
+          (employeeProfiles || []).map((profile: any) => [profile.id, profile]),
+        );
+        rows = (profiles || []).map((profile: any) => {
+          const extraProfile = (byId.get(profile.id) ?? {}) as Record<
+            string,
+            any
+          >;
+          return {
+            ...extraProfile,
+            id: profile.id,
+            full_name:
+              profile.full_name || extraProfile["full_name"] || "Employee",
+          };
+        });
+      } else {
+        rows = getEmployeeProfiles().map((profile: any) => ({
+          ...profile,
+          full_name: profile.full_name || "Employee",
+        }));
+      }
+
+      try {
+        const companyRequests = await recruitment.hiringRequests();
+        setRequestedIds(
+          companyRequests
+            .filter(
+              (request) =>
+                request.company_id === currentUser.id &&
+                request.status === "pending_approval",
+            )
+            .map((request) => request.employee_id),
+        );
+      } catch (requestError) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Hiring requests could not be loaded.",
+        );
+      }
+
+      const normalized = rows
+        .filter((employee) => employee && employee.id)
+        .map((employee) => {
+          const score = employeeQualificationScore(employee);
+          return {
+            ...employee,
+            qualificationScore: score,
+            qualificationLevel: qualificationLevel(score),
+          };
+        })
+        .sort(
+          (a, b) => (b.qualificationScore ?? 0) - (a.qualificationScore ?? 0),
+        );
+
+      setEmployees(normalized);
+      setFiltered(normalized);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load employees.",
       );
-      rows = (profiles || []).map((profile: any) => {
-        const extraProfile = (byId.get(profile.id) ?? {}) as Record<
-          string,
-          any
-        >;
-        return {
-          ...extraProfile,
-          id: profile.id,
-          full_name:
-            profile.full_name || extraProfile["full_name"] || "Employee",
-        };
-      });
-    } else {
-      rows = getEmployeeProfiles().map((profile: any) => ({
-        ...profile,
-        full_name: profile.full_name || "Employee",
-      }));
+    } finally {
+      setLoading(false);
     }
-
-    const companyRequests = await recruitment.hiringRequests();
-    setRequestedIds(
-      companyRequests
-        .filter(
-          (request) =>
-            request.company_id === currentUser.id &&
-            request.status === "pending_approval",
-        )
-        .map((request) => request.employee_id),
-    );
-
-    const normalized = rows
-      .filter((employee) => employee && employee.id)
-      .map((employee) => {
-        const score = employeeQualificationScore(employee);
-        return {
-          ...employee,
-          qualificationScore: score,
-          qualificationLevel: qualificationLevel(score),
-        };
-      })
-      .sort(
-        (a, b) => (b.qualificationScore ?? 0) - (a.qualificationScore ?? 0),
-      );
-
-    setEmployees(normalized);
-    setFiltered(normalized);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -260,6 +279,11 @@ export default function CompanyEmployeesPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <div>
         <h1 className="text-3xl font-bold">Find employees</h1>
         <p className="mt-1 text-muted-foreground">

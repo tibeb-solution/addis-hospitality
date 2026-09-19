@@ -15,59 +15,106 @@ export default function CompanyDashboard() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [approvedHires, setApprovedHires] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/auth/login");
-        return;
+        if (!user) {
+          router.push("/auth/login");
+          return;
+        }
+
+        const [profileResult, jobsResult, hiresResult, employeesResult] =
+          await Promise.allSettled([
+            supabase
+              .from("company_profiles")
+              .select("*")
+              .eq("id", user.id)
+              .maybeSingle(),
+            recruitment.jobs(),
+            recruitment.hiringRequests(),
+            supabase
+              .from("employee_profiles")
+              .select("id, full_name, desired_position"),
+          ]);
+
+        const failures = [
+          profileResult,
+          jobsResult,
+          hiresResult,
+          employeesResult,
+        ].filter(
+          (result): result is PromiseRejectedResult =>
+            result.status === "rejected",
+        );
+        if (failures.length > 0) {
+          setError(
+            failures
+              .map((failure) =>
+                failure.reason instanceof Error
+                  ? failure.reason.message
+                  : "Some dashboard data could not be loaded.",
+              )
+              .join(" "),
+          );
+        }
+
+        const profileData =
+          profileResult.status === "fulfilled"
+            ? profileResult.value.data
+            : null;
+        const companyJobs =
+          jobsResult.status === "fulfilled" ? jobsResult.value : [];
+        const hiringRequests =
+          hiresResult.status === "fulfilled" ? hiresResult.value : [];
+        const employeeProfiles =
+          employeesResult.status === "fulfilled"
+            ? employeesResult.value.data || []
+            : [];
+
+        setProfile(profileData || null);
+        const employeeMap = new Map(
+          (employeeProfiles || []).map((employee: any) => [
+            employee.id,
+            employee as Record<string, any>,
+          ]),
+        );
+        setApprovedHires(
+          hiringRequests
+            .filter(
+              (request) =>
+                request.company_id === user.id && request.status === "approved",
+            )
+            .map((request) => {
+              const employee = employeeMap.get(request.employee_id) as
+                | Record<string, any>
+                | undefined;
+              return {
+                ...request,
+                employeeName: employee?.["full_name"] || "Employee",
+                position: employee?.["desired_position"] || "—",
+              };
+            }),
+        );
+        setJobs(companyJobs.filter((job) => job.company_id === user.id));
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Unable to load the company dashboard.",
+        );
+      } finally {
+        setLoading(false);
       }
-
-      const { data } = await supabase
-        .from("company_profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data || null);
-      const companyJobs = (await recruitment.jobs()).filter(
-        (job) => job.company_id === user.id,
-      );
-      const hiringRequests = (await recruitment.hiringRequests()).filter(
-        (request) =>
-          request.company_id === user.id && request.status === "approved",
-      );
-      const employeeProfiles = await supabase
-        .from("employee_profiles")
-        .select("id, full_name, desired_position");
-      const employeeMap = new Map(
-        (employeeProfiles.data || []).map((profile: any) => [
-          profile.id,
-          profile as Record<string, any>,
-        ]),
-      );
-      setApprovedHires(
-        hiringRequests.map((request) => {
-          const employee = employeeMap.get(request.employee_id) as
-            | Record<string, any>
-            | undefined;
-          return {
-            ...request,
-            employeeName: employee?.["full_name"] || "Employee",
-            position: employee?.["desired_position"] || "—",
-          };
-        }),
-      );
-      setJobs(companyJobs);
-      setLoading(false);
     };
 
-    loadProfile();
+    void loadProfile();
   }, [router]);
 
   if (loading) {
@@ -76,6 +123,11 @@ export default function CompanyDashboard() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {error && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       {/* Welcome Card */}
       <div className="bg-gradient-to-r from-primary to-accent rounded-lg p-4 sm:p-8 text-primary-foreground">
         <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
