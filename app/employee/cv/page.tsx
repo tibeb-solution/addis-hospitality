@@ -77,6 +77,63 @@ function initialCv(profile: any): CvData {
   };
 }
 
+type ProfileSync = {
+  fullName?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  languages?: string;
+  highestEducation?: string;
+};
+
+function applyProfileSync(cv: CvData, profile: ProfileSync): CvData {
+  return {
+    ...cv,
+    contact: {
+      ...cv.contact,
+      fullName: profile.fullName ?? cv.contact.fullName,
+      title: profile.title ?? cv.contact.title,
+      email: profile.email ?? cv.contact.email,
+      phone: profile.phone ?? cv.contact.phone,
+      address: profile.address ?? cv.contact.address,
+    },
+    personal: {
+      ...cv.personal,
+      dateOfBirth: profile.dateOfBirth ?? cv.personal.dateOfBirth,
+      gender: profile.gender ?? cv.personal.gender,
+    },
+    education: profile.highestEducation
+      ? cv.education.map((item, index) =>
+          index === 0
+            ? { ...item, title: profile.highestEducation ?? item.title }
+            : item
+        )
+      : cv.education,
+    languages: profile.languages ?? cv.languages,
+  };
+}
+
+function profileToSync(profile: any): ProfileSync {
+  return {
+    fullName: profile?.full_name || "",
+    title: profile?.desired_position || "",
+    email: profile?.email || "",
+    phone: profile?.phone || "",
+    address: [profile?.residence_area, profile?.residence_city]
+      .filter(Boolean)
+      .join(", "),
+    dateOfBirth: profile?.date_of_birth || "",
+    gender: profile?.gender || "",
+    languages: Array.isArray(profile?.languages)
+      ? profile.languages.join(", ")
+      : profile?.languages || "",
+    highestEducation: profile?.highest_education || "",
+  };
+}
+
 function Field({
   label,
   value,
@@ -169,9 +226,11 @@ function Section({
 export default function EmployeeCvPage({
   embedded = false,
   showPreview = true,
+  profileSync,
 }: {
   embedded?: boolean;
   showPreview?: boolean;
+  profileSync?: ProfileSync;
 }) {
   const router = useRouter();
   const previewOnly = usePathname() === "/employee/cv";
@@ -221,10 +280,12 @@ export default function EmployeeCvPage({
         };
         setUser(authUser);
         setProfile(merged);
+        const profileCv = initialCv(merged);
+        const syncedProfile = profileToSync(merged);
         setCv(
           savedCv?.data
-            ? { ...initialCv(merged), ...savedCv.data }
-            : initialCv(merged),
+            ? applyProfileSync({ ...profileCv, ...savedCv.data }, syncedProfile)
+            : applyProfileSync(profileCv, syncedProfile)
         );
         setStatus(savedCv?.status || "draft");
         if (employee?.avatar_url) {
@@ -241,8 +302,9 @@ export default function EmployeeCvPage({
         }
         const employee = getEmployeeProfile(current.id) || current;
         setUser(current);
-        setProfile({ ...current, ...employee });
-        setCv(initialCv({ ...current, ...employee }));
+        const profileData = { ...current, ...employee };
+        setProfile(profileData);
+        setCv(applyProfileSync(initialCv(profileData), profileToSync(profileData)));
         setStatus((employee as any).cv_status || "draft");
         if ((employee as any)?.avatar_url) {
           setAvatarUrl((employee as any).avatar_url);
@@ -267,6 +329,21 @@ export default function EmployeeCvPage({
     window.addEventListener("afterprint", cleanup, { once: true });
     window.print();
   };
+
+  useEffect(() => {
+    if (!profileSync) return;
+    setCv((current) => (current ? applyProfileSync(current, profileSync) : current));
+  }, [
+    profileSync?.address,
+    profileSync?.dateOfBirth,
+    profileSync?.email,
+    profileSync?.fullName,
+    profileSync?.gender,
+    profileSync?.highestEducation,
+    profileSync?.languages,
+    profileSync?.phone,
+    profileSync?.title,
+  ]);
 
   const selectedSkills = useMemo(() => {
     if (!cv?.skills) return [];
@@ -317,7 +394,6 @@ export default function EmployeeCvPage({
             cv.experience.some((item) => item.title && item.detail),
             cv.education.some((item) => item.title && item.detail),
             cv.skills,
-            cv.certifications.some((item) => item.title && item.detail),
             cv.achievements,
             cv.languages,
             cv.references.some(
@@ -867,7 +943,6 @@ export default function EmployeeCvPage({
                             ? "Reference name"
                             : field[0].toUpperCase() + field.slice(1)
                         }
-                        required
                         value={reference[field]}
                         onChange={(value) =>
                           updateReference(index, { [field]: value })

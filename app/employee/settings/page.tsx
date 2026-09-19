@@ -93,6 +93,10 @@ export default function EmployeeSettings() {
   const [messageType, setMessageType] = useState<"success" | "error">(
     "success",
   );
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileMessageType, setProfileMessageType] = useState<
+    "success" | "error"
+  >("success");
 
   useEffect(() => {
     if (isSupabaseConfigured()) {
@@ -256,8 +260,8 @@ export default function EmployeeSettings() {
         .from("employee_profiles")
         .upsert({ id: user.id, ...profileUpdates });
       if (error) {
-        setMessageType("error");
-        setMessage(error.message);
+        setProfileMessageType("error");
+        setProfileMessage(error.message);
         return;
       }
       const { error: accountError } = await supabase
@@ -265,8 +269,8 @@ export default function EmployeeSettings() {
         .update({ full_name: formData.full_name, phone: formData.phone })
         .eq("id", user.id);
       if (accountError) {
-        setMessageType("error");
-        setMessage(accountError.message);
+        setProfileMessageType("error");
+        setProfileMessage(accountError.message);
         return;
       }
     } else {
@@ -277,9 +281,9 @@ export default function EmployeeSettings() {
     setCurrentUser(updated);
     setUser(updated);
 
-    setMessageType("success");
-    setMessage("Profile updated successfully!");
-    setTimeout(() => setMessage(""), 3000);
+    setProfileMessageType("success");
+    setProfileMessage("Profile updated successfully!");
+    setTimeout(() => setProfileMessage(""), 3000);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -863,6 +867,17 @@ export default function EmployeeSettings() {
             <Button type="submit" className="w-full md:w-auto">
               {t("common.save")}
             </Button>
+            {profileMessage && (
+              <div
+                className={`p-4 rounded-lg ${
+                  profileMessageType === "success"
+                    ? "bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400"
+                    : "bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400"
+                }`}
+              >
+                {profileMessage}
+              </div>
+            )}
           </form>
         </div>
 
@@ -876,7 +891,23 @@ export default function EmployeeSettings() {
               menu.
             </p>
           </div>
-          <EmployeeCvPage embedded showPreview={false} />
+          <EmployeeCvPage
+            embedded
+            showPreview={false}
+            profileSync={{
+              fullName: formData.full_name,
+              title: positionChoice,
+              email: formData.email,
+              phone: formData.phone,
+              address: [formData.residence_area, formData.residence_city]
+                .filter(Boolean)
+                .join(", "),
+              dateOfBirth: formData.date_of_birth,
+              gender: formData.gender,
+              languages: formData.languages.join(", "),
+              highestEducation: formData.highest_education,
+            }}
+          />
         </div>
 
         {/* Password Settings */}
