@@ -986,25 +986,30 @@ export const recruitment = {
     if (isSupabaseConfigured()) {
       const { data, error } = await createClient()
         .from("ratings")
-        .insert(input)
+        .upsert(input, { onConflict: "application_id,author_id" })
         .select()
         .single();
       if (error) throw error;
       return data as Rating;
     }
-    if (
-      (await this.ratings()).some(
-        (rating) =>
-          rating.application_id === input.application_id &&
-          rating.author_id === input.author_id,
-      )
-    ) {
-      throw new Error(
-        "You have already submitted a rating for this employment.",
-      );
-    }
-    const rating = { ...input, id: id(), created_at: new Date().toISOString() };
-    write(keys.ratings, [...(await this.ratings()), rating]);
+    const ratings = await this.ratings();
+    const existingIndex = ratings.findIndex(
+      (rating) =>
+        rating.application_id === input.application_id &&
+        rating.author_id === input.author_id,
+    );
+    const rating = {
+      ...input,
+      id: existingIndex >= 0 ? ratings[existingIndex].id : id(),
+      created_at:
+        existingIndex >= 0
+          ? ratings[existingIndex].created_at
+          : new Date().toISOString(),
+    };
+    const nextRatings = [...ratings];
+    if (existingIndex >= 0) nextRatings[existingIndex] = rating;
+    else nextRatings.push(rating);
+    write(keys.ratings, nextRatings);
     return rating;
   },
   matchScore(job: Job, profile: any) {

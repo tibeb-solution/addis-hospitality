@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -9,6 +9,7 @@ import { logAction } from "@/lib/local-storage";
 import { formatEmployeeId } from "@/lib/employee-id";
 import EmployeeIdCard from "@/components/employee-id-card";
 import EmployeeCvPreview from "@/components/employee-cv-preview";
+import { recruitment } from "@/lib/recruitment";
 import { CheckCircle2, CreditCard, Eye, LockKeyhole, X } from "lucide-react";
 
 const ID_DOCUMENT_TYPES = new Set(["national_id", "passport"]);
@@ -31,6 +32,14 @@ export default function AdminEmployeeDetailPage() {
   const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
   const [cv, setCv] = useState<any>(null);
   const [showCvModal, setShowCvModal] = useState(false);
+  const [ratingApplicationId, setRatingApplicationId] = useState<string | null>(
+    null,
+  );
+  const [employeeRating, setEmployeeRating] = useState<any>(null);
+  const [ratingScore, setRatingScore] = useState("5");
+  const [ratingReview, setRatingReview] = useState("");
+  const [ratingMessage, setRatingMessage] = useState("");
+  const [ratingSaving, setRatingSaving] = useState(false);
 
   useEffect(() => {
     const loadEmployee = async () => {
@@ -57,6 +66,23 @@ export default function AdminEmployeeDetailPage() {
           .eq("employee_id", params.id as string)
           .maybeSingle();
         setCv(cvData || null);
+        const [applications, ratings] = await Promise.all([
+          recruitment.applications(),
+          recruitment.ratings(),
+        ]);
+        setRatingApplicationId(
+          applications.find(
+            (application) => application.employee_id === params.id,
+          )?.id || null,
+        );
+        const existingRating = ratings.find(
+          (rating) => rating.subject_id === params.id,
+        );
+        setEmployeeRating(existingRating || null);
+        if (existingRating) {
+          setRatingScore(String(existingRating.score));
+          setRatingReview(existingRating.review || "");
+        }
         // Load employee/company profile avatar (if available)
         try {
           const { data: profile } = await supabase
@@ -85,6 +111,36 @@ export default function AdminEmployeeDetailPage() {
     loadEmployee();
   }, [params]);
 
+  const submitEmployeeRating = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!ratingApplicationId || !employee) return;
+
+    setRatingSaving(true);
+    setRatingMessage("");
+    try {
+      const reviewer = (await createClient().auth.getUser()).data.user;
+      if (!reviewer)
+        throw new Error(
+          "Your admin session has expired. Please sign in again.",
+        );
+      const rating = await recruitment.rate({
+        application_id: ratingApplicationId,
+        author_id: reviewer.id,
+        subject_id: employee.id,
+        score: Number(ratingScore),
+        review: ratingReview,
+      });
+      setEmployeeRating(rating);
+      setRatingMessage("Employee rating saved.");
+    } catch (err) {
+      setRatingMessage(
+        err instanceof Error ? err.message : "Unable to save employee rating.",
+      );
+    } finally {
+      setRatingSaving(false);
+    }
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     if (!employee) return;
     setUpdating(true);
@@ -93,7 +149,10 @@ export default function AdminEmployeeDetailPage() {
     try {
       const supabase = createClient();
       const reviewer = (await supabase.auth.getUser()).data.user;
-      if (!reviewer) throw new Error("Your admin session has expired. Please sign in again.");
+      if (!reviewer)
+        throw new Error(
+          "Your admin session has expired. Please sign in again.",
+        );
       const { data: updatedProfile, error: updateError } = await supabase
         .from("profiles")
         .update({
@@ -107,7 +166,10 @@ export default function AdminEmployeeDetailPage() {
         .maybeSingle();
 
       if (updateError) throw updateError;
-      if (!updatedProfile) throw new Error("Approval was not saved. Confirm you are an active admin and refresh the page.");
+      if (!updatedProfile)
+        throw new Error(
+          "Approval was not saved. Confirm you are an active admin and refresh the page.",
+        );
 
       setEmployee({ ...employee, ...updatedProfile });
     } catch (err) {
@@ -122,8 +184,14 @@ export default function AdminEmployeeDetailPage() {
     status: "approved" | "rejected",
   ) => {
     const document = documents.find((item) => item.id === documentId);
-    if (document && isIdDocument(document.document_type) && employee?.status !== "active") {
-      setError("Approve the employee account before verifying identity documents.");
+    if (
+      document &&
+      isIdDocument(document.document_type) &&
+      employee?.status !== "active"
+    ) {
+      setError(
+        "Approve the employee account before verifying identity documents.",
+      );
       return;
     }
     setUpdating(true);
@@ -164,7 +232,12 @@ export default function AdminEmployeeDetailPage() {
       setError("Approve the employee account before reviewing the CV.");
       return;
     }
-    if (!documents.some((item) => isIdDocument(item.document_type) && item.status === "approved")) {
+    if (
+      !documents.some(
+        (item) =>
+          isIdDocument(item.document_type) && item.status === "approved",
+      )
+    ) {
       setError("Verify a national ID or passport before reviewing the CV.");
       return;
     }
@@ -177,7 +250,10 @@ export default function AdminEmployeeDetailPage() {
     try {
       const supabase = createClient();
       const { data: reviewer } = await supabase.auth.getUser();
-      if (!reviewer.user) throw new Error("Your admin session has expired. Please sign in again.");
+      if (!reviewer.user)
+        throw new Error(
+          "Your admin session has expired. Please sign in again.",
+        );
       const { data: updatedCv, error: updateError } = await supabase
         .from("employee_cvs")
         .update({
@@ -191,7 +267,10 @@ export default function AdminEmployeeDetailPage() {
         .select("employee_id,status,review_note,reviewed_at")
         .maybeSingle();
       if (updateError) throw updateError;
-      if (!updatedCv) throw new Error("CV approval was not saved. Confirm you are an active admin and the CV is still submitted.");
+      if (!updatedCv)
+        throw new Error(
+          "CV approval was not saved. Confirm you are an active admin and the CV is still submitted.",
+        );
       setCv({ ...cv, ...updatedCv });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.serverError"));
@@ -209,8 +288,12 @@ export default function AdminEmployeeDetailPage() {
   }
 
   const accountVerified = employee.status === "active";
-  const idDocuments = documents.filter((document) => isIdDocument(document.document_type));
-  const idVerified = idDocuments.some((document) => document.status === "approved");
+  const idDocuments = documents.filter((document) =>
+    isIdDocument(document.document_type),
+  );
+  const idVerified = idDocuments.some(
+    (document) => document.status === "approved",
+  );
   const cvSubmitted = cv?.status === "submitted";
 
   return (
@@ -335,7 +418,9 @@ export default function AdminEmployeeDetailPage() {
             {
               number: "1",
               title: "Account",
-              detail: accountVerified ? "Account is approved" : "Review account information",
+              detail: accountVerified
+                ? "Account is approved"
+                : "Review account information",
               complete: accountVerified,
             },
             {
@@ -354,18 +439,22 @@ export default function AdminEmployeeDetailPage() {
             {
               number: "3",
               title: "CV",
-              detail: !accountVerified || !idVerified
-                ? "Waiting for account and ID approval"
-                : cvSubmitted
-                  ? "CV is ready for review"
-                  : cv?.status === "approved"
-                    ? "CV is approved"
-                    : "Waiting for CV submission",
+              detail:
+                !accountVerified || !idVerified
+                  ? "Waiting for account and ID approval"
+                  : cvSubmitted
+                    ? "CV is ready for review"
+                    : cv?.status === "approved"
+                      ? "CV is approved"
+                      : "Waiting for CV submission",
               complete: cv?.status === "approved",
               locked: !accountVerified || !idVerified,
             },
           ].map((step) => (
-            <div key={step.number} className="rounded-md border border-border p-4">
+            <div
+              key={step.number}
+              className="rounded-md border border-border p-4"
+            >
               <div className="flex items-start gap-3">
                 {step.complete ? (
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
@@ -378,7 +467,9 @@ export default function AdminEmployeeDetailPage() {
                 )}
                 <div>
                   <p className="font-medium">{step.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{step.detail}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {step.detail}
+                  </p>
                 </div>
               </div>
             </div>
@@ -392,14 +483,20 @@ export default function AdminEmployeeDetailPage() {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">{t("auth.email")}</h3>
             <span className="text-xs font-mono font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-md border border-primary/20">
-              {formatEmployeeId(employee.id_number, employee.email || employee.id)}
+              {formatEmployeeId(
+                employee.id_number,
+                employee.email || employee.id,
+              )}
             </span>
           </div>
           <dl className="space-y-3 text-sm">
             <div>
               <dt className="text-muted-foreground">Employee ID Number</dt>
               <dd className="font-mono font-bold text-primary">
-                {formatEmployeeId(employee.id_number, employee.email || employee.id)}
+                {formatEmployeeId(
+                  employee.id_number,
+                  employee.email || employee.id,
+                )}
               </dd>
             </div>
             <div>
@@ -475,12 +572,29 @@ export default function AdminEmployeeDetailPage() {
               ["Desired position", employee.desired_position],
               ["Years of experience", employee.years_experience],
               ["Preferred cities", employee.preferred_cities],
-              ["Expected salary", employee.expected_salary_min || employee.expected_salary_max ? `${employee.expected_salary_min || "—"} – ${employee.expected_salary_max || "—"} ETB` : null],
+              [
+                "Expected salary",
+                employee.expected_salary_min || employee.expected_salary_max
+                  ? `${employee.expected_salary_min || "—"} – ${employee.expected_salary_max || "—"} ETB`
+                  : null,
+              ],
               ["Highest education", employee.highest_education],
               ["Employment type", employee.employment_type],
               ["Availability", employee.availability],
-              ["Willing to relocate", employee.willing_to_relocate === true ? "Yes" : employee.willing_to_relocate === false ? "No" : null],
-              ["Skills", Array.isArray(employee.skills) ? employee.skills.join(", ") : employee.skills],
+              [
+                "Willing to relocate",
+                employee.willing_to_relocate === true
+                  ? "Yes"
+                  : employee.willing_to_relocate === false
+                    ? "No"
+                    : null,
+              ],
+              [
+                "Skills",
+                Array.isArray(employee.skills)
+                  ? employee.skills.join(", ")
+                  : employee.skills,
+              ],
             ].map(([label, value]) => (
               <div key={label}>
                 <dt className="text-muted-foreground">{label}</dt>
@@ -488,7 +602,56 @@ export default function AdminEmployeeDetailPage() {
               </div>
             ))}
           </dl>
-          {employee.bio && <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{employee.bio}</p>}
+          {employee.bio && (
+            <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+              {employee.bio}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+          <div>
+            <h3 className="font-semibold">Admin employee rating</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Only admins can rate employees. Companies see the qualification
+              score, not a company rating.
+            </p>
+          </div>
+          {!ratingApplicationId ? (
+            <p className="text-sm text-muted-foreground">
+              This employee has no application available for rating yet.
+            </p>
+          ) : (
+            <form onSubmit={submitEmployeeRating} className="space-y-3">
+              <select
+                value={ratingScore}
+                onChange={(event) => setRatingScore(event.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Strong</option>
+                <option value="3">3 - Good</option>
+                <option value="2">2 - Needs improvement</option>
+                <option value="1">1 - Basic</option>
+              </select>
+              <textarea
+                value={ratingReview}
+                onChange={(event) => setRatingReview(event.target.value)}
+                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Add an internal review of this employee"
+              />
+              <Button type="submit" disabled={ratingSaving}>
+                {ratingSaving
+                  ? "Saving..."
+                  : employeeRating
+                    ? "Update rating"
+                    : "Save rating"}
+              </Button>
+              {ratingMessage && (
+                <p className="text-sm text-primary">{ratingMessage}</p>
+              )}
+            </form>
+          )}
         </div>
 
         {/* Moderation Controls */}
@@ -587,15 +750,49 @@ export default function AdminEmployeeDetailPage() {
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-semibold">CV review</h3>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">{cv.status}</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
+              {cv.status}
+            </span>
           </div>
-          <p className="text-sm text-muted-foreground">Review the employee's completed CV before approving download access.</p>
+          <p className="text-sm text-muted-foreground">
+            Review the employee's completed CV before approving download access.
+          </p>
           <div className="grid gap-4 rounded-lg border border-border bg-muted/20 p-4 text-sm sm:grid-cols-2">
-            <div><p className="text-muted-foreground">Professional title</p><p className="font-medium">{cv.data?.contact?.title || "—"}</p></div>
-            <div><p className="text-muted-foreground">Contact</p><p className="font-medium">{[cv.data?.contact?.email, cv.data?.contact?.phone].filter(Boolean).join(" | ") || "—"}</p></div>
-            <div className="sm:col-span-2"><p className="text-muted-foreground">Professional summary</p><p className="whitespace-pre-wrap font-medium">{cv.data?.summary || "—"}</p></div>
-            <div><p className="text-muted-foreground">Work experience</p><p className="font-medium">{cv.data?.experience?.filter((item: any) => item.title || item.detail).length || 0} entries</p></div>
-            <div><p className="text-muted-foreground">References</p><p className="font-medium">{cv.data?.references?.filter((item: any) => item.name).length || 0} entries</p></div>
+            <div>
+              <p className="text-muted-foreground">Professional title</p>
+              <p className="font-medium">{cv.data?.contact?.title || "—"}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Contact</p>
+              <p className="font-medium">
+                {[cv.data?.contact?.email, cv.data?.contact?.phone]
+                  .filter(Boolean)
+                  .join(" | ") || "—"}
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="text-muted-foreground">Professional summary</p>
+              <p className="whitespace-pre-wrap font-medium">
+                {cv.data?.summary || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Work experience</p>
+              <p className="font-medium">
+                {cv.data?.experience?.filter(
+                  (item: any) => item.title || item.detail,
+                ).length || 0}{" "}
+                entries
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">References</p>
+              <p className="font-medium">
+                {cv.data?.references?.filter((item: any) => item.name).length ||
+                  0}{" "}
+                entries
+              </p>
+            </div>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
             <Button
@@ -607,18 +804,53 @@ export default function AdminEmployeeDetailPage() {
               <Eye className="h-4 w-4 text-primary" />
               Preview Full CV
             </Button>
-            {cv.status !== "approved" && <Button disabled={updating || !accountVerified || !idVerified || cv.status !== "submitted"} onClick={() => void handleCvStatus("approved")}>Approve CV</Button>}
-            {cv.status !== "rejected" && <Button disabled={updating || !accountVerified || !idVerified || cv.status !== "submitted"} variant="destructive" onClick={() => void handleCvStatus("rejected")}>Reject CV</Button>}
+            {cv.status !== "approved" && (
+              <Button
+                disabled={
+                  updating ||
+                  !accountVerified ||
+                  !idVerified ||
+                  cv.status !== "submitted"
+                }
+                onClick={() => void handleCvStatus("approved")}
+              >
+                Approve CV
+              </Button>
+            )}
+            {cv.status !== "rejected" && (
+              <Button
+                disabled={
+                  updating ||
+                  !accountVerified ||
+                  !idVerified ||
+                  cv.status !== "submitted"
+                }
+                variant="destructive"
+                onClick={() => void handleCvStatus("rejected")}
+              >
+                Reject CV
+              </Button>
+            )}
           </div>
           {(!accountVerified || !idVerified) && (
             <p className="text-sm text-muted-foreground">
-              CV review unlocks after the account and an identity document are approved.
+              CV review unlocks after the account and an identity document are
+              approved.
             </p>
           )}
-          {accountVerified && idVerified && !cvSubmitted && cv.status !== "approved" && (
-            <p className="text-sm text-muted-foreground">Waiting for the employee to submit this CV.</p>
+          {accountVerified &&
+            idVerified &&
+            !cvSubmitted &&
+            cv.status !== "approved" && (
+              <p className="text-sm text-muted-foreground">
+                Waiting for the employee to submit this CV.
+              </p>
+            )}
+          {cv.review_note && (
+            <p className="text-sm text-muted-foreground">
+              Review note: {cv.review_note}
+            </p>
           )}
-          {cv.review_note && <p className="text-sm text-muted-foreground">Review note: {cv.review_note}</p>}
 
           {showCvModal && cv.data && (
             <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-xs">
@@ -629,15 +861,26 @@ export default function AdminEmployeeDetailPage() {
                 <div className="flex items-center gap-2">
                   {cv.status === "submitted" && (
                     <>
-                      <Button disabled={updating || !accountVerified || !idVerified} onClick={() => void handleCvStatus("approved")}>
+                      <Button
+                        disabled={updating || !accountVerified || !idVerified}
+                        onClick={() => void handleCvStatus("approved")}
+                      >
                         Approve CV
                       </Button>
-                      <Button disabled={updating || !accountVerified || !idVerified} variant="destructive" onClick={() => void handleCvStatus("rejected")}>
+                      <Button
+                        disabled={updating || !accountVerified || !idVerified}
+                        variant="destructive"
+                        onClick={() => void handleCvStatus("rejected")}
+                      >
                         Reject CV
                       </Button>
                     </>
                   )}
-                  <Button type="button" variant="outline" onClick={() => setShowCvModal(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCvModal(false)}
+                  >
                     <X className="mr-1 h-4 w-4" />
                     Back to review
                   </Button>
@@ -696,7 +939,10 @@ export default function AdminEmployeeDetailPage() {
                   {doc.status !== "approved" && (
                     <button
                       type="button"
-                      disabled={updating || (isIdDocument(doc.document_type) && !accountVerified)}
+                      disabled={
+                        updating ||
+                        (isIdDocument(doc.document_type) && !accountVerified)
+                      }
                       className="text-sm text-green-700 underline disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={() =>
                         void handleDocumentStatus(doc.id, "approved")
@@ -708,7 +954,10 @@ export default function AdminEmployeeDetailPage() {
                   {doc.status !== "rejected" && (
                     <button
                       type="button"
-                      disabled={updating || (isIdDocument(doc.document_type) && !accountVerified)}
+                      disabled={
+                        updating ||
+                        (isIdDocument(doc.document_type) && !accountVerified)
+                      }
                       className="text-sm text-red-700 underline disabled:cursor-not-allowed disabled:opacity-50"
                       onClick={() =>
                         void handleDocumentStatus(doc.id, "rejected")
@@ -740,7 +989,9 @@ export default function AdminEmployeeDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-lg">Official Member ID Card Badge</h3>
+            <h3 className="font-semibold text-lg">
+              Official Member ID Card Badge
+            </h3>
           </div>
           <span className="text-xs font-medium text-muted-foreground">
             Auto-generated from employee credentials

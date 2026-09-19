@@ -19,11 +19,9 @@ export default function EmployeeJobsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [drafts, setDrafts] = useState<any[]>([]);
-  const [ratings, setRatings] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [message, setMessage] = useState("");
-  const [ratingFor, setRatingFor] = useState<Application | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [applying, setApplying] = useState(false);
   const [jobFilter, setJobFilter] = useState("");
@@ -47,48 +45,47 @@ export default function EmployeeJobsPage() {
         currentProfile = data;
       }
 
-    const [
-      availableJobs,
-      allApplications,
-      allInterviews,
-      allDrafts,
-      allRatings,
-    ] = await Promise.all([
-      recruitment.jobs(),
-      recruitment.applications(),
-      recruitment.interviews(),
-      current?.id
-        ? recruitment.applicationDrafts(current.id)
-        : Promise.resolve([]),
-      recruitment.ratings(),
-    ]);
-    setJobs(
-      availableJobs
-        .filter((job) => job.status === "published" && !isJobExpired(job))
-        .filter((job) => {
-          const age = currentProfile?.age;
-          const genderMatches = !job.gender_preference || job.gender_preference === currentProfile?.gender;
-          const ageMatches = age === undefined || (age >= (job.min_age ?? 18) && age <= (job.max_age ?? 65));
-          return ageMatches && genderMatches;
-        })
-        .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    );
+      const [availableJobs, allApplications, allInterviews, allDrafts] =
+        await Promise.all([
+          recruitment.jobs(),
+          recruitment.applications(),
+          recruitment.interviews(),
+          current?.id
+            ? recruitment.applicationDrafts(current.id)
+            : Promise.resolve([]),
+        ]);
+      setJobs(
+        availableJobs
+          .filter((job) => job.status === "published" && !isJobExpired(job))
+          .filter((job) => {
+            const age = currentProfile?.age;
+            const genderMatches =
+              !job.gender_preference ||
+              job.gender_preference === currentProfile?.gender;
+            const ageMatches =
+              age === undefined ||
+              (age >= (job.min_age ?? 18) && age <= (job.max_age ?? 65));
+            return ageMatches && genderMatches;
+          })
+          .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+      );
 
-    setApplications(
-      allApplications.filter(
-        (application) => application.employee_id === current?.id,
-      ),
-    );
+      setApplications(
+        allApplications.filter(
+          (application) => application.employee_id === current?.id,
+        ),
+      );
 
-    setInterviews(
-      allInterviews.filter(
-        (interview) => interview.employee_id === current?.id,
-      ),
-    );
-    setDrafts(allDrafts);
-    setRatings(allRatings);
+      setInterviews(
+        allInterviews.filter(
+          (interview) => interview.employee_id === current?.id,
+        ),
+      );
+      setDrafts(allDrafts);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to load jobs.");
+      setMessage(
+        error instanceof Error ? error.message : "Unable to load jobs.",
+      );
     }
   };
 
@@ -105,7 +102,9 @@ export default function EmployeeJobsPage() {
         const draft = await recruitment.getApplicationDraft(job.id, user.id);
         if (draft) setMessage("Draft restored. You can submit when ready.");
       } catch {
-        setMessage("Application opened. Your draft could not be loaded, but you can still submit.");
+        setMessage(
+          "Application opened. Your draft could not be loaded, but you can still submit.",
+        );
       }
     }
     setMessage((current) => current || "");
@@ -131,10 +130,20 @@ export default function EmployeeJobsPage() {
           ).data
         : getEmployeeProfile(user.id);
       if (isSupabaseConfigured() && !profile) {
-        throw new Error("Your employee profile could not be loaded. Please complete your profile, then try again.");
+        throw new Error(
+          "Your employee profile could not be loaded. Please complete your profile, then try again.",
+        );
       }
-      if (!profile?.gender || !profile?.date_of_birth || !profile?.emergency_contact_name || !profile?.emergency_contact_relationship || !profile?.emergency_contact_phone) {
-        setMessage("Update your gender, date of birth, and complete emergency contact information in your profile before applying.");
+      if (
+        !profile?.gender ||
+        !profile?.date_of_birth ||
+        !profile?.emergency_contact_name ||
+        !profile?.emergency_contact_relationship ||
+        !profile?.emergency_contact_phone
+      ) {
+        setMessage(
+          "Update your gender, date of birth, and complete emergency contact information in your profile before applying.",
+        );
         return;
       }
       await recruitment.apply(selectedJob, user.id, profile, note);
@@ -154,30 +163,6 @@ export default function EmployeeJobsPage() {
       setMessage(error instanceof Error ? error.message : "Unable to apply.");
     } finally {
       setApplying(false);
-    }
-  };
-
-  const submitRating = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!ratingFor || !user) return;
-
-    const form = new FormData(event.currentTarget);
-    const job = jobs.find((item) => item.id === ratingFor.job_id);
-
-    try {
-      await recruitment.rate({
-        application_id: ratingFor.id,
-        author_id: user.id,
-        subject_id: job?.company_id || "",
-        score: Number(form.get("score")),
-        review: String(form.get("review") || ""),
-      });
-      setMessage("Thank you for your rating.");
-      setRatingFor(null);
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Unable to submit rating.",
-      );
     }
   };
 
@@ -244,8 +229,17 @@ export default function EmployeeJobsPage() {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Available jobs</h2>
         <div className="grid gap-2 sm:grid-cols-3">
-          <input value={jobFilter} onChange={(event) => setJobFilter(event.target.value)} placeholder="Filter jobs by position or company" className="rounded-md border border-input bg-background px-3 py-2 text-sm sm:col-span-2" />
-          <select value={genderFilter} onChange={(event) => setGenderFilter(event.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+          <input
+            value={jobFilter}
+            onChange={(event) => setJobFilter(event.target.value)}
+            placeholder="Filter jobs by position or company"
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm sm:col-span-2"
+          />
+          <select
+            value={genderFilter}
+            onChange={(event) => setGenderFilter(event.target.value)}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
             <option value="">All compatible jobs</option>
             <option value="male">Male preference</option>
             <option value="female">Female preference</option>
@@ -257,68 +251,77 @@ export default function EmployeeJobsPage() {
             No active jobs match the current date.
           </p>
         ) : (
-          jobs.filter((job) => `${job.title} ${job.company_name}`.toLowerCase().includes(jobFilter.toLowerCase()) && (!genderFilter || job.gender_preference === genderFilter)).map((job) => {
-            const applied = applications.some(
-              (application) => application.job_id === job.id,
-            );
-            const score = user
-              ? recruitment.matchScore(job, getEmployeeProfile(user.id))
-              : 0;
+          jobs
+            .filter(
+              (job) =>
+                `${job.title} ${job.company_name}`
+                  .toLowerCase()
+                  .includes(jobFilter.toLowerCase()) &&
+                (!genderFilter || job.gender_preference === genderFilter),
+            )
+            .map((job) => {
+              const applied = applications.some(
+                (application) => application.job_id === job.id,
+              );
+              const score = user
+                ? recruitment.matchScore(job, getEmployeeProfile(user.id))
+                : 0;
 
-            return (
-              <article
-                key={job.id}
-                className="rounded-lg border border-border bg-card p-5"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:justify-between">
-                  <div>
-                    <h3 className="font-semibold">{job.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {job.company_name} | {job.location} |{" "}
-                      {job.employment_type.replace("_", " ")}
-                    </p>
-                    <p className="mt-2 text-sm whitespace-pre-wrap">
-                      {job.description}
-                    </p>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Skills: {job.skills.join(", ") || "Not specified"} |
-                      Match: {score}% | Education:{" "}
-                      {job.education_required || "Not specified"}
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Age: {job.min_age ?? "18"}-{job.max_age ?? "65"} | Gender: {job.gender_preference || "No preference"}
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Posted {new Date(job.created_at).toLocaleString()} |
-                      Deadline: {formatDeadlineDate(job.application_deadline)}
-                      {job.application_deadline && (
-                        <span className="ml-2 font-semibold text-red-600">
-                          {formatDeadlineCountdown(
-                            job.application_deadline,
-                            now,
-                          )}
-                        </span>
-                      )}
-                    </p>
+              return (
+                <article
+                  key={job.id}
+                  className="rounded-lg border border-border bg-card p-5"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:justify-between">
+                    <div>
+                      <h3 className="font-semibold">{job.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {job.company_name} | {job.location} |{" "}
+                        {job.employment_type.replace("_", " ")}
+                      </p>
+                      <p className="mt-2 text-sm whitespace-pre-wrap">
+                        {job.description}
+                      </p>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Skills: {job.skills.join(", ") || "Not specified"} |
+                        Match: {score}% | Education:{" "}
+                        {job.education_required || "Not specified"}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Age: {job.min_age ?? "18"}-{job.max_age ?? "65"} |
+                        Gender: {job.gender_preference || "No preference"}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Posted {new Date(job.created_at).toLocaleString()} |
+                        Deadline: {formatDeadlineDate(job.application_deadline)}
+                        {job.application_deadline && (
+                          <span className="ml-2 font-semibold text-red-600">
+                            {formatDeadlineCountdown(
+                              job.application_deadline,
+                              now,
+                            )}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <Button
+                      disabled={applied}
+                      onClick={() => openApplication(job)}
+                    >
+                      {applied
+                        ? "Applied"
+                        : drafts.some(
+                              (draft) =>
+                                draft.job_id === job.id &&
+                                draft.employee_id === user?.id,
+                            )
+                          ? "Continue"
+                          : "Apply"}
+                    </Button>
                   </div>
-                  <Button
-                    disabled={applied}
-                    onClick={() => openApplication(job)}
-                  >
-                    {applied
-                      ? "Applied"
-                      : drafts.some(
-                            (draft) =>
-                              draft.job_id === job.id &&
-                              draft.employee_id === user?.id,
-                          )
-                        ? "Continue"
-                        : "Apply"}
-                  </Button>
-                </div>
-              </article>
-            );
-          })
+                </article>
+              );
+            })
         )}
       </section>
 
@@ -331,13 +334,6 @@ export default function EmployeeJobsPage() {
         ) : (
           applications.map((application) => {
             const job = jobs.find((item) => item.id === application.job_id);
-            const rated =
-              user &&
-              ratings.some(
-                (rating) =>
-                  rating.application_id === application.id &&
-                  rating.author_id === user.id,
-              );
 
             return (
               <article
@@ -353,15 +349,6 @@ export default function EmployeeJobsPage() {
                     {application.match_score}%
                   </p>
                 </div>
-                {application.status === "hired" && !rated && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setRatingFor(application)}
-                  >
-                    Rate employer
-                  </Button>
-                )}
               </article>
             );
           })
@@ -375,7 +362,8 @@ export default function EmployeeJobsPage() {
         >
           <h2 className="font-semibold">Apply for {selectedJob.title}</h2>
           <p className="text-sm text-muted-foreground">
-            Application details: gender, age, desired position, and emergency contact information will be sent to admin for review.
+            Application details: gender, age, desired position, and emergency
+            contact information will be sent to admin for review.
           </p>
           <textarea
             name="cover_note"
@@ -405,41 +393,6 @@ export default function EmployeeJobsPage() {
               type="button"
               variant="outline"
               onClick={() => setSelectedJob(null)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {ratingFor && (
-        <form
-          onSubmit={submitRating}
-          className="space-y-3 rounded-lg border border-primary bg-card p-5"
-        >
-          <h2 className="font-semibold">Rate your employer</h2>
-          <select
-            name="score"
-            className="w-full rounded-md border border-input bg-background px-3 py-2"
-            defaultValue="5"
-          >
-            <option value="5">5 - Excellent</option>
-            <option value="4">4 - Good</option>
-            <option value="3">3 - Average</option>
-            <option value="2">2 - Poor</option>
-            <option value="1">1 - Very poor</option>
-          </select>
-          <textarea
-            name="review"
-            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2"
-            placeholder="Optional review"
-          />
-          <div className="flex gap-2">
-            <Button type="submit">Submit rating</Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setRatingFor(null)}
             >
               Cancel
             </Button>

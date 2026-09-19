@@ -78,6 +78,8 @@ export default function CompanyEmployeesPage() {
         }));
       }
 
+      const ratings = await recruitment.ratings().catch(() => []);
+
       try {
         const companyRequests = await recruitment.hiringRequests();
         setRequestedIds(
@@ -101,10 +103,14 @@ export default function CompanyEmployeesPage() {
         .filter((employee) => employee && employee.id)
         .map((employee) => {
           const score = employeeQualificationScore(employee);
+          const adminRating = ratings.find(
+            (rating) => rating.subject_id === employee.id,
+          );
           return {
             ...employee,
             qualificationScore: score,
             qualificationLevel: qualificationLevel(score),
+            adminRating: adminRating?.score ?? null,
           };
         })
         .sort(
@@ -369,7 +375,7 @@ export default function CompanyEmployeesPage() {
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="best_match">Best match</option>
-            <option value="highest_rated">Highest rated first</option>
+            <option value="highest_rated">Highest qualification first</option>
           </select>
         </div>
       </div>
@@ -403,8 +409,13 @@ export default function CompanyEmployeesPage() {
 
                   <div className="flex flex-wrap gap-2 text-xs">
                     <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">
-                      Rating: {employee.qualificationScore}/100
+                      Qualification score: {employee.qualificationScore}/100
                     </span>
+                    {employee.adminRating !== null && (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-1 text-amber-700">
+                        Admin rating: {employee.adminRating}/5
+                      </span>
+                    )}
                     <span className="rounded-full bg-muted px-2 py-1 text-foreground">
                       {employee.qualificationLevel}
                     </span>
