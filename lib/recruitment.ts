@@ -912,12 +912,6 @@ export const recruitment = {
     }
 
     await this.notify(
-      ADMIN_USER_ID,
-      "Hiring request pending approval",
-      `A company requested approval to hire an employee.`,
-      "hire_request",
-    );
-    await this.notify(
       input.company_id,
       "Hiring request sent",
       "Your hiring request is pending admin approval.",
@@ -934,11 +928,14 @@ export const recruitment = {
     );
     if (!request) return null;
 
+    const reviewerId = isSupabaseConfigured()
+      ? (await createClient().auth.getUser()).data.user?.id || ADMIN_USER_ID
+      : ADMIN_USER_ID;
     const updated = {
       ...request,
       status,
       reviewed_at: new Date().toISOString(),
-      reviewed_by: ADMIN_USER_ID,
+      reviewed_by: reviewerId,
     };
 
     if (isSupabaseConfigured()) {

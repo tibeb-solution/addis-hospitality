@@ -276,6 +276,30 @@ ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS review_note text;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_at timestamptz;
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS reviewed_by uuid REFERENCES profiles(id);
 ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS logo_status text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS company_name text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS logo_url text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS trade_license_number text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS tin_number text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS year_established integer;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS employee_count integer;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS website text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS contact_person text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS contact_position text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS contact_phone text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS contact_email text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS region text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS sub_city text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS address text;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS is_verified boolean DEFAULT false;
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS business_type text;
+
+-- Backfill company detail rows for accounts created before the auth trigger
+-- was added. This is safe to rerun and preserves any existing detail data.
+INSERT INTO public.company_profiles (id, company_name, email)
+SELECT p.id, COALESCE(p.full_name, ''), p.email
+FROM public.profiles p
+WHERE p.role = 'company'
+ON CONFLICT (id) DO NOTHING;
 
 -- Backfill emails from profiles table if missing
 UPDATE public.company_profiles cp
