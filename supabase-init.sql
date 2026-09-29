@@ -38,7 +38,7 @@ AS $$
 DECLARE
   selected_role text := 'employee';
 BEGIN
-  IF NEW.raw_user_meta_data->>'role' IS NOT NULL AND NEW.raw_user_meta_data->>'role' IN ('employee', 'company', 'admin') THEN
+  IF NEW.raw_user_meta_data->>'role' IS NOT NULL AND NEW.raw_user_meta_data->>'role' IN ('employee', 'company') THEN
     selected_role := NEW.raw_user_meta_data->>'role';
   END IF;
 
@@ -51,8 +51,8 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'company_name', NEW.raw_user_meta_data->>'name', ''),
     COALESCE(NEW.raw_user_meta_data->>'phone', ''),
     'AHS-001-' || lpad((100 + (abs(hashtext(NEW.id::text)) % 900))::text, 3, '0') || '-' || extract(year FROM now())::text,
-    CASE WHEN selected_role = 'admin' THEN 'active' ELSE 'pending' END,
-    true
+    'pending',
+    false
   )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
@@ -512,6 +512,29 @@ CREATE POLICY profiles_update ON profiles FOR UPDATE TO authenticated
   USING (id::text = auth.uid()::text OR public.is_admin())
   WITH CHECK (id::text = auth.uid()::text OR public.is_admin());
 
+CREATE OR REPLACE FUNCTION public.protect_profile_privileged_fields()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF auth.uid() = OLD.auth_user_id AND NOT public.is_admin() THEN
+    NEW.role := OLD.role;
+    NEW.status := OLD.status;
+    NEW.email_verified := OLD.email_verified;
+    NEW.reviewed_at := OLD.reviewed_at;
+    NEW.reviewed_by := OLD.reviewed_by;
+    NEW.status_note := OLD.status_note;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS protect_profile_privileged_fields ON profiles;
+CREATE TRIGGER protect_profile_privileged_fields
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_profile_privileged_fields();
+
 DROP POLICY IF EXISTS employee_profiles_access ON employee_profiles;
 CREATE POLICY employee_profiles_access ON employee_profiles FOR ALL TO authenticated
   USING (id::text = auth.uid()::text OR public.is_admin())
@@ -550,7 +573,8 @@ CREATE POLICY avatars_access ON avatars FOR ALL TO authenticated
   WITH CHECK (owner_id::text = auth.uid()::text OR public.is_admin());
 
 DROP POLICY IF EXISTS jobs_read ON jobs;
-CREATE POLICY jobs_read ON jobs FOR SELECT TO authenticated USING (true);
+CREATE POLICY jobs_read ON jobs FOR SELECT TO authenticated
+  USING (status = 'published' OR company_id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS jobs_write ON jobs;
 CREATE POLICY jobs_write ON jobs FOR ALL TO authenticated
   USING (company_id::text = auth.uid()::text OR public.is_admin())
@@ -583,25 +607,42 @@ CREATE POLICY application_drafts_access ON application_drafts FOR ALL TO authent
   WITH CHECK (employee_id::text = auth.uid()::text OR public.is_admin());
 
 DROP POLICY IF EXISTS interviews_access ON interviews;
-CREATE POLICY interviews_access ON interviews FOR ALL TO authenticated
+CREATE POLICY interviews_access ON interviews FOR SELECT TO authenticated
+  USING (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin())
+;
+DROP POLICY IF EXISTS interviews_insert ON interviews;
+CREATE POLICY interviews_insert ON interviews FOR INSERT TO authenticated
+  WITH CHECK (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS interviews_update ON interviews;
+CREATE POLICY interviews_update ON interviews FOR UPDATE TO authenticated
   USING (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin())
   WITH CHECK (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS interviews_delete ON interviews;
+CREATE POLICY interviews_delete ON interviews FOR DELETE TO authenticated
+  USING (company_id::text = auth.uid()::text OR employee_id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS notifications_access ON notifications;
 CREATE POLICY notifications_access ON notifications FOR ALL TO authenticated
   USING (user_id::text = auth.uid()::text OR public.is_admin())
   WITH CHECK (user_id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS ratings_access ON ratings;
-CREATE POLICY ratings_access ON ratings FOR ALL TO authenticated
-  USING (author_id::text = auth.uid()::text OR subject_id::text = auth.uid()::text OR public.is_admin())
+CREATE POLICY ratings_select ON ratings FOR SELECT TO authenticated
+  USING (author_id::text = auth.uid()::text OR subject_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS ratings_insert ON ratings;
+CREATE POLICY ratings_insert ON ratings FOR INSERT TO authenticated
   WITH CHECK (author_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS ratings_update ON ratings;
+CREATE POLICY ratings_update ON ratings FOR UPDATE TO authenticated
+  USING (author_id::text = auth.uid()::text OR public.is_admin())
+  WITH CHECK (author_id::text = auth.uid()::text OR public.is_admin());
+DROP POLICY IF EXISTS ratings_delete ON ratings;
+CREATE POLICY ratings_delete ON ratings FOR DELETE TO authenticated
+  USING (author_id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS subscriptions_access ON subscriptions;
-CREATE POLICY subscriptions_access ON subscriptions FOR ALL TO authenticated
-  USING (company_id::text = auth.uid()::text OR public.is_admin())
-  WITH CHECK (company_id::text = auth.uid()::text OR public.is_admin());
+CREATE POLICY subscriptions_select ON subscriptions FOR SELECT TO authenticated
+  USING (company_id::text = auth.uid()::text OR public.is_admin());
 DROP POLICY IF EXISTS payment_transactions_access ON payment_transactions;
-CREATE POLICY payment_transactions_access ON payment_transactions FOR ALL TO authenticated
-  USING (company_id::text = auth.uid()::text OR public.is_admin())
-  WITH CHECK (company_id::text = auth.uid()::text OR public.is_admin());
+CREATE POLICY payment_transactions_select ON payment_transactions FOR SELECT TO authenticated
+  USING (company_id::text = auth.uid()::text OR public.is_admin());
 
 -- Storage: avatars are public because the existing UI uses getPublicUrl;
 -- documents remain private and are accessed through signed URLs.
