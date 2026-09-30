@@ -25,7 +25,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-
       {/* Header */}
       <header className="relative border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -208,22 +207,20 @@ export default function LandingPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl space-y-3">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                Our services
+                {t("services.eyebrow")}
               </p>
               <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
-                Practical hospitality support, from people to operations.
+                {t("services.title")}
               </h2>
               <p className="text-sm leading-6 text-muted-foreground sm:text-base">
-                We help hospitality businesses find the right people, run
-                memorable events, and keep their operations organized with
-                dependable systems.
+                {t("services.description")}
               </p>
             </div>
             <Link
               href="/services"
               className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
-              Explore all services <ArrowRight className="h-4 w-4" />
+              {t("services.exploreAll")} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
@@ -231,33 +228,28 @@ export default function LandingPage() {
             {[
               {
                 icon: BriefcaseBusiness,
-                title: "Employment agency",
-                description:
-                  "Recruitment and placement for hotels, restaurants, resorts, events, and other hospitality teams.",
+                title: "employmentAgency",
+                description: "employmentAgencyDescription",
               },
               {
                 icon: CalendarDays,
-                title: "Event organization",
-                description:
-                  "Planning, coordination, staffing, and guest-ready execution for hospitality and corporate events.",
+                title: "eventOrganization",
+                description: "eventOrganizationDescription",
               },
               {
                 icon: ClipboardCheck,
-                title: "Asset counting systems",
-                description:
-                  "Simple digital tools for tracking hospitality assets, stock, equipment, and operational accountability.",
+                title: "assetCountingSystems",
+                description: "assetCountingSystemsDescription",
               },
               {
                 icon: Hotel,
-                title: "Hospitality operations",
-                description:
-                  "Practical support that helps hospitality organizations improve daily service and operational consistency.",
+                title: "hospitalityOperations",
+                description: "hospitalityOperationsDescription",
               },
               {
                 icon: UsersRound,
-                title: "Workforce coordination",
-                description:
-                  "Connect qualified professionals with the right opportunities and help teams grow with confidence.",
+                title: "workforceCoordination",
+                description: "workforceCoordinationDescription",
               },
             ].map(({ icon: Icon, title, description }) => (
               <div
@@ -265,9 +257,11 @@ export default function LandingPage() {
                 className="rounded-lg border border-border bg-background p-5 transition-colors hover:border-primary/50"
               >
                 <Icon className="h-7 w-7 text-primary" />
-                <h3 className="mt-4 text-lg font-semibold">{title}</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  {t(`services.${title}`)}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {description}
+                  {t(`services.${description}`)}
                 </p>
               </div>
             ))}

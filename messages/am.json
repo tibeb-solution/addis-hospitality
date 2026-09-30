@@ -327,6 +327,28 @@
     "privacy": "ግላዊነት ፖሊሲ",
     "terms": "የሰሪ ውል"
   },
+  "services": {
+    "eyebrow": "አገልግሎቶቻችን",
+    "title": "ከሰዎች እስከ ስራ አስኪያጅነት የሚደርስ ተግባራዊ የእንግዳ አስተናጋጅነት ድጋፍ።",
+    "description": "የእንግዳ አስተናጋጅነት ንግዶች ትክክለኛ ሰዎችን እንዲያገኙ፣ የማይረሱ ዝግጅቶችን እንዲያካሂዱ እና ስራቸውን በታማኝ ስርዓቶች እንዲያደራጁ እንረዳለን።",
+    "exploreAll": "ሁሉንም አገልግሎቶች ይመልከቱ",
+    "pageDescription": "የምንሰጣቸውን ሰፊ አገልግሎቶች ይመልከቱ",
+    "employmentAgency": "የቅጥር ኤጀንሲ",
+    "employmentAgencyDescription": "ለሆቴሎች፣ ለምግብ ቤቶች፣ ለመዝናኛ ማዕከላት፣ ለዝግጅቶች እና ለሌሎች የእንግዳ አስተናጋጅነት ቡድኖች ቀጣሪዎችን መፈለግና ማመዳደብ።",
+    "employmentAgencyPageDescription": "ለእንግዳ አስተናጋጅነት ባለሙያዎች እና ድርጅቶች የቅጥር እና የምደባ አገልግሎት።",
+    "eventOrganization": "ዝግጅት አደረጃጀት",
+    "eventOrganizationDescription": "ለእንግዳ አስተናጋጅነት እና ለድርጅታዊ ዝግጅቶች ዕቅድ፣ ማስተባበር፣ ሰራተኛ ማደራጀት እና ዝግጅቱን በተሟላ ሁኔታ ማካሄድ።",
+    "eventOrganizationPageDescription": "ለማይረሱ የእንግዳ አስተናጋጅነት እና ድርጅታዊ ዝግጅቶች ዕቅድ፣ የሰው ኃይል እና ማስተባበር።",
+    "assetCountingSystems": "የንብረት ቆጠራ ስርዓቶች",
+    "assetCountingSystemsDescription": "የእንግዳ አስተናጋጅነት ንብረቶችን፣ እቃዎችን፣ መሳሪያዎችን እና የስራ ተጠያቂነትን ለመከታተል ቀላል ዲጂታል መሳሪያዎች።",
+    "assetCountingSystemsPageDescription": "ለእንግዳ አስተናጋጅነት ስራዎች የተዘጋጁ ዲጂታል የንብረት እና የእቃ ክትትል ስርዓቶች።",
+    "hospitalityOperations": "የእንግዳ አስተናጋጅነት ስራዎች",
+    "hospitalityOperationsDescription": "የእንግዳ አስተናጋጅነት ድርጅቶች የዕለት ተዕለት አገልግሎታቸውንና የስራ ቋሚነታቸውን እንዲያሻሽሉ ተግባራዊ ድጋፍ።",
+    "hospitalityOperationsPageDescription": "የእንግዳ አስተናጋጅነት ንግዶች ቋሚ አገልግሎት እንዲሰጡ የሚረዳ የስራ ድጋፍ።",
+    "workforceCoordination": "የሰው ኃይል ማስተባበር",
+    "workforceCoordinationDescription": "ብቁ ባለሙያዎችን ከትክክለኛ የስራ ዕድሎች ጋር ማገናኘት እና ቡድኖች በመተማመን እንዲያድጉ መርዳት።",
+    "workforceCoordinationPageDescription": "ብቁ ባለሙያዎችን ከእንግዳ አስተናጋጅነት ቀጣሪዎች ጋር የሚያገናኝ ተግባራዊ ድልድይ።"
+  },
   "admin": {
     "title": "አስተዳደር ኮንሶል",
     "dashboard": "ዳሳሽ",
