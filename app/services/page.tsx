@@ -50,7 +50,7 @@ export default function ServicesPage() {
             {t("nav.services")}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Discover our comprehensive range of services
+            {t("services.pageDescription")}
           </p>
         </div>
 
@@ -58,28 +58,28 @@ export default function ServicesPage() {
           {[
             [
               BriefcaseBusiness,
-              "Employment agency",
-              "Recruitment and placement for hospitality professionals and organizations.",
+              "employmentAgency",
+              "employmentAgencyPageDescription",
             ],
             [
               CalendarDays,
-              "Event organization",
-              "Planning, staffing, and coordination for memorable hospitality and corporate events.",
+              "eventOrganization",
+              "eventOrganizationPageDescription",
             ],
             [
               ClipboardCheck,
-              "Asset counting systems",
-              "Digital asset and stock tracking systems built for hospitality operations.",
+              "assetCountingSystems",
+              "assetCountingSystemsPageDescription",
             ],
             [
               Hotel,
-              "Hospitality operations",
-              "Operational support that helps hospitality businesses deliver consistent service.",
+              "hospitalityOperations",
+              "hospitalityOperationsPageDescription",
             ],
             [
               UsersRound,
-              "Workforce coordination",
-              "A practical bridge between qualified talent and hospitality employers.",
+              "workforceCoordination",
+              "workforceCoordinationPageDescription",
             ],
           ].map(([Icon, title, description]) => {
             const ServiceIcon = Icon as typeof BriefcaseBusiness;
@@ -90,10 +90,10 @@ export default function ServicesPage() {
               >
                 <ServiceIcon className="h-8 w-8 text-primary" />
                 <h2 className="mt-5 text-xl font-semibold">
-                  {title as string}
+                  {t(`services.${title as string}`)}
                 </h2>
                 <p className="mt-2 leading-7 text-muted-foreground">
-                  {description as string}
+                  {t(`services.${description as string}`)}
                 </p>
               </article>
             );
