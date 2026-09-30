@@ -327,6 +327,28 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   },
+  "services": {
+    "eyebrow": "Our services",
+    "title": "Practical hospitality support, from people to operations.",
+    "description": "We help hospitality businesses find the right people, run memorable events, and keep their operations organized with dependable systems.",
+    "exploreAll": "Explore all services",
+    "pageDescription": "Discover our comprehensive range of services",
+    "employmentAgency": "Employment agency",
+    "employmentAgencyDescription": "Recruitment and placement for hotels, restaurants, resorts, events, and other hospitality teams.",
+    "employmentAgencyPageDescription": "Recruitment and placement for hospitality professionals and organizations.",
+    "eventOrganization": "Event organization",
+    "eventOrganizationDescription": "Planning, coordination, staffing, and guest-ready execution for hospitality and corporate events.",
+    "eventOrganizationPageDescription": "Planning, staffing, and coordination for memorable hospitality and corporate events.",
+    "assetCountingSystems": "Asset counting systems",
+    "assetCountingSystemsDescription": "Simple digital tools for tracking hospitality assets, stock, equipment, and operational accountability.",
+    "assetCountingSystemsPageDescription": "Digital asset and stock tracking systems built for hospitality operations.",
+    "hospitalityOperations": "Hospitality operations",
+    "hospitalityOperationsDescription": "Practical support that helps hospitality organizations improve daily service and operational consistency.",
+    "hospitalityOperationsPageDescription": "Operational support that helps hospitality businesses deliver consistent service.",
+    "workforceCoordination": "Workforce coordination",
+    "workforceCoordinationDescription": "Connect qualified professionals with the right opportunities and help teams grow with confidence.",
+    "workforceCoordinationPageDescription": "A practical bridge between qualified talent and hospitality employers."
+  },
   "admin": {
     "title": "Admin Console",
     "dashboard": "Dashboard",
