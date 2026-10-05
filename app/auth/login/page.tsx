@@ -193,6 +193,29 @@ export default function LoginPage() {
 
           {isSupabaseConfigured() && (
             <Button type="button" variant="outline" disabled={loading} onClick={handleGoogleLogin} className="w-full" size="lg">
+              <svg
+                aria-hidden="true"
+                className="size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  fill="#4285F4"
+                  d="M21.35 12.23c0-.72-.06-1.42-.18-2.09H12v3.96h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.26Z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 21.6c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.53A9.74 9.74 0 0 0 12 21.6Z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M6.54 13.69a5.85 5.85 0 0 1 0-3.38V7.78H3.3a9.6 9.6 0 0 0 0 8.44l3.24-2.53Z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 6.28c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.38 14.63 2.4 12 2.4a9.74 9.74 0 0 0-8.7 5.38l3.24 2.53C7.31 8 9.46 6.28 12 6.28Z"
+                />
+              </svg>
               Continue with Google
             </Button>
           )}
