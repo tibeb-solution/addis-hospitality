@@ -50,43 +50,25 @@ export default function ProjectsPage() {
           </p>
         </div>
 
-        {/* Projects Content Placeholder */}
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="rounded-lg border border-border bg-card p-8">
-            <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-8">
-            <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-8">
-            <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-8">
-            <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
+          {[
+            ["landing.feature1Title", "landing.feature1Desc"],
+            ["landing.feature2Title", "landing.feature2Desc"],
+            ["landing.feature3Title", "landing.feature3Desc"],
+            ["landing.howItWorks", "landing.ctaDescription"],
+          ].map(([title, description]) => (
+            <section
+              key={title}
+              className="rounded-lg border border-border bg-card p-8"
+            >
+              <h2 className="text-2xl font-semibold text-foreground">
+                {t(title)}
+              </h2>
+              <p className="mt-4 leading-7 text-muted-foreground">
+                {t(description)}
+              </p>
+            </section>
+          ))}
         </div>
       </main>
     </div>
