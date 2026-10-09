@@ -33,34 +33,37 @@ export function Footer() {
 
   const navigationLinks = {
     jobSeekers: [
-      { label: t("footer.browseJobs") || "Browse Jobs", href: "/jobs" },
+      {
+        label: t("footer.browseJobs") || "Browse Jobs",
+        href: "/auth/login",
+      },
       {
         label: t("footer.myApplications") || "My Applications",
-        href: "/employee/jobs",
+        href: "/auth/login",
       },
       {
         label: t("footer.savedJobs") || "Saved Jobs",
-        href: "/employee/settings",
+        href: "/auth/login",
       },
-      { label: t("footer.profile") || "Profile", href: "/employee/settings" },
+      { label: t("footer.profile") || "Profile", href: "/auth/login" },
     ],
     employers: [
-      { label: t("footer.postJob") || "Post a Job", href: "/company/jobs" },
-      { label: t("footer.recruiterDashboard") || "Dashboard", href: "/admin" },
+      { label: t("footer.postJob") || "Post a Job", href: "/auth/login" },
+      { label: t("footer.recruiterDashboard") || "Dashboard", href: "/auth/login" },
       {
         label: t("footer.applications") || "Applications",
-        href: "/admin/companies",
+        href: "/auth/login",
       },
       {
         label: t("footer.companyProfile") || "Company Profile",
-        href: "/company/settings",
+        href: "/auth/login",
       },
     ],
     company: [
       { label: t("footer.about") || "About", href: "/about" },
       { label: t("footer.contact") || "Contact", href: "/contact" },
       { label: t("footer.blog") || "Blog", href: "/news" },
-      { label: t("footer.careers") || "Careers", href: "/company" },
+      { label: t("footer.careers") || "Careers", href: "/auth/login" },
     ],
     legal: [
       {
@@ -76,10 +79,10 @@ export function Footer() {
   };
 
   const socialLinks = [
-    { icon: Globe, href: "#facebook", label: "Facebook" },
-    { icon: MessageCircle, href: "#twitter", label: "X / Twitter" },
-    { icon: BriefcaseBusiness, href: "#linkedin", label: "LinkedIn" },
-    { icon: Camera, href: "#instagram", label: "Instagram" },
+    { icon: Globe, href: "/auth/login", label: "Facebook" },
+    { icon: MessageCircle, href: "/auth/login", label: "X / Twitter" },
+    { icon: BriefcaseBusiness, href: "/auth/login", label: "LinkedIn" },
+    { icon: Camera, href: "/auth/login", label: "Instagram" },
   ];
 
   return (
