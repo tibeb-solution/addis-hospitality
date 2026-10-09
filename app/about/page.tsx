@@ -50,25 +50,24 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* About Content Placeholder */}
         <div className="space-y-8">
-          <div className="rounded-lg border border-border bg-card p-8">
-            <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
+          <section className="rounded-lg border border-border bg-card p-8">
+            <h2 className="text-2xl font-semibold text-foreground">
+              {t("landing.title")}
+            </h2>
+            <p className="mt-4 leading-7 text-muted-foreground">
+              {t("landing.description")}
+            </p>
+          </section>
 
-          <div className="rounded-lg border border-border bg-card p-8">
-            <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
-            </div>
-          </div>
+          <section className="rounded-lg border border-border bg-card p-8">
+            <h2 className="text-2xl font-semibold text-foreground">
+              {t("landing.features")}
+            </h2>
+            <p className="mt-4 leading-7 text-muted-foreground">
+              {t("landing.feature3Desc")}
+            </p>
+          </section>
         </div>
       </main>
     </div>
