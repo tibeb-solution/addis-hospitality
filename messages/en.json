@@ -264,6 +264,7 @@
     "status_rejected": "Rejected",
     "doc_status_pending": "Pending",
     "doc_status_verified": "Verified",
+    "doc_status_approved": "Approved",
     "doc_status_rejected": "Rejected",
     "gender_male": "Male",
     "gender_female": "Female",
